@@ -1,0 +1,16 @@
+[[edge_functions]]
+  function = "Conexion_IA" 
+  path = "/API/Conectar_gemini"
+  method = "GET"
+[[edge_functions]]
+  function = "Conexion_supabase"
+  path = "/API/Conectar_supabase"
+  method = "GET"
+[[edge_functions]]
+  function = "OAuth_consent"
+  path = "/API/Consent"
+  method = "POST"
+[[edge_functions]]
+  function = "OAuth_login"
+  path = "/API/Login_google"
+  method = "POST"
