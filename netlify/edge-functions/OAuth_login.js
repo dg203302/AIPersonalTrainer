@@ -1,5 +1,5 @@
 import conectar_supabase from "./Conexion_supabase.js";
-export default async function oauth_login(){
+export default async function handler(request, context) {
     const { supabase } = conectar_supabase();
     const { data, error } = await supabase.auth.signInWithOAuth({
         provider: "google",
