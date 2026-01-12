@@ -1,11 +1,9 @@
 import conectar_supabase from "./Conexion_supabase.js";
-export default async function oauth_login(
-    { provider = "google", redirectTo } = {},
-) {
+export default async function oauth_login(){
     const { supabase } = conectar_supabase();
     const { data, error } = await supabase.auth.signInWithOAuth({
-        provider,
-        options: redirectTo ? { redirectTo } : undefined,
+        provider: "google",
+        options: { redirectTo: "https://aipersonaltr.netlify.app/Templates/Dashboard.html" }
     });
 
     if (error || !data?.url) {
