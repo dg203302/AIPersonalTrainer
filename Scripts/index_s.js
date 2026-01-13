@@ -1,5 +1,5 @@
 document.getElementById("boton_google").addEventListener("click",async () => {
-    const response = await fetch('/api/login_google');
+    const response = await fetch('login_google');
     const result =  await response.json();
     if(response.ok){
         window.location.href = result.redirectUrl;
@@ -8,7 +8,7 @@ document.getElementById("boton_google").addEventListener("click",async () => {
     }
 });
 document.getElementById("boton_prueba").addEventListener("click",async () => {
-    const response = await fetch('/api/Prueba');
+    const response = await fetch('prueba');
     const text =  await response.text();
     alert(text);
 });
