@@ -3,6 +3,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 function getSupabaseClient() {
     const supabaseUrl = "https://lhecmoeilmhzgxpcetto.supabase.co";
     const supabaseAnonKey = "sb_secret_8pOt21ZHhoru6-VbtV6sEQ_TYL8DivC";
+    //esto para produccion
     //const supabaseUrl = Deno.env.get("Supabase_Project_Url");
     //const supabaseAnonKey = Deno.env.get("Supabase_Api_Key");
     if (!supabaseUrl || !supabaseAnonKey) {
@@ -19,7 +20,9 @@ export default async function handler(_request, _context) {
         const supabase = getSupabaseClient();
         const { data, error } = await supabase.auth.signInWithOAuth({
             provider: "google",
-            options: { redirectTo: "https://aipersonaltr.netlify.app/Templates/Inicio/Dashboard.html" }
+            options: { redirectTo: "http://localhost:8888/Templates/Inicio/Dashboard.html" }
+            //esto para produccion
+            //options: { redirectTo: "https://aipersonaltr.netlify.app/Templates/Inicio/Dashboard.html" }
         });
 
         if (error || !data?.url) {
