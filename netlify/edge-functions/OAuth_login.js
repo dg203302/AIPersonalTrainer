@@ -22,7 +22,7 @@ export default async function handler(_request, _context) {
         const supabase = getSupabaseClient();
         const { data, error } = await supabase.auth.signInWithOAuth({
             provider: "google",
-            options: { redirectTo: `https://aipersonaltr.netlify.app//Templates/Inicio/Dashboard.html` },
+            options: { redirectTo: `/Templates/Inicio/Dashboard.html` },
         });
 
         if (error || !data?.url) {

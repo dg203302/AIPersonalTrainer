@@ -5,8 +5,13 @@ function getSupabaseClient() {
     return createClient(supabaseUrl, supabaseKey);
 }
 window.onload = async () => {
+    const accessToken = new URL(window.location.href).searchParams.get("access_token");
+    if (!accessToken) {
+        console.error("No access token found in URL.");
+        return;
+    }
     const supabase = getSupabaseClient();
-    const { data: { session }, error } = await supabase.auth.getSessionFromUrl({ storeSession: true });
+    const { data: { session }, error } = await supabase.auth.setSession({ accessToken });
     if (error) {
         console.error("Error getting session from URL:", error.message);
         return;
