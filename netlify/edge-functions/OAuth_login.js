@@ -1,8 +1,10 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 function getSupabaseClient() {
-    const supabaseUrl = Deno.env.get("Supabase_Project_Url");
-    const supabaseAnonKey = Deno.env.get("Supabase_Api_Key");
+    const supabaseUrl = "https://lhecmoeilmhzgxpcetto.supabase.co";
+    const supabaseAnonKey = "sb_secret_8pOt21ZHhoru6-VbtV6sEQ_TYL8DivC";
+    //const supabaseUrl = Deno.env.get("Supabase_Project_Url");
+    //const supabaseAnonKey = Deno.env.get("Supabase_Api_Key");
     if (!supabaseUrl || !supabaseAnonKey) {
         throw new Error("Missing Supabase_Project_Url or Supabase_Api_Key environment variable");
     }
@@ -12,7 +14,7 @@ function getSupabaseClient() {
     });
 }
 
-export default async function handler(request, context) {
+export default async function handler(_request, _context) {
     try {
         const supabase = getSupabaseClient();
         const { data, error } = await supabase.auth.signInWithOAuth({

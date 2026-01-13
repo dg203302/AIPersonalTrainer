@@ -4,16 +4,6 @@
   method = "GET"
 
 [[edge_functions]]
-  function = "Conexion_supabase"
-  path = "/conectar_supabase"
-  method = "GET"
-
-[[edge_functions]]
   function = "OAuth_login"
   path = "/login_google"
   method = "POST"
-
-[[edge_functions]]
-  function = "Prueba"
-  path = "/prueba"
-  method = "GET"
