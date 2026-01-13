@@ -1,19 +1,19 @@
 [[edge_functions]]
   function = "Conexion_IA" 
-  path = "conectar_gemini"
+  path = "/conectar_gemini"
   method = "GET"
 
 [[edge_functions]]
   function = "Conexion_supabase"
-  path = "conectar_supabase"
+  path = "/conectar_supabase"
   method = "GET"
 
 [[edge_functions]]
   function = "OAuth_login"
-  path = "login_google"
+  path = "/login_google"
   method = "POST"
 
 [[edge_functions]]
   function = "Prueba"
-  path = "prueba"
+  path = "/prueba"
   method = "GET"
