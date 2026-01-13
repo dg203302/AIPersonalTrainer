@@ -12,3 +12,12 @@ window.onload = () =>{
         }
     });
 }
+document.getElementById("logout_button").addEventListener("click", async () => {
+    const { error } = await supabase.auth.signOut();
+    if (error) {
+        alert("Error al cerrar sesión: " + error.message);
+    } else {
+        localStorage.removeItem("supabase.auth.token");
+        window.location.href = "https://aipersonaltr.netlify.app/";
+    }
+});
