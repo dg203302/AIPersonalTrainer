@@ -6,7 +6,9 @@ const supabase = createClient(supabaseUrl, supabaseKey, {auth: {persistSession: 
 window.onload = () =>{
     const user = supabase.auth.getUser().then(({data: {user}}) => {
         if (user) {
+            //aca hacer la edge function que inserte en la tabla de fitness con el id
             document.getElementById("datos_persistencia").innerText = "ID_usuario guardado: " + user.id;
+
         } else {
             alert("No se encontró un usuario autenticado.");
         }
