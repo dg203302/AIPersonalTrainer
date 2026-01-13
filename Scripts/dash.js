@@ -6,10 +6,9 @@ const supabase = createClient(supabaseUrl, supabaseKey, {auth: {persistSession: 
 window.onload = () =>{
     const user = supabase.auth.getUser().then(({data: {user}}) => {
         if (user) {
-            localStorage.setItem("ID_usuario", user.id);
+            document.getElementById("datos_persistencia").innerText = "ID_usuario guardado: " + user.id;
         } else {
             alert("No se encontró un usuario autenticado.");
         }
     });
-    document.getElementById("datos_persistencia").innerText = "ID_usuario guardado: " + localStorage.getItem("ID_usuario");
 }
