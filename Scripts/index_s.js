@@ -7,3 +7,6 @@ document.getElementById("boton_google").addEventListener("click",async () => {
         alert("Error al iniciar sesión con Google: " + (result.error ?? 'unknown_error'));
     }
 });
+window.onload = () => {
+    fetch()
+}

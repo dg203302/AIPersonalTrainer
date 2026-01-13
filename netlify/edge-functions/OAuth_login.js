@@ -11,7 +11,7 @@ function getSupabaseClient() {
     }
 
     return createClient(supabaseUrl, supabaseAnonKey, {
-        auth: { persistSession: false, autoRefreshToken: false },
+        auth: { persistSession: true, autoRefreshToken: false },
     });
 }
 
@@ -20,9 +20,7 @@ export default async function handler(_request, _context) {
         const supabase = getSupabaseClient();
         const { data, error } = await supabase.auth.signInWithOAuth({
             provider: "google",
-            options: { redirectTo: "http://localhost:8888/Templates/Inicio/Dashboard.html" }
-            //esto para produccion
-            //options: { redirectTo: "https://aipersonaltr.netlify.app/Templates/Inicio/Dashboard.html" }
+            options: { redirectTo: "https://aipersonaltr.netlify.app/Templates/Inicio/Dashboard.html" }
         });
 
         if (error || !data?.url) {
@@ -31,7 +29,7 @@ export default async function handler(_request, _context) {
                 { status: 500, headers: { "Content-Type": "application/json" } }
             );
         }
-
+        //guardarInfo(data.UID);
         return new Response(
             JSON.stringify({ redirectUrl: data.url }),
             { status: 200, headers: { "Content-Type": "application/json" } }
