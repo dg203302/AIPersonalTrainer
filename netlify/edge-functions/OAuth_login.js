@@ -11,7 +11,11 @@ function getSupabaseClient() {
     }
 
     return createClient(supabaseUrl, supabaseAnonKey, {
-        auth: { persistSession: true, autoRefreshToken: false },
+        auth: { 
+            persistSession: true, 
+            autoRefreshToken: false,
+            storage: globalThis.localStorage
+        },
     });
 }
 
@@ -20,7 +24,6 @@ export default async function handler(_request, _context) {
         const supabase = getSupabaseClient();
         const { data, error } = await supabase.auth.signInWithOAuth({
             provider: "google",
-            options: { redirectTo: "https://aipersonaltr.netlify.app/Templates/Inicio/Dashboard.html" }
         });
 
         if (error || !data?.url) {

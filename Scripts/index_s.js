@@ -7,6 +7,15 @@ document.getElementById("boton_google").addEventListener("click",async () => {
         alert("Error al iniciar sesión con Google: " + (result.error ?? 'unknown_error'));
     }
 });
-window.onload = () => {
-    fetch()
+/*
+window.onload = async () => {
+    const resp = await fetch('/checkSession', {method: 'GET'});
+    if(resp.ok){
+        window.location.href = "/Templates/Inicio/Dashboard.html";
+    }
+    else{
+        //poner sweetalert2
+        alert("sesion no guardada!")
+    }
 }
+*/
