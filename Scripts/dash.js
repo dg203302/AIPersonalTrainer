@@ -5,7 +5,7 @@ function getSupabaseClient() {
     return createClient(supabaseUrl, supabaseKey);
 }
 window.onload = async () => {
-    const accessToken = new URL(window.location.href).searchParams.get("access_token");
+    const accessToken = new URLSearchParams(window.location.search).get('access_token');
     if (!accessToken) {
         console.error("No access token found in URL.");
         return;
