@@ -1,11 +1,23 @@
-import conectar_supabase from "./Conexion_supabase.js";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+
+function getSupabaseClient() {
+    const supabaseUrl = Deno.env.get("Supabase_Project_Url");
+    const supabaseAnonKey = Deno.env.get("Supabase_Api_Key");
+    if (!supabaseUrl || !supabaseAnonKey) {
+        throw new Error("Missing Supabase_Project_Url or Supabase_Api_Key environment variable");
+    }
+
+    return createClient(supabaseUrl, supabaseAnonKey, {
+        auth: { persistSession: false, autoRefreshToken: false },
+    });
+}
 
 export default async function handler(request, context) {
     try {
-        const { supabase } = conectar_supabase();
+        const supabase = getSupabaseClient();
         const { data, error } = await supabase.auth.signInWithOAuth({
             provider: "google",
-            options: { redirectTo: "https://aipersonaltr.netlify.app/Templates/Dashboard.html" }
+            options: { redirectTo: "https://aipersonaltr.netlify.app/Templates/Inicio/Dashboard.html" }
         });
 
         if (error || !data?.url) {
