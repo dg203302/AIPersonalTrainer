@@ -6,7 +6,9 @@ const supabase = createClient(supabaseUrl, supabaseKey, {auth: {persistSession: 
 window.onload = () =>{
     const user = supabase.auth.getUser().then(({data: {user}}) => {
         if (user) {
+            //aca hacer la edge function que inserte en la tabla de fitness con el id
             document.getElementById("datos_persistencia").innerText = "ID_usuario guardado: " + user.id;
+
         } else {
             alert("No se encontró un usuario autenticado.");
         }
@@ -18,6 +20,6 @@ document.getElementById("logout_button").addEventListener("click", async () => {
         alert("Error al cerrar sesión: " + error.message);
     } else {
         localStorage.removeItem("supabase.auth.token");
-        window.location.href = "https://aipersonaltr.netlify.app/";
+        window.location.href = "/Templates/Creacion_cuenta/Iniciar_sesion.html";
     }
 });
