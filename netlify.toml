@@ -12,3 +12,8 @@
   function = "OAuth_login"
   path = "/api/login_google"
   method = "POST"
+
+[[edge_functions]]
+  function = "Prueba"
+  path = "/api/prueba"
+  method = "GET"
