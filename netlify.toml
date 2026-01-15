@@ -2,3 +2,8 @@
   function = "Conexion_IA" 
   path = "/conectar_gemini"
   method = "GET"
+
+[[edge_functions]]
+  function = "registrar_datos_n_usu"
+  path = "/registrar_usuario_nuevo"
+  method = "POST"

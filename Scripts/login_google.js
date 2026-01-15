@@ -6,7 +6,8 @@ const supabase = createClient(supabaseUrl, supabaseKey, {auth: {persistSession: 
 document.getElementById("boton_google").addEventListener("click",async () => {
     const { data, error } = await supabase.auth.signInWithOAuth({
         provider: "google",
-        options: { redirectTo: `https://aipersonaltr.netlify.app//Templates/Inicio/Dashboard.html` },
+        //options: { redirectTo: `https://aipersonaltr.netlify.app/Templates/Inicio/Dashboard.html` },  ESTO PARA PRODUCCION
+        options: { redirectTo: `http://localhost:8888/Templates/Inicio/Dashboard.html`}
     });
 
     if (error) {
@@ -23,7 +24,8 @@ document.getElementById("boton_google").addEventListener("click",async () => {
 window.onload = () =>{
     supabase.auth.getSession().then(({data: {session}}) => {
         if (session) {
-            window.location.href = "https://aipersonaltr.netlify.app//Templates/Inicio/Dashboard.html";
+            window.location.href = "http://localhost:8888/Templates/Inicio/Dashboard.html";
+            //window.location.href = "https://aipersonaltr.netlify.app/Templates/Inicio/Dashboard.html";  ESTO PARA PRODUCCION
         }
     });
 }
