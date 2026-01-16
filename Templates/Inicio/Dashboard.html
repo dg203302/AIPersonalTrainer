@@ -6,9 +6,42 @@
     <title>Dashboard</title>
 </head>
 <body>
-    <p id="datos_persistencia">todavia no se guarda nada</p>
-    <button id="logout_button">Cerrar sesión</button>
-    <script src="/Scripts/logout.js" type="module"></script>
+    <header>
+        <div id="textos">
+            <h1>Inicio</h1>
+            <h2>Personal TrAIner</h2>
+        </div>
+        <div id="usuario">
+            <h2 id="username">...</h2>
+            <img src="https://www.gravatar.com/avatar/00000000000000000000000000000000?d=mp&f=y" alt="avatar" id="icono_usuario">
+            <a href="/Templates/Inicio/perfil_usuario.html"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9ImN1cnJlbnRDb2xvciIgc3Ryb2tlLXdpZHRoPSIyIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiIGNsYXNzPSJsdWNpZGUgbHVjaWRlLXVzZXItaWNvbiBsdWNpZGUtdXNlciI+PHBhdGggZD0iTTE5IDIxdi0yYTQgNCAwIDAgMC00LTRIOWE0IDQgMCAwIDAtNCA0djIiLz48Y2lyY2xlIGN4PSIxMiIgY3k9IjciIHI9IjQiLz48L3N2Zz4=" alt="Perfil"></a>
+        </div>
+    </header>
+    <main>
+        <section id="Ejercicios">
+            <h1>Plan de Entreno</h1>
+            <div id="botones_accion">
+                <button id="boton_ejercicios">...</button>
+                <button id="boton_refrescar_ejercicios">refrescar</button>
+            </div>
+            <div id="Plan_ejercicio" style="display: none;"></div>
+        </section>
+        <section id="Alimentacion">
+            <h1>Plan de Alimentacion - PROXIMAMENTE</h1>
+            <div id="botones_accion">
+                <button id="boton_alimentacion">...</button>
+                <button id="boton_refrescar_alimentacion">refrescar</button>
+            </div>
+            <div id="Plan_alimentacion" style="display: none;"></div>
+        </section>
+    </main>
+    <footer>
+        <div id="creditos">
+            <p>2026 &copy; <a href="https://diegogarcia-dev.com.ar">Diego Garcia</a></p>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="/Scripts/dashboard.js" type="module"></script>
 </body>
 </html>

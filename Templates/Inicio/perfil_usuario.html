@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <header>
+        <h1 id="username">...</h1>
+        <img src="https://www.gravatar.com/avatar/00000000000000000000000000000000?d=mp&f=y" alt="avatar" id="icono_usuario">
+        <button id="logout_button"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9ImN1cnJlbnRDb2xvciIgc3Ryb2tlLXdpZHRoPSIyIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiIGNsYXNzPSJsdWNpZGUgbHVjaWRlLWxvZy1vdXQtaWNvbiBsdWNpZGUtbG9nLW91dCI+PHBhdGggZD0ibTE2IDE3IDUtNS01LTUiLz48cGF0aCBkPSJNMjEgMTJIOSIvPjxwYXRoIGQ9Ik05IDIxSDVhMiAyIDAgMCAxLTItMlY1YTIgMiAwIDAgMSAyLTJoNCIvPjwvc3ZnPg==" alt="logout"></button>
+    </header>
+
+    <main>
+        <section id="datos_usuario">
+            <h2>Tus Datos</h2>
+            <div>
+                <p>Altura: <span id="altura_usuario">...</span> cm</p>
+                <button id="editar_altura">Cambiar</button>
+            </div>
+            <div>
+                <p>Edad: <span id="edad_usuario">...</span> años</p>
+                <button id="editar_edad">Cambiar</button>
+            </div>
+            <div>
+                <p>Peso Actual: <span id="peso_usuario">...</span> kg</p>
+                <button id="editar_peso">Cambiar</button>
+            </div>
+            <div>
+                <p>Peso Objetivo: <span id="peso_objetivo_usuario">...</span> kg</p>
+                <button id="editar_peso_objetivo">Cambiar</button>
+            </div>
+        </section>
+        <section>
+            <button id="eliminar_cuenta">Eliminar Cuenta</button> <!-- Botón para eliminar la cuenta - para despues-->
+        </section>
+    </main>
+
+    <footer>
+        <a href="/Templates/Inicio/Dashboard.html">volver</a>
+    </footer>
+
+
+    <script src="/Scripts/perfil_usuario.js" type="module"></script>
+    <script src="/Scripts/logout.js" type="module"></script>
+</body>
+</html>

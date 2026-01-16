@@ -23,6 +23,8 @@ window.onload = () =>{
             }
             else{
                 sessionStorage.clear();
+                localStorage.setItem("username_usuario", user.user_metadata.full_name ?? "Usuario sin nombre");
+                localStorage.setItem("avatar_usuario", user.user_metadata.avatar_url ?? "/Assets/Imagenes/Avatares/avatar_default.png");
                 localStorage.setItem("id_usuario", user.id);
                 localStorage.setItem("altura_usuario", datos[0].Altura);
                 localStorage.setItem("edad_usuario", datos[0].Edad);
