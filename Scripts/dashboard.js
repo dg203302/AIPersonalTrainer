@@ -3,6 +3,29 @@ const supabaseUrl = "https://lhecmoeilmhzgxpcetto.supabase.co";
 const supabaseKey = "sb_publishable_oLC8LcDLa3jR72Hpd_jJsA_eXjMlP3-";
 const supabase = createClient(supabaseUrl, supabaseKey, {auth: {persistSession: true,autoRefreshToken: false, storage: localStorage}});
 
+const updateFixedChromeHeights = () => {
+    const header = document.querySelector("header");
+    const root = document.documentElement;
+    if (header) root.style.setProperty("--header-fixed", `${header.offsetHeight}px`);
+};
+
+const initFixedChromeObservers = () => {
+    updateFixedChromeHeights();
+    if ("ResizeObserver" in window) {
+        const ro = new ResizeObserver(() => updateFixedChromeHeights());
+        const header = document.querySelector("header");
+        if (header) ro.observe(header);
+    } else {
+        window.addEventListener("resize", updateFixedChromeHeights, { passive: true });
+    }
+};
+
+if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", initFixedChromeObservers, { once: true });
+} else {
+    initFixedChromeObservers();
+}
+
 
 const sweetalert = window.swal;
 const username = localStorage.getItem("username_usuario")
