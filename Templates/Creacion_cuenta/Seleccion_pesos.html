@@ -1,25 +1,53 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
+    <link rel="stylesheet" href="/Styles/styles_sele_pesos.css">
+    <meta name="theme-color" content="#0A1226">
+    <title>Pesos</title>
 </head>
 <body>
     <header>
-        Comencemos
+        <p id="datos_previos">...</p>
     </header>
     <main>
-        <section>
-            <p id="datos_previos">...</p>
-        </section>
         <form id="Ingreso_Pesos">
-            <div id="selectores">
-                <input type="number" id="peso_act" name="peso_act" min="40" max="200" required>
-                <input type="number" id="peso_desea" name="peso_desea" min="40" max="200" required>
+            <h1>Elegí tus pesos</h1>
+            <p class="helper">Esto nos ayuda a ajustar el objetivo y a que el plan tenga un rumbo claro. No buscamos perfección: buscamos un punto de partida realista.</p>
+
+            <div id="selectores" role="group" aria-label="Selección de pesos">
+                <section class="field">
+                    <h2>Peso actual</h2>
+                    <div class="wheel-wrap">
+                        <div class="wheel" data-field="peso_act" aria-label="Peso actual en kilogramos" tabindex="0"></div>
+                        <div class="wheel-highlight" aria-hidden="true"></div>
+                    </div>
+                    <input type="hidden" id="peso_act" name="peso_act" required>
+                </section>
+
+                <section class="field">
+                    <h2>Peso objetivo</h2>
+                    <div class="wheel-wrap">
+                        <div class="wheel" data-field="peso_desea" aria-label="Peso objetivo en kilogramos" tabindex="0"></div>
+                        <div class="wheel-highlight" aria-hidden="true"></div>
+                    </div>
+                    <input type="hidden" id="peso_desea" name="peso_desea" required>
+                </section>
             </div>
-            <input type="submit">Finalizar</button>
+
+            <button type="submit">Finalizar</button>
         </form>
+
+        <section class="page-copy" aria-label="Información adicional">
+            <h2>Cómo lo usamos</h2>
+            <p>Con tu peso actual y tu objetivo podemos ajustar mejor el enfoque del plan (ganar músculo, perder grasa o recomposición) sin caer en extremos. La idea es que el progreso sea gradual y sostenible.</p>
+            <p>Si tu objetivo cambia con el tiempo, no pasa nada: el plan se puede reorientar. Lo importante es mantener la constancia y medir avances con calma.</p>
+            <div class="note">
+                <h3>Tip rápido</h3>
+                <p>Elegí un objetivo razonable. Cambios grandes se logran mejor en etapas pequeñas y repetibles.</p>
+            </div>
+        </section>
     </main>
 
     <footer>

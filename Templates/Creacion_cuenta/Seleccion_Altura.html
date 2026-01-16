@@ -1,40 +1,168 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
+    <link rel="stylesheet" href="/Styles/styles_sele_altura.css">
+    <meta name="theme-color" content="#0A1226">
+    <title>Altura</title>
 </head>
 <body>
     <header>
-        Comencemos
+        <p id="datos_previos">...</p>
     </header>
     <main>
-        <section>
-            <p id="datos_previos">...</p>
-        </section>
         <form id="ingreso_altura">
-            <h1>Ingresa tu Altura:</h1>
+            <h1>Ingresa tu altura</h1>
+            <p class="helper">Elegí tu altura para ajustar mejor recomendaciones, rangos de repeticiones y progresión. Es un dato simple, pero ayuda a que todo sea más consistente.</p>
             <div id="selector_altura">
-                <input type="number" id="altura" name="altura" min="100" max="200" required>
+                <div class="wheel-row" role="group" aria-label="Altura">
+                    <div class="wheel" data-field="altura" aria-label="Altura en centímetros" tabindex="0"></div>
+                </div>
+                <input type="hidden" id="altura" name="altura" required>
             </div>
-            <input type="submit">Continuar</input>
+            <button type="submit">Continuar</button>
         </form>
+
+        <section class="page-copy" aria-label="Información adicional">
+            <h2>¿Para qué sirve este dato?</h2>
+            <p>La altura ayuda a contextualizar tu perfil físico y a que las sugerencias sean más realistas. No es para “etiquetarte”, sino para ajustar detalles prácticos y evitar planes genéricos.</p>
+            <p>En los próximos pasos vas a completar el resto de datos para terminar de armar un plan claro y fácil de seguir. Lo importante: que puedas sostenerlo en el tiempo.</p>
+            <div class="note">
+                <h3>Tip rápido</h3>
+                <p>Si no estás seguro de tu altura exacta, elegí un valor aproximado. Más adelante siempre se puede ajustar.</p>
+            </div>
+        </section>
     </main>
     <footer>
         <a href="/index.html">Volver</a> <!--poner un icono de inicio-->
     </footer>
+
     <script>
-        window.onload = () =>{
-            const t = document.getElementById("datos_previos")
-            t.textContent = "Tu edad: " + sessionStorage.getItem("edad_temp")
+        const updateFixedChromeHeights = () => {
+            const header = document.querySelector("header");
+            const footer = document.querySelector("footer");
+            const root = document.documentElement;
+
+            if (header) root.style.setProperty("--header-fixed", `${header.offsetHeight}px`);
+            if (footer) root.style.setProperty("--footer-fixed", `${footer.offsetHeight}px`);
+        };
+
+        const initFixedChromeObservers = () => {
+            updateFixedChromeHeights();
+            if ("ResizeObserver" in window) {
+                const ro = new ResizeObserver(() => updateFixedChromeHeights());
+                const header = document.querySelector("header");
+                const footer = document.querySelector("footer");
+                if (header) ro.observe(header);
+                if (footer) ro.observe(footer);
+            } else {
+                window.addEventListener("resize", updateFixedChromeHeights, { passive: true });
+            }
+        };
+
+        const WHEEL_ITEM_HEIGHT = 44;
+
+        const buildWheel = ({ field, values, format }) => {
+            const wheelEl = document.querySelector(`.wheel[data-field="${field}"]`);
+            const inputEl = document.getElementById(field);
+            if (!wheelEl || !inputEl) return;
+
+            wheelEl.innerHTML = "";
+            wheelEl.dataset.index = "0";
+            wheelEl.dataset.length = String(values.length);
+
+            const frag = document.createDocumentFragment();
+            for (let i = 0; i < values.length; i++) {
+                const item = document.createElement("div");
+                item.className = "wheel-item";
+                item.dataset.value = String(values[i]);
+                item.textContent = format ? format(values[i]) : String(values[i]);
+                frag.appendChild(item);
+            }
+            wheelEl.appendChild(frag);
+
+            const setActive = (index) => {
+                const clamped = Math.max(0, Math.min(values.length - 1, index));
+                wheelEl.dataset.index = String(clamped);
+                inputEl.value = String(values[clamped]);
+                const items = wheelEl.querySelectorAll(".wheel-item");
+                items.forEach((node, idx) => node.classList.toggle("is-active", idx === clamped));
+            };
+
+            let scrollTimer = null;
+            const onScroll = () => {
+                const idx = Math.round((wheelEl.scrollTop + 0.0001) / WHEEL_ITEM_HEIGHT);
+                setActive(idx);
+                if (scrollTimer) window.clearTimeout(scrollTimer);
+                scrollTimer = window.setTimeout(() => {
+                    wheelEl.scrollTo({ top: Number(wheelEl.dataset.index) * WHEEL_ITEM_HEIGHT, behavior: "smooth" });
+                }, 80);
+            };
+
+            wheelEl.addEventListener("scroll", onScroll, { passive: true });
+            wheelEl.addEventListener("click", (e) => {
+                const item = e.target.closest(".wheel-item");
+                if (!item) return;
+                const items = Array.from(wheelEl.querySelectorAll(".wheel-item"));
+                const idx = items.indexOf(item);
+                setActive(idx);
+                wheelEl.scrollTo({ top: idx * WHEEL_ITEM_HEIGHT, behavior: "smooth" });
+            });
+
+            wheelEl.addEventListener("keydown", (e) => {
+                if (e.key !== "ArrowUp" && e.key !== "ArrowDown") return;
+                e.preventDefault();
+                const delta = e.key === "ArrowDown" ? 1 : -1;
+                const idx = Number(wheelEl.dataset.index || "0") + delta;
+                setActive(idx);
+                wheelEl.scrollTo({ top: Number(wheelEl.dataset.index) * WHEEL_ITEM_HEIGHT, behavior: "smooth" });
+            });
+
+            setActive(0);
+            wheelEl.scrollTop = 0;
+        };
+
+        const initWheelAltura = () => {
+            const alturas = [];
+            for (let cm = 100; cm <= 200; cm++) alturas.push(cm);
+            buildWheel({ field: "altura", values: alturas, format: (cm) => `${cm} cm` });
+
+            // default 170cm
+            const wheel = document.querySelector('.wheel[data-field="altura"]');
+            const idx170 = Math.max(0, Math.min(alturas.length - 1, 170 - 100));
+            if (wheel) {
+                wheel.scrollTo({ top: idx170 * WHEEL_ITEM_HEIGHT, behavior: "auto" });
+                wheel.dispatchEvent(new Event("scroll"));
+            }
+            document.getElementById("altura").value ||= "170";
+            updateFixedChromeHeights();
+        };
+
+        const init = () => {
+            const t = document.getElementById("datos_previos");
+            const edad = sessionStorage.getItem("edad_temp");
+            t.textContent = edad ? `Tu edad: ${edad}` : "Completá tus datos";
+            initFixedChromeObservers();
+            initWheelAltura();
+        };
+
+        if (document.readyState === "loading") {
+            document.addEventListener("DOMContentLoaded", init, { once: true });
+        } else {
+            init();
         }
+
         document.getElementById("ingreso_altura").addEventListener("submit", function (event){
-            event.preventDefault()
+            event.preventDefault();
             const alt = parseInt(document.getElementById("altura").value, 10);
-            sessionStorage.setItem("alt_temp", alt)
-            return window.location.href = "/Templates/Creacion_cuenta/Seleccion_pesos.html"
-        })
+            if (!Number.isFinite(alt) || alt < 100 || alt > 200) {
+                alert("Altura inválida");
+                return;
+            }
+            sessionStorage.setItem("alt_temp", String(alt));
+            return window.location.href = "/Templates/Creacion_cuenta/Seleccion_pesos.html";
+        });
     </script>
 </body>
 </html>

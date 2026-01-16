@@ -1,18 +1,54 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
+    <link rel="stylesheet" href="/Styles/styles_google.css">
+    <meta name="theme-color" content="#0A1226">
+    <title>Login</title>
 </head>
 <body>
+    <header>
+        <h1>Personal TrAIner</h1>
+        <p>Entrenamiento simple, claro y móvil</p>
+    </header>
+
     <main>
-        <header>Bienvenido</header>
-        <section>
-            <p>inicia sesion/registrate con tu cuenta de google, si eres nuevo se te pedira luego ingresar tus datos fisiologicos: altura, edad y peso actual para poder continuar</p>
-            <button id="boton_google">Inicia Sesion con google</button>
+        <section class="card" aria-label="Inicio de sesión">
+            <h2>Iniciá sesión con Google</h2>
+            <p class="lead">Usamos Google para que puedas entrar rápido, sin contraseñas y sin fricción. Si es tu primera vez, después te pedimos unos datos básicos (edad, altura y pesos) para personalizar tu experiencia.</p>
+            <div class="bullets" aria-label="Qué vas a poder hacer">
+                <div class="bullet">Armar rutinas consistentes y repetibles</div>
+                <div class="bullet">Elegir ejercicios de forma simple</div>
+                <div class="bullet">Avanzar con progresión gradual</div>
+                <div class="bullet">Mantener el foco con una UI limpia</div>
+            </div>
+            <button id="boton_google" class="google-btn" type="button" aria-label="Iniciar sesión con Google">
+                <span class="google-icon" aria-hidden="true">
+                    <svg viewBox="0 0 48 48" width="20" height="20" focusable="false" aria-hidden="true">
+                        <path fill="#FFC107" d="M43.611 20.083H42V20H24v8h11.303C33.79 32.657 29.233 36 24 36c-6.627 0-12-5.373-12-12s5.373-12 12-12c3.059 0 5.842 1.154 7.959 3.041l5.657-5.657C34.979 6.053 29.787 4 24 4 12.955 4 4 12.955 4 24s8.955 20 20 20 20-8.955 20-20c0-1.341-.138-2.65-.389-3.917z"/>
+                        <path fill="#FF3D00" d="M6.306 14.691l6.571 4.819C14.654 16.108 19.01 12 24 12c3.059 0 5.842 1.154 7.959 3.041l5.657-5.657C34.979 6.053 29.787 4 24 4 16.318 4 9.656 8.337 6.306 14.691z"/>
+                        <path fill="#4CAF50" d="M24 44c5.126 0 9.944-1.965 13.521-5.166l-6.238-5.283C29.296 35.091 26.78 36 24 36c-5.211 0-9.747-3.318-11.271-7.946l-6.52 5.025C9.505 39.556 16.227 44 24 44z"/>
+                        <path fill="#1976D2" d="M43.611 20.083H42V20H24v8h11.303c-.724 2.048-2.156 3.777-4.02 4.99l.003-.002 6.238 5.283C36.796 39.091 44 34 44 24c0-1.341-.138-2.65-.389-3.917z"/>
+                    </svg>
+                </span>
+                <span>Continuar con Google</span>
+            </button>
+            <p class="fine">Al continuar, se inicia la autenticación con Google. No pedimos ni guardamos tu contraseña.</p>
+        </section>
+
+        <section class="page-copy" aria-label="Información adicional">
+            <h3>¿Por qué pedimos datos fisiológicos?</h3>
+            <p>Con pocos datos evitamos recomendaciones genéricas y ajustamos mejor el entrenamiento: selección de ejercicios, progresión y consistencia. Es información simple, pero muy útil para personalizar.</p>
+            <div class="note">
+                <h4>Privacidad</h4>
+                <p>La idea es ser transparentes y pedir solo lo necesario para que el plan tenga sentido.</p>
+            </div>
         </section>
     </main>
+    <footer>
+		<a href="/index.html">Volver</a>
+    </footer>
     <script src="/Scripts/login_google.js" type="module"></script>
 </body>
 </html>
