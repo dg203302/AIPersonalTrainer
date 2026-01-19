@@ -192,6 +192,18 @@ section h1{
 	margin: 10px 0 8px;
 }
 
+#descripcion_previa{
+	flex: 1 1 100%;
+	margin: 0;
+	color: var(--muted);
+	font-size: 13.5px;
+	line-height: 1.55;
+	padding: 10px 12px;
+	border-radius: 14px;
+	border: 1px solid color-mix(in srgb, #fff 12%, transparent);
+	background: color-mix(in srgb, #000 14%, transparent);
+}
+
 button{
 	appearance: none;
 	border: 1px solid color-mix(in srgb, #fff 22%, transparent);
@@ -238,5 +250,169 @@ footer a{
 
 @media (prefers-reduced-motion: reduce){
 	*{ scroll-behavior: auto !important; transition: none !important; animation: none !important; }
+}
+
+/* SweetAlert2: toasts translúcidos (estética app) */
+.swal2-container .swal2-popup.swal2-toast{
+	background: color-mix(in srgb, var(--bg1) 62%, transparent);
+	color: var(--text);
+	border: 1px solid color-mix(in srgb, #fff 16%, transparent);
+	border-radius: 16px;
+	box-shadow: 0 16px 50px rgba(0,0,0,.40);
+	backdrop-filter: blur(16px) saturate(150%);
+	-webkit-backdrop-filter: blur(16px) saturate(150%);
+}
+
+.swal2-container .swal2-popup.swal2-toast .swal2-title,
+.swal2-container .swal2-popup.swal2-toast .swal2-html-container{
+	color: var(--text);
+}
+
+.swal2-container .swal2-popup.swal2-toast .swal2-close{
+	color: color-mix(in srgb, var(--text) 70%, transparent);
+}
+
+.swal2-container .swal2-popup.swal2-toast .swal2-timer-progress-bar{
+	background: linear-gradient(90deg, color-mix(in srgb, var(--accent) 70%, transparent), color-mix(in srgb, var(--accent2) 70%, transparent));
+	opacity: .9;
+}
+
+/* Iconos: mantener look sobrio y acorde */
+.swal2-container .swal2-popup.swal2-toast .swal2-icon{ border-color: color-mix(in srgb, #fff 18%, transparent); }
+.swal2-container .swal2-popup.swal2-toast .swal2-icon .swal2-icon-content{ color: var(--text); }
+
+/* SweetAlert2: modal (generar plan) alineado a la estética */
+.dashboard-swal{
+	background:
+		radial-gradient(900px 420px at 18% 0%, color-mix(in srgb, var(--accent2) 14%, transparent) 0%, transparent 65%),
+		radial-gradient(900px 420px at 80% 10%, color-mix(in srgb, var(--accent) 12%, transparent) 0%, transparent 62%),
+		linear-gradient(180deg, color-mix(in srgb, var(--bg0) 70%, #000), color-mix(in srgb, var(--bg1) 86%, #000));
+	color: var(--text);
+	border: 1px solid var(--stroke2);
+	border-radius: var(--radius-xl);
+	box-shadow: var(--shadow);
+}
+
+.dashboard-swal .swal2-title{ color: var(--text); }
+
+.dashboard-swal .swal2-html-container{
+	color: var(--muted);
+	margin: 10px 0 0;
+}
+
+.dashboard-swal-confirm,
+.dashboard-swal-cancel{
+	appearance: none !important;
+	border-radius: 999px !important;
+	padding: 10px 14px !important;
+	min-height: 40px !important;
+	font: inherit !important;
+	box-shadow: var(--shadow-soft) !important;
+}
+
+.dashboard-swal-confirm{
+	border: 0 !important;
+	color: color-mix(in srgb, #000 88%, var(--text)) !important;
+	background:
+		linear-gradient(135deg, color-mix(in srgb, var(--accent) 55%, transparent), color-mix(in srgb, var(--accent2) 45%, transparent)) !important;
+}
+
+.dashboard-swal-cancel{
+	border: 1px solid color-mix(in srgb, #fff 22%, transparent) !important;
+	background: color-mix(in srgb, #fff 8%, transparent) !important;
+	color: var(--text) !important;
+}
+
+.dashboard-swal .swal-helper{
+	margin: 0 0 12px;
+	font-size: 13.5px;
+	line-height: 1.55;
+	color: var(--muted);
+}
+
+.dashboard-swal .swal-section{
+	margin-top: 12px;
+	padding-top: 12px;
+	border-top: 1px solid color-mix(in srgb, #fff 10%, transparent);
+}
+
+.dashboard-swal .swal-section h3{
+	margin: 0 0 10px;
+	font-size: 14px;
+	letter-spacing: .1px;
+	color: var(--text);
+}
+
+.dashboard-swal .swal-grid{
+	display: grid;
+	grid-template-columns: 1fr;
+	gap: 12px;
+}
+
+.dashboard-swal .swal-label{
+	margin: 0 0 8px;
+	color: var(--text);
+	font-size: 13.5px;
+	font-weight: 650;
+}
+
+.dashboard-swal .swal-radio{
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	padding: 10px 12px;
+	border-radius: 14px;
+	border: 1px solid color-mix(in srgb, #fff 12%, transparent);
+	background: color-mix(in srgb, #fff 6%, transparent);
+	color: var(--muted);
+	user-select: none;
+}
+
+.dashboard-swal .swal-radio input{ accent-color: color-mix(in srgb, var(--accent) 75%, #fff); }
+
+.dashboard-swal .swal-ejercicios{
+	display: grid;
+	gap: 8px;
+}
+
+.dashboard-swal .swal-details{
+	border-radius: 14px;
+	border: 1px solid color-mix(in srgb, #fff 12%, transparent);
+	background: color-mix(in srgb, #000 10%, transparent);
+	padding: 8px 12px;
+}
+
+.dashboard-swal .swal-details > summary{
+	cursor: pointer;
+	color: var(--text);
+	font-weight: 650;
+	list-style: none;
+}
+
+.dashboard-swal .swal-details > summary::-webkit-details-marker{ display: none; }
+
+.dashboard-swal .swal-chip{
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	min-width: 22px;
+	height: 22px;
+	margin-left: 8px;
+	border-radius: 999px;
+	border: 1px solid color-mix(in srgb, #fff 14%, transparent);
+	background: color-mix(in srgb, #fff 7%, transparent);
+	color: var(--muted);
+	font-size: 12px;
+}
+
+.dashboard-swal .swal-lista{
+	margin: 10px 0 2px;
+	padding-left: 18px;
+	color: var(--muted);
+	line-height: 1.55;
+}
+
+@media (min-width: 720px){
+	.dashboard-swal .swal-grid{ grid-template-columns: 1fr 1fr; }
 }
 

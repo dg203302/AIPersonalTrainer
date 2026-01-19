@@ -1,9 +1,24 @@
 [[edge_functions]]
-  function = "Conexion_IA" 
-  path = "/conectar_gemini"
-  method = "GET"
+  function = "generar_plan_con_IA" 
+  path = "/generar_plan_entreno"
+  method = "POST"
 
 [[edge_functions]]
   function = "registrar_datos_n_usu"
   path = "/registrar_usuario_nuevo"
+  method = "POST"
+
+[[edge_functions]]
+  function = "cargar_cambios_perfil"
+  path = "/cargar_cambios_perfil"
+  method = "POST"
+
+[[edge_functions]]
+  function = "eliminar_cuenta_perfil"
+  path = "/eliminar_cuenta_perfil"
+  method = "POST"
+
+[[edge_functions]]
+  function = "actualizar_cambios_plan"
+  path = "/actualizar_cambios_plan"
   method = "POST"
