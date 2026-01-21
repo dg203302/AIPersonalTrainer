@@ -1,7 +1,7 @@
 import { GoogleGenAI } from "https://esm.sh/@google/genai@1.38.0";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-const ai = new GoogleGenAI({apiKey: "AIzaSyAxwEYVeGPeXsn2euGgIAdO0x-6b4Ckja0"});
+const ai = new GoogleGenAI({apiKey: "AIzaSyBTr2T_HeTiDnKjABK4eWEnpB11ND_F2nA"});
 const supabaseUrl = "https://lhecmoeilmhzgxpcetto.supabase.co";
 const supabaseKey = "sb_secret_8pOt21ZHhoru6-VbtV6sEQ_TYL8DivC";
 const supabase = createClient(supabaseUrl, supabaseKey);
@@ -55,6 +55,7 @@ const validatePlanShape = (obj) => {
         for (const ex of dia.ejercicios) {
             if (!ex || typeof ex !== "object") return "Cada ejercicio debe ser un objeto";
             if (typeof ex.nombre !== "string" || !ex.nombre.trim()) return "Cada ejercicio debe tener nombre (string)";
+            if (typeof ex.descripcion !== "string" || !ex.descripcion.trim()) return "Cada ejercicio debe tener descripcion (string)";
             if (typeof ex.series !== "number" || Number.isNaN(ex.series)) return "Cada ejercicio debe tener series (number)";
             if (typeof ex.repeticiones !== "string" || !ex.repeticiones.trim()) return "Cada ejercicio debe tener repeticiones (string)";
             if (typeof ex.descanso_segundos !== "number" || Number.isNaN(ex.descanso_segundos)) {
@@ -92,8 +93,8 @@ export default async function handler(request, _context){
             headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
     }
-
-	const { id_usuario, lugar, objetivo, Edad, Altura, Peso_actual, Peso_objetivo } = payload;
+    
+	const { id_usuario, lugar, objetivo, dias, dias_semana, Altura, Peso_actual, Peso_objetivo, Edad} = payload;
     if (!id_usuario) {
         return new Response(JSON.stringify({ error: "Missing id_usuario" }), {
             status: 400,
@@ -101,7 +102,142 @@ export default async function handler(request, _context){
         });
     }
 
-	const prompt = `Devuelve UNICAMENTE un JSON valido (RFC 8259).
+    const stripAccents = (s) => String(s ?? "")
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .trim();
+
+    const ALL_DIAS = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"];
+    const DIA_BY_CODE = {
+        L: "Lunes",
+        M: "Martes",
+        X: "Miércoles",
+        J: "Jueves",
+        V: "Viernes",
+        S: "Sábado",
+        D: "Domingo",
+    };
+
+    const DIA_BY_NAME = {
+        lunes: "Lunes",
+        martes: "Martes",
+        miercoles: "Miércoles",
+        jueves: "Jueves",
+        viernes: "Viernes",
+        sabado: "Sábado",
+        domingo: "Domingo",
+    };
+
+    const normalizeSelectedDays = () => {
+        const selected = new Set();
+
+        if (Array.isArray(dias)) {
+            for (const item of dias) {
+                const code = String(item ?? "").toUpperCase();
+                const label = DIA_BY_CODE[code];
+                if (label) selected.add(label);
+            }
+        }
+
+        if (Array.isArray(dias_semana)) {
+            for (const item of dias_semana) {
+                const key = stripAccents(item).toLowerCase();
+                const label = DIA_BY_NAME[key];
+                if (label) selected.add(label);
+            }
+        }
+
+        // fallback: si no vino nada, asumir toda la semana
+        if (selected.size === 0) {
+            for (const d of ALL_DIAS) selected.add(d);
+        }
+
+        return Array.from(selected);
+    };
+
+    const diasSeleccionados = normalizeSelectedDays();
+    const diasSeleccionadosJson = JSON.stringify(diasSeleccionados);
+
+    const canonicalDayKey = (dayLabel) => stripAccents(dayLabel).toLowerCase();
+
+    const normalizePlanWithSelectedDays = (planObj) => {
+        if (!planObj || typeof planObj !== "object") return planObj;
+        const root = planObj.plan_entrenamiento_hipertrofia;
+        if (!root || typeof root !== "object") return planObj;
+
+        const semanalRaw = root.configuracion_semanal;
+        const semanalArr = Array.isArray(semanalRaw) ? semanalRaw : [];
+
+        const byDay = new Map();
+        for (const item of semanalArr) {
+            if (!item || typeof item !== "object") continue;
+            const key = canonicalDayKey(item.dia);
+            if (key) byDay.set(key, item);
+        }
+
+        const selectedKeys = new Set(diasSeleccionados.map(canonicalDayKey));
+
+        const normalizeExercise = (ex) => {
+            if (!ex || typeof ex !== "object") return null;
+            const nombre = typeof ex.nombre === "string" ? ex.nombre : String(ex.nombre ?? "").trim();
+            if (!nombre) return null;
+
+            const descripcionRaw = (typeof ex.descripcion === "string" && ex.descripcion.trim())
+                ? ex.descripcion.trim()
+                : (typeof ex.description === "string" && ex.description.trim())
+                    ? ex.description.trim()
+                    : "Realizá el movimiento controlado, con técnica correcta y rango completo.";
+
+            const seriesNum = Number(ex.series);
+            const descansoNum = Number(ex.descanso_segundos);
+            const repeticiones = (typeof ex.repeticiones === "string" && ex.repeticiones.trim())
+                ? ex.repeticiones.trim()
+                : String(ex.repeticiones ?? ex.reps ?? "10-12").trim() || "10-12";
+
+            return {
+                nombre,
+                descripcion: descripcionRaw,
+                series: Number.isFinite(seriesNum) ? seriesNum : 4,
+                repeticiones,
+                descanso_segundos: Number.isFinite(descansoNum) ? descansoNum : 90,
+            };
+        };
+
+        const semanalFixed = ALL_DIAS.map((diaCanonical) => {
+            const key = canonicalDayKey(diaCanonical);
+            const isSelected = selectedKeys.has(key);
+            const original = byDay.get(key);
+
+            const base = (original && typeof original === "object") ? original : { dia: diaCanonical };
+
+            // Canonicalizar nombre del día
+            base.dia = diaCanonical;
+
+            if (!isSelected) {
+                return {
+                    dia: diaCanonical,
+                    enfoque: "Descanso",
+                    ejercicios: [],
+                };
+            }
+
+            const enfoque = (typeof base.enfoque === "string" && base.enfoque.trim()) ? base.enfoque.trim() : "Entrenamiento";
+            const ejerciciosRaw = Array.isArray(base.ejercicios) ? base.ejercicios : [];
+            const ejerciciosNorm = ejerciciosRaw.map(normalizeExercise).filter(Boolean);
+
+            return {
+                dia: diaCanonical,
+                enfoque,
+                ejercicios: ejerciciosNorm,
+            };
+        });
+
+        root.configuracion_semanal = semanalFixed;
+        planObj.plan_entrenamiento_hipertrofia = root;
+        return planObj;
+    };
+
+    const prompt = `Devuelve UNICAMENTE un JSON valido (RFC 8259).
 PROHIBIDO: texto extra, markdown, bloques \
 \
 \
@@ -118,13 +254,13 @@ Usa SIEMPRE este formato EXACTO (mismas claves y tipos):
             "objetivo": "${String(objetivo ?? "").toLowerCase() === "grasa" ? "grasa" : "musculo"}"
         },
         "configuracion_semanal": [
-            {"dia":"Lunes","enfoque":"<string>","ejercicios":[{"nombre":"<string>","series":4,"repeticiones":"10-12","descanso_segundos":90}]},
-            {"dia":"Martes","enfoque":"<string>","ejercicios":[{"nombre":"<string>","series":4,"repeticiones":"10-12","descanso_segundos":90}]},
-            {"dia":"Miércoles","enfoque":"<string>","ejercicios":[{"nombre":"<string>","series":4,"repeticiones":"10-12","descanso_segundos":90}]},
-            {"dia":"Jueves","enfoque":"<string>","ejercicios":[{"nombre":"<string>","series":4,"repeticiones":"10-12","descanso_segundos":90}]},
-            {"dia":"Viernes","enfoque":"<string>","ejercicios":[{"nombre":"<string>","series":4,"repeticiones":"10-12","descanso_segundos":90}]},
-            {"dia":"Sábado","enfoque":"<string>","ejercicios":[{"nombre":"<string>","series":4,"repeticiones":"10-12","descanso_segundos":90}]},
-            {"dia":"Domingo","enfoque":"Descanso Total","ejercicios":[]}
+            {"dia":"Lunes","enfoque":"<string>","ejercicios":[{"nombre":"<string>","descripcion":"<string>","series":4,"repeticiones":"10-12","descanso_segundos":90}]},
+            {"dia":"Martes","enfoque":"<string>","ejercicios":[{"nombre":"<string>","descripcion":"<string>","series":4,"repeticiones":"10-12","descanso_segundos":90}]},
+            {"dia":"Miércoles","enfoque":"<string>","ejercicios":[{"nombre":"<string>","descripcion":"<string>","series":4,"repeticiones":"10-12","descanso_segundos":90}]},
+            {"dia":"Jueves","enfoque":"<string>","ejercicios":[{"nombre":"<string>","descripcion":"<string>","series":4,"repeticiones":"10-12","descanso_segundos":90}]},
+            {"dia":"Viernes","enfoque":"<string>","ejercicios":[{"nombre":"<string>","descripcion":"<string>","series":4,"repeticiones":"10-12","descanso_segundos":90}]},
+            {"dia":"Sábado","enfoque":"<string>","ejercicios":[{"nombre":"<string>","descripcion":"<string>","series":4,"repeticiones":"10-12","descanso_segundos":90}]},
+            {"dia":"Domingo","enfoque":"<string>","ejercicios":[{"nombre":"<string>","descripcion":"<string>","series":4,"repeticiones":"10-12","descanso_segundos":90}]}
         ],
         "progresion_sugerida": {
             "metodo": "Sobrecarga progresiva",
@@ -136,7 +272,15 @@ Usa SIEMPRE este formato EXACTO (mismas claves y tipos):
 Reglas extra:
 - series y descanso_segundos deben ser NUMEROS (no strings).
 - repeticiones SIEMPRE string (ej: "10-12" o "45-60 segundos").
+- descripcion SIEMPRE string con instrucciones claras y breves.
 - configuracion_semanal debe tener exactamente 7 dias (Lunes a Domingo).
+
+Regla de dias seleccionados:
+- Si el dia NO esta en la lista de dias seleccionados, entonces ese dia debe ser descanso: enfoque "Descanso" o "Descanso Total" y ejercicios [].
+- Si el dia SI esta en la lista de dias seleccionados, entonces debe tener ejercicios (no vacio) y enfoque coherente.
+
+Dias seleccionados para entrenar (SOLO estos dias deben tener ejercicios; los otros dias deben ser descanso con ejercicios []):
+${diasSeleccionadosJson}
 
 Ahora genera el plan semanal para:
 - entorno: ${lugar}
@@ -176,13 +320,17 @@ Cardio / acondicionamiento: Burpees, Saltos de tijera, Salto a la cuerda.`;
             throw new Error("La IA no devolvio un JSON parseable.");
         }
 
+        // Hacer el plan robusto: 7 días, descansos según selección, y campos requeridos
+        planObj = normalizePlanWithSelectedDays(planObj);
+
         const validationError = validatePlanShape(planObj);
         if (validationError) {
             throw new Error(`JSON invalido: ${validationError}`);
         }
 
         const plan_entreno_to_store = JSON.stringify(planObj);
-		const {data,error}= await supabase.from("Planes").select("*").eq("ID_user",id_usuario).single();
+
+        const {data,_error}= await supabase.from("Planes").select("*").eq("ID_user",id_usuario).single();
 		if(data){
 			const {error}=await supabase.from("Planes").update({
 				Plan_entreno:plan_entreno_to_store
@@ -205,6 +353,7 @@ Cardio / acondicionamiento: Burpees, Saltos de tijera, Salto a la cuerda.`;
         status: 200,
         });
     } catch (error) {
+        console.log(error)
         return new Response(JSON.stringify({ error: error.message }), {
             headers: { ...corsHeaders, "Content-Type": "application/json" },
             status: 500,

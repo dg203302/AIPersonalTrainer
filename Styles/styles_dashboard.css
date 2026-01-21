@@ -325,6 +325,13 @@ button:active{ transform: translateY(1px); }
 	font-weight: 700;
 }
 
+.plan-desc{
+	margin: -2px 0 10px;
+	font-size: 12.5px;
+	line-height: 1.5;
+	color: var(--muted);
+}
+
 .plan-meta{
 	display: flex;
 	flex-wrap: wrap;
@@ -612,6 +619,48 @@ footer a{
 }
 
 .dashboard-swal .swal-radio input{ accent-color: color-mix(in srgb, var(--accent) 75%, #fff); }
+
+.dashboard-swal .swal-dias{
+	display: flex;
+	flex-wrap: wrap;
+	gap: 10px;
+	align-items: center;
+}
+
+.dashboard-swal .swal-dia-btn{
+	appearance: none;
+	border: 1px solid color-mix(in srgb, #fff 16%, transparent);
+	background: color-mix(in srgb, #fff 7%, transparent);
+	color: var(--text);
+	border-radius: 999px;
+	min-width: 44px;
+	height: 44px;
+	padding: 0 14px;
+	font: inherit;
+	font-weight: 700;
+	letter-spacing: .6px;
+	cursor: pointer;
+	user-select: none;
+	box-shadow: var(--shadow-soft);
+}
+
+.dashboard-swal .swal-dia-btn:hover{
+	background: color-mix(in srgb, #fff 10%, transparent);
+}
+
+.dashboard-swal .swal-dia-btn.is-selected,
+.dashboard-swal .swal-dia-btn[aria-pressed="true"]{
+	border-color: color-mix(in srgb, var(--accent) 55%, transparent);
+	background:
+		linear-gradient(135deg,
+			color-mix(in srgb, var(--accent) 26%, transparent),
+			color-mix(in srgb, var(--accent2) 18%, transparent));
+}
+
+.dashboard-swal .swal-dia-btn:focus-visible{
+	outline: 3px solid color-mix(in srgb, var(--accent) 60%, transparent);
+	outline-offset: 2px;
+}
 
 .dashboard-swal .swal-ejercicios{
 	display: grid;

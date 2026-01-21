@@ -109,9 +109,51 @@ const renderListaEjerciciosBreve = () => {
     return parts.join("\n");
 };
 
+const DIAS_SEMANA = [
+    { code: "L", label: "L", name: "lunes" },
+    { code: "M", label: "M", name: "martes" },
+    { code: "X", label: "X", name: "miercoles" },
+    { code: "J", label: "J", name: "jueves" },
+    { code: "V", label: "V", name: "viernes" },
+    { code: "S", label: "S", name: "sabado" },
+    { code: "D", label: "D", name: "domingo" },
+];
+
+const normalizeDiasSeleccionados = (value) => {
+    if (!value) return null;
+    try {
+        const parsed = typeof value === "string" ? JSON.parse(value) : value;
+        if (!Array.isArray(parsed)) return null;
+        const allowed = new Set(DIAS_SEMANA.map((d) => d.code));
+        const uniq = [];
+        for (const item of parsed) {
+            const code = String(item ?? "").toUpperCase();
+            if (allowed.has(code) && !uniq.includes(code)) uniq.push(code);
+        }
+        return uniq;
+    } catch {
+        return null;
+    }
+};
+
+const renderDiasSelector = () => {
+    const buttons = DIAS_SEMANA.map(
+        (d) => `<button type="button" class="swal-dia-btn" data-dia="${escapeHtml(d.code)}" aria-pressed="false">${escapeHtml(d.label)}</button>`
+    ).join("");
+    return `
+        <div class="swal-dias" role="group" aria-label="Días de entrenamiento">
+            ${buttons}
+        </div>
+        <p class="swal-helper">Tocá para seleccionar los días en los que vas a entrenar.</p>
+    `;
+};
+
 const openGenerarPlanModal = async () => {
     const lastLugar = localStorage.getItem("plan_lugar") || "casa";
     const lastObjetivo = localStorage.getItem("plan_objetivo") || "musculo";
+    const lastDias =
+        normalizeDiasSeleccionados(localStorage.getItem("plan_dias")) ||
+        ["L", "M", "X", "J", "V"]; // default: lunes a viernes
 
     const result = await sweetalert.fire({
         title: "Generar Plan de Entrenamiento con IA",
@@ -137,6 +179,11 @@ const openGenerarPlanModal = async () => {
                     </div>
                 </section>
 
+                <section class="swal-section" aria-label="Días de entrenamiento">
+                    <h3>Días de la semana</h3>
+                    ${renderDiasSelector()}
+                </section>
+
                 <section class="swal-section" aria-label="Ejercicios disponibles">
                     <h3>Ejercicios disponibles (índice)</h3>
                     <p class="swal-helper">Lista breve de ejercicios que la IA usa como base para armar el plan.</p>
@@ -158,25 +205,55 @@ const openGenerarPlanModal = async () => {
             const popup = (typeof sweetalert.getPopup === "function" && sweetalert.getPopup()) || document.querySelector(".swal2-popup");
             popup?.querySelector(`input[name="lugar"][value="${lastLugar}"]`)?.click();
             popup?.querySelector(`input[name="objetivo"][value="${lastObjetivo}"]`)?.click();
+
+            const diasSet = new Set(lastDias);
+            popup?.querySelectorAll(".swal-dia-btn")?.forEach((btn) => {
+                const code = btn.getAttribute("data-dia");
+                const isOn = diasSet.has(String(code ?? "").toUpperCase());
+                btn.classList.toggle("is-selected", isOn);
+                btn.setAttribute("aria-pressed", isOn ? "true" : "false");
+            });
+
+            // toggle con delegación
+            popup?.querySelector(".swal-dias")?.addEventListener("click", (ev) => {
+                const target = ev.target;
+                if (!(target instanceof HTMLElement)) return;
+                const btn = target.closest(".swal-dia-btn");
+                if (!(btn instanceof HTMLButtonElement)) return;
+                const pressed = btn.getAttribute("aria-pressed") === "true";
+                const next = !pressed;
+                btn.classList.toggle("is-selected", next);
+                btn.setAttribute("aria-pressed", next ? "true" : "false");
+            });
         },
         preConfirm: () => {
             const popup = (typeof sweetalert.getPopup === "function" && sweetalert.getPopup()) || document.querySelector(".swal2-popup");
             const lugar = popup?.querySelector('input[name="lugar"]:checked')?.value;
             const objetivo = popup?.querySelector('input[name="objetivo"]:checked')?.value;
+            const dias = Array.from(popup?.querySelectorAll('.swal-dia-btn[aria-pressed="true"]') ?? []).map((b) => String(b.getAttribute("data-dia") ?? "").toUpperCase());
+
             if (!lugar || !objetivo) {
                 if (typeof sweetalert.showValidationMessage === "function") {
                     sweetalert.showValidationMessage("Elegí dónde entrenás y qué priorizás");
                 }
                 return false;
             }
-            return { lugar, objetivo };
+
+            if (!dias.length) {
+                if (typeof sweetalert.showValidationMessage === "function") {
+                    sweetalert.showValidationMessage("Seleccioná al menos un día de la semana");
+                }
+                return false;
+            }
+
+            return { lugar, objetivo, dias };
         },
     });
 
     if (!result.isConfirmed) return;
-    const { lugar, objetivo } = result.value;
+    const { lugar, objetivo, dias } = result.value;
 
-    await crearPlanEntreno(lugar, objetivo);
+    await crearPlanEntreno(lugar, objetivo, dias);
 };
 window.onload = async () => {
     sweetalert.fire({
@@ -208,7 +285,7 @@ function verificacion_plan_entrenamiento() {
         const contenedor_ejercicios = document.getElementById("Plan_ejercicio");
         contenedor_ejercicios.style.display = "block";
         contenedor_ejercicios.innerHTML = mapear_plan(plan_entrenamiento)
-        boton_ejercicios.textContent = "refrescar plan de entrenamiento";
+        boton_ejercicios.innerHTML = '<img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9ImN1cnJlbnRDb2xvciIgc3Ryb2tlLXdpZHRoPSIyIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiIGNsYXNzPSJsdWNpZGUgbHVjaWRlLXJlZnJlc2gtY2N3LWljb24gbHVjaWRlLXJlZnJlc2gtY2N3Ij48cGF0aCBkPSJNMjEgMTJhOSA5IDAgMCAwLTktOSA5Ljc1IDkuNzUgMCAwIDAtNi43NCAyLjc0TDMgOCIvPjxwYXRoIGQ9Ik0zIDN2NWg1Ii8+PHBhdGggZD0iTTMgMTJhOSA5IDAgMCAwIDkgOSA5Ljc1IDkuNzUgMCAwIDAgNi43NC0yLjc0TDIxIDE2Ii8+PHBhdGggZD0iTTE2IDE2aDV2NSIvPjwvc3ZnPg==">';
         boton_ejercicios.onclick = async () => {
             await recuperar_planes();
             sweetalert.fire({
@@ -225,27 +302,43 @@ function verificacion_plan_entrenamiento() {
     else if (plan_entrenamiento == "Ninguno" || plan_entrenamiento == null) {
         if (desc) desc.style.display = "block";
         boton_eliminar_plan_eje.style.display = "none";
-        boton_ejercicios.textContent = "generar plan de entrenamiento";
+        boton_ejercicios.innerHTML = "generar plan de entrenamiento";
         boton_ejercicios.onclick = async () => {
             await openGenerarPlanModal();
         }
     }
 }
-async function crearPlanEntreno(lugar, objetivo){
+async function crearPlanEntreno(lugar, objetivo, diasSeleccionados){
+
+    const diasCodes = Array.isArray(diasSeleccionados) ? diasSeleccionados : [];
+    const diasSem = diasCodes
+        .map((code) => DIAS_SEMANA.find((d) => d.code === String(code ?? "").toUpperCase())?.name)
+        .filter(Boolean);
 
     sweetalert.fire({
-        title: "Configuración guardada",
-        text: `Lugar: ${lugar ?? "-"} | Objetivo: ${objetivo ?? "-"}. Próximamente se generará el plan automáticamente.`,
+        title: "Plan en Generación",
+        text: `Lugar de entreno: ${lugar ?? "-"} | Objetivo de entreno: ${objetivo ?? "-"} | Días: ${(diasCodes || []).join(", ") || "-"}. Próximamente se generará el plan automáticamente.`,
         icon: "info",
         toast: true,
         position: "top-end",
         showConfirmButton: false,
-        timer: 10000,
+        timer: 50000,
     });
 
     const response = await fetch('/generar_plan_entreno', {
         method: 'POST',
-        body: JSON.stringify({ id_usuario: localStorage.getItem("id_usuario"), lugar: lugar, objetivo: objetivo, Altura: localStorage.getItem("altura_usuario"), Peso_actual: localStorage.getItem("peso_actual_usuario"), Peso_objetivo: localStorage.getItem("peso_objetivo_usuario"), Edad: localStorage.getItem("edad_usuario")}),
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            id_usuario: localStorage.getItem("id_usuario"),
+            lugar: lugar,
+            objetivo: objetivo,
+            dias: diasCodes,
+            dias_semana: diasSem,
+            Altura: localStorage.getItem("altura_usuario"),
+            Peso_actual: localStorage.getItem("peso_actual_usuario"),
+            Peso_objetivo: localStorage.getItem("peso_objetivo_usuario"),
+            Edad: localStorage.getItem("edad_usuario"),
+        }),
     })
 
     if (!response.ok) {
@@ -349,11 +442,13 @@ function mapear_plan(plan_entrenamiento_json){
     const normalizeExercise = (ex) => {
         if (!ex || typeof ex !== "object") return null;
         const nombre = ex.nombre ?? ex.ejercicio ?? ex.exercise ?? ex.name ?? ex.titulo ?? ex.title;
+        const descripcion = ex.descripcion ?? ex.description ?? ex.detalle ?? ex.detalles ?? ex.instrucciones ?? ex.instruccion;
         const series = ex.series ?? ex.series_por_ejercicio ?? ex.sets ?? ex.set ?? ex.seriesTotales;
         const repeticiones = ex.repeticiones ?? ex.reps ?? ex.repetitions ?? ex.rep ?? ex.repeticion;
         if (!nombre && !series && !repeticiones) return null;
         return {
             nombre: nombre ?? "Ejercicio",
+            descripcion: descripcion ?? "",
             series: series ?? "-",
             repeticiones: repeticiones ?? "-",
         };
@@ -426,11 +521,13 @@ function mapear_plan(plan_entrenamiento_json){
 
     const renderExerciseCard = (exNorm, idx) => {
         const nombre = escapeHtml(exNorm.nombre);
+        const descripcion = escapeHtml(exNorm.descripcion || "");
         const series = escapeHtml(exNorm.series);
         const reps = escapeHtml(exNorm.repeticiones);
         return `
             <article class="plan-card" data-idx="${idx}">
                 <h3 class="plan-nombre">${nombre}</h3>
+                ${descripcion ? `<p class="plan-desc">${descripcion}</p>` : ""}
                 <div class="plan-meta">
                     <span class="plan-chip">Series: <strong>${series}</strong></span>
                     <span class="plan-chip">Reps: <strong>${reps}</strong></span>
