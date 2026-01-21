@@ -198,13 +198,16 @@ window.onload = async () => {
 }
 
 function verificacion_plan_entrenamiento() {
+    const desc = document.getElementById("descripcion_previa");
     const plan_entrenamiento = localStorage.getItem("plan_entreno_usuario");
     const boton_ejercicios = document.getElementById("boton_ejercicios");
+    const boton_eliminar_plan_eje = document.getElementById("boton_eliminar");
     if (plan_entrenamiento != "Ninguno" && plan_entrenamiento != null) {
-        contenedor_ejercicios = document.getElementById("Plan_ejercicio");
-        contenedor_ejercicios.style.display = "flex";
-        contenedor_ejercicios.innerHTML = plan_entrenamiento;
-
+        desc.style.display = "none";
+        boton_eliminar_plan_eje.style.display = "inline-block";
+        const contenedor_ejercicios = document.getElementById("Plan_ejercicio");
+        contenedor_ejercicios.style.display = "block";
+        contenedor_ejercicios.innerHTML = mapear_plan(plan_entrenamiento)
         boton_ejercicios.textContent = "refrescar plan de entrenamiento";
         boton_ejercicios.onclick = async () => {
             await recuperar_planes();
@@ -220,8 +223,8 @@ function verificacion_plan_entrenamiento() {
         }
     }
     else if (plan_entrenamiento == "Ninguno" || plan_entrenamiento == null) {
-        const desc = document.getElementById("descripcion_previa");
         if (desc) desc.style.display = "block";
+        boton_eliminar_plan_eje.style.display = "none";
         boton_ejercicios.textContent = "generar plan de entrenamiento";
         boton_ejercicios.onclick = async () => {
             await openGenerarPlanModal();
@@ -229,10 +232,22 @@ function verificacion_plan_entrenamiento() {
     }
 }
 async function crearPlanEntreno(lugar, objetivo){
+
+    sweetalert.fire({
+        title: "Configuración guardada",
+        text: `Lugar: ${lugar ?? "-"} | Objetivo: ${objetivo ?? "-"}. Próximamente se generará el plan automáticamente.`,
+        icon: "info",
+        toast: true,
+        position: "top-end",
+        showConfirmButton: false,
+        timer: 10000,
+    });
+
     const response = await fetch('/generar_plan_entreno', {
         method: 'POST',
-        body: JSON.stringify({ lugar: lugar, objetivo: objetivo, Altura: localStorage.getItem("altura_usuario"), Peso_actual: localStorage.getItem("peso_actual_usuario"), Peso_objetivo: localStorage.getItem("peso_objetivo_usuario"), Edad: localStorage.getItem("edad_usuario")}),
+        body: JSON.stringify({ id_usuario: localStorage.getItem("id_usuario"), lugar: lugar, objetivo: objetivo, Altura: localStorage.getItem("altura_usuario"), Peso_actual: localStorage.getItem("peso_actual_usuario"), Peso_objetivo: localStorage.getItem("peso_objetivo_usuario"), Edad: localStorage.getItem("edad_usuario")}),
     })
+
     if (!response.ok) {
         sweetalert.fire({
             title: "Error",
@@ -246,23 +261,25 @@ async function crearPlanEntreno(lugar, objetivo){
         return;
     }
     else {
-        const data = await response.json();
-        const planEntrenamiento = data.plan;
-
-        await sweetalert.fire({
-            title: "Configuración guardada",
-            text: `Lugar: ${lugar ?? "-"} | Objetivo: ${objetivo ?? "-"}. Próximamente se generará el plan automáticamente.`,
-            icon: "info",
-            toast: true,
-            position: "top-end",
-            showConfirmButton: false,
-            timer: 3500,
-        });
-
-        console.log("Plan de entrenamiento generado correctamente." + planEntrenamiento);
-
-        await recuperar_planes();
-        verificacion_plan_entrenamiento();
+        try{
+            const {data,error}=await supabase.from("Planes").select("*").eq("ID_user", localStorage.getItem("id_usuario")).limit(1);
+            if (error){throw new Error(error.message);}
+            localStorage.setItem("plan_entreno_usuario", data.length === 0 ? "Ninguno" : data[0].Plan_entreno ?? "Ninguno");
+            localStorage.setItem("plan_dieta_usuario", data.length === 0 ? "Ninguno" : data[0].Plan_alimenta ?? "Ninguno");
+            await recuperar_planes();
+            verificacion_plan_entrenamiento();
+        }catch(error){
+            sweetalert.fire({
+                title: "Error",
+                text: "Error al guardar la configuración: " + error.message,
+                icon: "error",
+                toast: true,
+                position: "top-end",
+                showConfirmButton: false,
+                timer: 5000,
+            });
+            return;
+        }
     }
 }
 
@@ -291,10 +308,224 @@ async function recuperar_planes() {
     }
 }
 
+function mapear_plan(plan_entrenamiento_json){
+    const raw = plan_entrenamiento_json;
+    if (raw == null) {
+        return "<div class=\"plan-vacio\">No hay plan cargado.</div>";
+    }
+
+    const asString = typeof raw === "string" ? raw.trim() : JSON.stringify(raw);
+    if (!asString || asString === "Ninguno") {
+        return "<div class=\"plan-vacio\">No hay plan cargado.</div>";
+    }
+
+    const extractLikelyJson = (text) => {
+        const s = String(text ?? "");
+        // strip code fences if present
+        const unfenced = s
+            .replace(/^```(?:json)?\s*/i, "")
+            .replace(/\s*```\s*$/i, "")
+            .trim();
+
+        const firstObj = unfenced.indexOf("{");
+        const firstArr = unfenced.indexOf("[");
+        if (firstObj === -1 && firstArr === -1) return unfenced;
+        const start = firstArr === -1 ? firstObj : (firstObj === -1 ? firstArr : Math.min(firstObj, firstArr));
+        const lastObj = unfenced.lastIndexOf("}");
+        const lastArr = unfenced.lastIndexOf("]");
+        const end = Math.max(lastObj, lastArr);
+        if (end <= start) return unfenced;
+        return unfenced.slice(start, end + 1);
+    };
+
+    const tryParseJson = (text) => {
+        try {
+            return JSON.parse(text);
+        } catch {
+            return null;
+        }
+    };
+
+    const normalizeExercise = (ex) => {
+        if (!ex || typeof ex !== "object") return null;
+        const nombre = ex.nombre ?? ex.ejercicio ?? ex.exercise ?? ex.name ?? ex.titulo ?? ex.title;
+        const series = ex.series ?? ex.series_por_ejercicio ?? ex.sets ?? ex.set ?? ex.seriesTotales;
+        const repeticiones = ex.repeticiones ?? ex.reps ?? ex.repetitions ?? ex.rep ?? ex.repeticion;
+        if (!nombre && !series && !repeticiones) return null;
+        return {
+            nombre: nombre ?? "Ejercicio",
+            series: series ?? "-",
+            repeticiones: repeticiones ?? "-",
+        };
+    };
+
+    const diasOrden = [
+        "lunes",
+        "martes",
+        "miércoles",
+        "miercoles",
+        "jueves",
+        "viernes",
+        "sábado",
+        "sabado",
+        "domingo",
+        "monday",
+        "tuesday",
+        "wednesday",
+        "thursday",
+        "friday",
+        "saturday",
+        "sunday",
+    ];
+
+    const parse = () => {
+        const extracted = extractLikelyJson(asString);
+        const parsed = tryParseJson(extracted);
+        if (parsed != null) return parsed;
+
+        // fallback: sometimes it's JSON but with text around it
+        const parsed2 = tryParseJson(asString);
+        if (parsed2 != null) return parsed2;
+        return null;
+    };
+
+    const parsed = parse();
+    if (parsed == null) {
+        return `
+            <div class="plan-container">
+                <div class="plan-aviso">No pude interpretar el plan como JSON. Mostrando texto.</div>
+                <pre class="plan-raw">${escapeHtml(asString)}</pre>
+            </div>
+        `;
+    }
+
+    const isPlainArray = Array.isArray(parsed);
+    let root = isPlainArray ? { ejercicios: parsed } : parsed;
+
+    // Soportar estructura guardada: { plan_entrenamiento_hipertrofia: { configuracion_semanal: [...] } }
+    if (root && typeof root === "object") {
+        root =
+            root.plan_entrenamiento_hipertrofia ??
+            root.plan_entrenamiento ??
+            root.plan ??
+            root;
+    }
+
+    // Detect common shapes
+    const maybeDiasArray =
+        root.configuracion_semanal ??
+        root.configuracionSemanal ??
+        root.dias ??
+        root.semana ??
+        root.plan_semanal ??
+        root.planSemanal;
+    const hasDiasArray = Array.isArray(maybeDiasArray);
+
+    const weekdayKeys = Object.keys(root || {}).filter((k) => diasOrden.includes(String(k).toLowerCase()));
+    const hasWeekdayObject = weekdayKeys.length > 0;
+
+    const renderExerciseCard = (exNorm, idx) => {
+        const nombre = escapeHtml(exNorm.nombre);
+        const series = escapeHtml(exNorm.series);
+        const reps = escapeHtml(exNorm.repeticiones);
+        return `
+            <article class="plan-card" data-idx="${idx}">
+                <h3 class="plan-nombre">${nombre}</h3>
+                <div class="plan-meta">
+                    <span class="plan-chip">Series: <strong>${series}</strong></span>
+                    <span class="plan-chip">Reps: <strong>${reps}</strong></span>
+                </div>
+            </article>
+        `;
+    };
+
+    const renderDaySection = (diaLabel, ejerciciosList, enfoque) => {
+        const normalized = (Array.isArray(ejerciciosList) ? ejerciciosList : [])
+            .map(normalizeExercise)
+            .filter(Boolean);
+
+        const cards = normalized.length
+            ? normalized.map(renderExerciseCard).join("")
+            : `<div class="plan-vacio">No hay ejercicios para este día.</div>`;
+
+        return `
+            <section class="plan-dia">
+                <div class="plan-dia-header">
+                    <div class="plan-dia-titulos">
+                        <h2 class="plan-dia-titulo">${escapeHtml(diaLabel)}</h2>
+                        ${enfoque ? `<div class="plan-dia-subtitle">${escapeHtml(enfoque)}</div>` : ""}
+                    </div>
+                    <span class="plan-dia-chip">${normalized.length} ejercicios</span>
+                </div>
+                <div class="plan-grid">${cards}</div>
+            </section>
+        `;
+    };
+
+    let html = "";
+
+    if (hasDiasArray) {
+        const sections = maybeDiasArray
+            .map((d, i) => {
+                const dia = d.dia ?? d.nombre ?? d.day ?? `Día ${i + 1}`;
+                const enfoque = d.enfoque ?? d.focus ?? d.objetivo ?? d.titulo ?? d.title;
+                const ejercicios = d.ejercicios ?? d.entrenamiento ?? d.exercises ?? d.rutina ?? d.items ?? [];
+                return renderDaySection(dia, ejercicios, enfoque);
+            })
+            .join("");
+        html = sections;
+    } else if (hasWeekdayObject) {
+        const orderedKeys = [...weekdayKeys].sort((a, b) => {
+            const ia = diasOrden.indexOf(String(a).toLowerCase());
+            const ib = diasOrden.indexOf(String(b).toLowerCase());
+            return (ia === -1 ? 999 : ia) - (ib === -1 ? 999 : ib);
+        });
+        html = orderedKeys.map((k) => renderDaySection(k, root[k])).join("");
+    } else {
+        const ejercicios = root.ejercicios ?? root.plan ?? root.entrenamiento ?? root.exercises ?? root.rutina ?? [];
+        const normalized = (Array.isArray(ejercicios) ? ejercicios : [])
+            .map(normalizeExercise)
+            .filter(Boolean);
+        const cards = normalized.length
+            ? normalized.map(renderExerciseCard).join("")
+            : `<div class="plan-vacio">No pude encontrar ejercicios en el JSON.</div>`;
+        html = `<div class="plan-grid">${cards}</div>`;
+    }
+
+    return `<div class="plan-container">${html}</div>`;
+}
+document.getElementById("boton_eliminar")?.addEventListener("click", async () => {
+    const confirmResult = await sweetalert.fire({
+        title: "¿Estás seguro?",
+        text: "Esta acción eliminará tu plan de entrenamiento actual.",
+        icon: "warning",
+        showCancelButton: true,
+        confirmButtonText: "Sí, eliminar",
+        cancelButtonText: "Cancelar",
+    });
+
+    if (!confirmResult.isConfirmed) return;
+
+    localStorage.setItem("plan_entreno_usuario", "Ninguno");
+    await actualizar_cambios_plan_entreno();
+    document.getElementById("Plan_ejercicio").innerHTML = "";
+    document.getElementById("Plan_ejercicio").style.display = "none";
+    verificacion_plan_entrenamiento();
+
+    sweetalert.fire({
+        title: "Plan eliminado",
+        text: "Tu plan de entrenamiento ha sido eliminado.",
+        icon: "success",
+        toast: true,
+        position: "top-end",
+        showConfirmButton: false,
+        timer: 3000,
+    });
+});
 async function actualizar_cambios_plan_entreno(){
     const res = await fetch('/actualizar_cambios_plan', {
         method: 'POST',
-        body: JSON.stringify({ plan_entreno: localStorage.getItem("plan_entreno_usuario")}),
+        body: JSON.stringify({ plan_entreno: localStorage.getItem("plan_entreno_usuario"), id_usuario: localStorage.getItem("id_usuario")}),
     })
     if (!res.ok) {
         console.error("Error al actualizar el plan de entrenamiento en el servidor.");

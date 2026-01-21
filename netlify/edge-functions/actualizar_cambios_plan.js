@@ -11,10 +11,14 @@ export default async function handler(request, context){
         return context.json({ message: "Body inválido: se esperaba JSON" }, { status: 400 });
     }
 
-    const plan_json = payload?.plan_json;
+    const plan_json = payload?.plan_entreno;
     const id_usuario = payload?.id_usuario;
+    
     if (!plan_json) {
-        return context.json({ message: "Falta 'plan_json' en el JSON" }, { status: 400 });
+        return context.json({ message: "Falta 'Plan_entreno' en el JSON" }, { status: 400 });
+    }
+    if (!id_usuario) {
+        return context.json({ message: "Falta 'id_usuario' en el JSON" }, { status: 400 });
     }
 
     const { data, error } = await supabase

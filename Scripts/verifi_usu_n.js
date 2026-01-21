@@ -30,6 +30,23 @@ window.onload = () =>{
                 localStorage.setItem("edad_usuario", datos[0].Edad);
                 localStorage.setItem("peso_usuario", datos[0].Peso);
                 localStorage.setItem("peso_objetivo_usuario", datos[0].Peso_Obj);
+                const {data, error} = await supabase
+                    .from("Planes")
+                    .select("*")
+                    .eq("ID_user", user.id)
+                    .limit(1);
+                const planes = data ?? [];
+                if (error) {
+                    alert("Error al obtener el plan de entrenamiento del usuario: " + error.message);
+                    return;
+                }
+                if (planes.length === 0) {
+                    localStorage.setItem("plan_entreno_usuario", "Ninguno");
+                    localStorage.setItem("plan_dieta_usuario", "Ninguno");
+                } else {
+                    localStorage.setItem("plan_entreno_usuario", planes[0].Plan_entreno);
+                    localStorage.setItem("plan_dieta_usuario", planes[0].Plan_alimenta);
+                }
                 window.location.href = "/Templates/Inicio/Dashboard.html";
                 return
             }

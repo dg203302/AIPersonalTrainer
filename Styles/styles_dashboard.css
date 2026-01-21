@@ -53,7 +53,7 @@ a:focus-visible{
 	border-radius: 10px;
 }
 
-header{
+body > header{
 	position: fixed;
 	top: 0;
 	left: 0;
@@ -74,7 +74,7 @@ header{
 	gap: 12px;
 }
 
-header::before{
+body > header::before{
 	content: "";
 	position: absolute;
 	inset: 0;
@@ -85,7 +85,7 @@ header::before{
 	opacity: .85;
 }
 
-header > *{
+body > header > *{
 	position: relative;
 	z-index: 1;
 }
@@ -230,6 +230,134 @@ button:active{ transform: translateY(1px); }
 	overflow-x: auto;
 }
 
+/* Plan de entrenamiento (render desde JS) */
+.plan-container{
+	width: 100%;
+	display: grid;
+	gap: 12px;
+}
+
+.plan-aviso{
+	color: var(--muted);
+	font-size: 13px;
+	padding: 10px 12px;
+	border-radius: 14px;
+	border: 1px solid color-mix(in srgb, #fff 12%, transparent);
+	background: color-mix(in srgb, #000 14%, transparent);
+}
+
+.plan-raw{
+	margin: 0;
+	padding: 12px;
+	border-radius: 14px;
+	border: 1px solid var(--stroke2);
+	background: color-mix(in srgb, #000 18%, transparent);
+	color: var(--text);
+	white-space: pre-wrap;
+	word-break: break-word;
+	font-size: 13px;
+	line-height: 1.5;
+}
+
+.plan-dia{
+	border-radius: 18px;
+	border: 1px solid var(--stroke2);
+	background: color-mix(in srgb, #fff 6%, transparent);
+	padding: 12px;
+}
+
+.plan-dia-header{
+	display: flex;
+	align-items: flex-start;
+	flex-wrap: wrap;
+	justify-content: space-between;
+	gap: 8px 10px;
+	margin-bottom: 10px;
+}
+
+.plan-dia-titulos{
+	min-width: 0;
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+}
+
+.plan-dia-titulo{
+	margin: 0;
+	font-size: 15px;
+	letter-spacing: .2px;
+}
+
+.plan-dia-subtitle{
+	font-size: 12.5px;
+	color: var(--muted);
+	line-height: 1.35;
+}
+
+.plan-dia-chip{
+	margin-left: auto;
+	align-self: flex-start;
+	font-size: 12px;
+	color: var(--muted);
+	border: 1px solid color-mix(in srgb, #fff 14%, transparent);
+	background: color-mix(in srgb, #000 14%, transparent);
+	padding: 6px 10px;
+	border-radius: 999px;
+}
+
+.plan-grid{
+	display: grid;
+	grid-template-columns: 1fr;
+	gap: 10px;
+}
+
+.plan-card{
+	border-radius: 16px;
+	border: 1px solid var(--stroke2);
+	background: color-mix(in srgb, #000 14%, transparent);
+	padding: 12px;
+	box-shadow: var(--shadow-soft);
+}
+
+.plan-nombre{
+	margin: 0 0 8px;
+	font-size: 14px;
+	font-weight: 700;
+}
+
+.plan-meta{
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+}
+
+.plan-chip{
+	font-size: 12.5px;
+	color: var(--muted);
+	border: 1px solid color-mix(in srgb, #fff 14%, transparent);
+	background: color-mix(in srgb, #fff 6%, transparent);
+	padding: 6px 10px;
+	border-radius: 999px;
+}
+
+.plan-chip strong{
+	color: var(--text);
+	font-weight: 700;
+}
+
+.plan-vacio{
+	color: var(--muted);
+	font-size: 13px;
+	padding: 10px 12px;
+	border-radius: 14px;
+	border: 1px dashed color-mix(in srgb, #fff 18%, transparent);
+	background: color-mix(in srgb, #000 12%, transparent);
+}
+
+@media (min-width: 680px){
+	.plan-grid{ grid-template-columns: 1fr 1fr; }
+}
+
 footer{
 	padding: 14px var(--pad) calc(14px + env(safe-area-inset-bottom));
 	color: var(--muted2);
@@ -253,6 +381,92 @@ footer a{
 }
 
 /* SweetAlert2: toasts translúcidos (estética app) */
+.swal2-container{
+	font-family: inherit;
+}
+
+/* SweetAlert2: modales (confirmaciones) con estética app */
+.swal2-container .swal2-popup:not(.swal2-toast){
+	background:
+		radial-gradient(900px 420px at 18% 0%, color-mix(in srgb, var(--accent2) 14%, transparent) 0%, transparent 65%),
+		radial-gradient(900px 420px at 80% 10%, color-mix(in srgb, var(--accent) 12%, transparent) 0%, transparent 62%),
+		linear-gradient(180deg, color-mix(in srgb, var(--bg0) 70%, #000), color-mix(in srgb, var(--bg1) 86%, #000));
+	color: var(--text);
+	border: 1px solid var(--stroke2);
+	border-radius: var(--radius-xl);
+	box-shadow: var(--shadow);
+	backdrop-filter: blur(16px) saturate(150%);
+	-webkit-backdrop-filter: blur(16px) saturate(150%);
+}
+
+.swal2-container .swal2-popup:not(.swal2-toast) .swal2-title{
+	color: var(--text);
+	letter-spacing: .2px;
+}
+
+.swal2-container .swal2-popup:not(.swal2-toast) .swal2-html-container,
+.swal2-container .swal2-popup:not(.swal2-toast) .swal2-content{
+	color: var(--muted);
+	line-height: 1.55;
+}
+
+.swal2-container .swal2-popup:not(.swal2-toast) .swal2-actions{
+	gap: 10px;
+}
+
+.swal2-container .swal2-popup:not(.swal2-toast) .swal2-styled{
+	appearance: none !important;
+	border-radius: 999px !important;
+	padding: 10px 14px !important;
+	min-height: 44px !important;
+	font: inherit !important;
+	box-shadow: var(--shadow-soft) !important;
+	border: 1px solid color-mix(in srgb, #fff 22%, transparent) !important;
+	background: color-mix(in srgb, #fff 8%, transparent) !important;
+	color: var(--text) !important;
+}
+
+.swal2-container .swal2-popup:not(.swal2-toast) .swal2-styled.swal2-confirm{
+	border: 0 !important;
+	color: color-mix(in srgb, #000 88%, var(--text)) !important;
+	background:
+		linear-gradient(135deg, color-mix(in srgb, var(--accent) 55%, transparent), color-mix(in srgb, var(--accent2) 45%, transparent)) !important;
+}
+
+.swal2-container .swal2-popup:not(.swal2-toast) .swal2-styled:focus-visible{
+	outline: 3px solid color-mix(in srgb, var(--accent) 70%, transparent) !important;
+	outline-offset: 3px;
+}
+
+.swal2-container .swal2-popup:not(.swal2-toast) .swal2-icon{
+	border-color: color-mix(in srgb, #fff 18%, transparent);
+}
+
+.swal2-container .swal2-popup:not(.swal2-toast) .swal2-icon .swal2-icon-content{
+	color: var(--text);
+}
+
+/* Evitar que los toasts queden debajo del header fijo */
+.swal2-container.swal2-top-end,
+.swal2-container.swal2-top-right,
+.swal2-container.swal2-top{
+	top: calc(var(--header-fixed, 72px) + 10px) !important;
+}
+
+.swal2-container.swal2-top-end,
+.swal2-container.swal2-top-right,
+.swal2-container.swal2-bottom-end,
+.swal2-container.swal2-bottom-right{
+	right: calc(var(--pad, 16px) + env(safe-area-inset-right)) !important;
+}
+
+.swal2-container.swal2-top-start,
+.swal2-container.swal2-top-left,
+.swal2-container.swal2-bottom-start,
+.swal2-container.swal2-bottom-left{
+	left: calc(var(--pad, 16px) + env(safe-area-inset-left)) !important;
+}
+
 .swal2-container .swal2-popup.swal2-toast{
 	background: color-mix(in srgb, var(--bg1) 62%, transparent);
 	color: var(--text);
@@ -261,11 +475,25 @@ footer a{
 	box-shadow: 0 16px 50px rgba(0,0,0,.40);
 	backdrop-filter: blur(16px) saturate(150%);
 	-webkit-backdrop-filter: blur(16px) saturate(150%);
+	padding: 12px 12px 12px 12px;
+	overflow: hidden;
 }
 
 .swal2-container .swal2-popup.swal2-toast .swal2-title,
 .swal2-container .swal2-popup.swal2-toast .swal2-html-container{
 	color: var(--text);
+}
+
+.swal2-container .swal2-popup.swal2-toast .swal2-title{
+	font-size: 14px;
+	font-weight: 700;
+	letter-spacing: .2px;
+}
+
+.swal2-container .swal2-popup.swal2-toast .swal2-html-container{
+	font-size: 13px;
+	line-height: 1.45;
+	color: var(--muted);
 }
 
 .swal2-container .swal2-popup.swal2-toast .swal2-close{
@@ -280,6 +508,21 @@ footer a{
 /* Iconos: mantener look sobrio y acorde */
 .swal2-container .swal2-popup.swal2-toast .swal2-icon{ border-color: color-mix(in srgb, #fff 18%, transparent); }
 .swal2-container .swal2-popup.swal2-toast .swal2-icon .swal2-icon-content{ color: var(--text); }
+
+/* Acentos por tipo (sutiles) */
+.swal2-container .swal2-popup.swal2-toast .swal2-icon.swal2-success{
+	border-color: color-mix(in srgb, var(--accent3) 65%, transparent);
+}
+.swal2-container .swal2-popup.swal2-toast .swal2-icon.swal2-error{
+	border-color: color-mix(in srgb, #ff5c7a 65%, transparent);
+}
+.swal2-container .swal2-popup.swal2-toast .swal2-icon.swal2-warning{
+	border-color: color-mix(in srgb, #ffd36a 65%, transparent);
+}
+.swal2-container .swal2-popup.swal2-toast .swal2-icon.swal2-info,
+.swal2-container .swal2-popup.swal2-toast .swal2-icon.swal2-question{
+	border-color: color-mix(in srgb, var(--accent) 65%, transparent);
+}
 
 /* SweetAlert2: modal (generar plan) alineado a la estética */
 .dashboard-swal{
