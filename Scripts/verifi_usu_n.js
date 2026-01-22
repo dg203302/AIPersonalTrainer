@@ -51,7 +51,9 @@ window.onload = () =>{
                 return
             }
         } else {
-            return
+            localStorage.clear();
+            sessionStorage.clear();
+            return window.location.href = "/";
         }
     });
 }

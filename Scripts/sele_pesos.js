@@ -156,7 +156,7 @@ const init = () => {
         }
 
         if (await registrar_datos(id_usuario, sessionStorage.getItem("edad_temp"), sessionStorage.getItem("alt_temp"), peso_act_temp, peso_desea_temp)) {
-            window.location.href = "/Templates/Inicio/Dashboard.html";
+            window.location.href = "/Templates/Inicio/Verificacion_usuario_n.html";
         }
     });
 };

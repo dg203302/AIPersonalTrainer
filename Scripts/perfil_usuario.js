@@ -1,3 +1,4 @@
+import { logout } from "./logout.js";
 const username = localStorage.getItem("username_usuario")
 const avatar = localStorage.getItem("avatar_usuario")
 const id_usuario = localStorage.getItem("id_usuario")
@@ -383,8 +384,72 @@ document.getElementById("eliminar_cuenta").addEventListener("click", async () =>
 })
 
 async function EliminarPerfil(){
-	//wip
+	const result = await swal.fire({
+		title: '¿Estás seguro?',
+		text: "Esta acción no se puede deshacer. Se eliminará toda tu información.",
+		icon: 'warning',
+		showCancelButton: true,
+		confirmButtonText: 'Sí, eliminar mi cuenta',
+		cancelButtonText: 'Cancelar',
+		customClass: {
+			popup: 'perfil-swal',
+			confirmButton: 'perfil-swal-confirm',
+			cancelButton: 'perfil-swal-cancel',
+		},
+	});
+
+	if (!result.isConfirmed) return;
+
+	let response;
+	try {
+		response = await fetch('/eliminar_cuenta_perfil', {
+			method: 'POST',
+			headers: { 'Content-Type': 'application/json' },
+			body: JSON.stringify({ id_usuario: id_usuario }),
+		});
+	} catch (e) {
+		await swal.fire({
+			icon: 'error',
+			title: 'Error',
+			text: 'No se pudo conectar con el servidor. Intentá nuevamente.',
+			customClass: {
+				popup: 'perfil-swal',
+				confirmButton: 'perfil-swal-confirm',
+			},
+		});
+		return;
+	}
+
+	if (!response.ok) {
+		const payload = await response.json().catch(() => ({}));
+		await swal.fire({
+			icon: 'error',
+			title: 'Error al eliminar',
+			text: payload?.error ? String(payload.error) : 'No se pudo eliminar la cuenta. Intentá nuevamente.',
+			customClass: {
+				popup: 'perfil-swal',
+				confirmButton: 'perfil-swal-confirm',
+			},
+		});
+		return;
+	}
+
+	await swal.fire({
+		icon: 'success',
+		title: 'Cuenta eliminada',
+		text: 'Tu cuenta ha sido eliminada correctamente.',
+		toast: true,
+		position: 'top-end',
+		showConfirmButton: false,
+		timer: 2500,
+		timerProgressBar: true,
+	});
+
+	setTimeout(async () => {
+		await logout();
+	}, 800);
 }
+
 async function subirCambiosPerfil(){
 	const response = await fetch('/cargar_cambios_perfil', {
 		method: 'POST',

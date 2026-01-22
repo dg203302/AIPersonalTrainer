@@ -1,10 +1,29 @@
 import { GoogleGenAI } from "https://esm.sh/@google/genai@1.38.0";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-const ai = new GoogleGenAI({apiKey: "AIzaSyBTr2T_HeTiDnKjABK4eWEnpB11ND_F2nA"});
+
 const supabaseUrl = "https://lhecmoeilmhzgxpcetto.supabase.co";
 const supabaseKey = "sb_secret_8pOt21ZHhoru6-VbtV6sEQ_TYL8DivC";
 const supabase = createClient(supabaseUrl, supabaseKey);
+
+let aiClientPromise;
+const getAiClient = () => {
+    if (!aiClientPromise) {
+        aiClientPromise = (async () => {
+            const { data, error } = await supabase
+                .from("claves_sensibles")
+                .select("gemini")
+                .eq("id", 1)
+                .single();
+
+            if (error) throw new Error(`No se pudo obtener la apiKey de Gemini: ${error.message}`);
+            const apiKey = data?.gemini;
+            if (!apiKey || typeof apiKey !== "string") throw new Error("apiKey de Gemini inválida");
+            return new GoogleGenAI({ apiKey });
+        })();
+    }
+    return aiClientPromise;
+};
 
 const corsHeaders = {
     "Access-Control-Allow-Origin": "*",
@@ -299,6 +318,7 @@ Brazos: Curl de bíceps con barra, Curl martillo con mancuernas, Curl predicador
 Abdomen / core: Plancha abdominal, Crunch abdominal clásico, Elevación de piernas colgado o en suelo, Giros rusos, Rueda abdominal.
 Cardio / acondicionamiento: Burpees, Saltos de tijera, Salto a la cuerda.`;
 	try {
+		const ai = await getAiClient();
 		const response = await ai.models.generateContent({
         model: "gemini-3-flash-preview",
         contents: prompt,
