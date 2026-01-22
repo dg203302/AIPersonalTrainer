@@ -31,6 +31,97 @@ const corsHeaders = {
     "Access-Control-Allow-Headers": "content-type",
 };
 
+const normalizeKey = (s) => String(s ?? "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/\s+/g, " ")
+    .trim()
+    .toLowerCase();
+
+const EJERCICIOS_INDICE = {
+    "Pecho": [
+        "Press de banca plano con barra",
+        "Press de banca inclinado con mancuernas",
+        "Flexiones de brazos (peso corporal)",
+        "Aperturas con mancuernas",
+        "Fondos en paralelas (pecho bajo/tríceps)",
+        "Cruce de poleas",
+    ],
+    "Espalda": [
+        "Dominadas (peso corporal)",
+        "Jalón al pecho en polea",
+        "Remo con barra",
+        "Remo unilateral con mancuerna",
+        "Remo sentado en polea",
+        "Hiperextensiones lumbares",
+    ],
+    "Piernas": [
+        "Sentadilla libre",
+        "Prensa de piernas",
+        "Zancadas / estocadas",
+        "Peso muerto rumano",
+        "Hip thrust (empuje de cadera)",
+        "Extensión de cuádriceps en máquina",
+        "Curl femoral tumbado o sentado",
+        "Elevación de talones",
+        "Sentadilla búlgara",
+    ],
+    "Hombros": [
+        "Press militar con barra o mancuernas",
+        "Elevaciones laterales con mancuernas",
+        "Pájaros / vuelos posteriores",
+        "Elevaciones frontales",
+        "Face pull (salud del hombro)",
+    ],
+    "Brazos": [
+        "Curl de bíceps con barra",
+        "Curl martillo con mancuernas",
+        "Curl predicador",
+        "Press francés",
+        "Extensión de tríceps en polea alta",
+        "Fondos entre bancos",
+    ],
+    "Abdomen / core": [
+        "Plancha abdominal",
+        "Crunch abdominal clásico",
+        "Elevación de piernas colgado o en suelo",
+        "Giros rusos",
+        "Rueda abdominal",
+    ],
+    "Cardio / acondicionamiento": [
+        "Burpees",
+        "Saltos de tijera",
+        "Salto a la cuerda",
+    ],
+};
+
+const allowedExercisesByKey = (() => {
+    const map = new Map();
+    for (const items of Object.values(EJERCICIOS_INDICE)) {
+        for (const ex of items) {
+            map.set(normalizeKey(ex), ex);
+        }
+    }
+    return map;
+})();
+
+const normalizeSelectedExercises = (value) => {
+    if (!Array.isArray(value)) return [];
+    const out = [];
+    const seen = new Set();
+    for (const item of value) {
+        const key = normalizeKey(item);
+        if (!key) continue;
+        const canonical = allowedExercisesByKey.get(key);
+        if (!canonical) continue;
+        if (seen.has(canonical)) continue;
+        seen.add(canonical);
+        out.push(canonical);
+        if (out.length >= 40) break;
+    }
+    return out;
+};
+
 const extractLikelyJson = (text) => {
     const s = String(text ?? "").trim();
     // Remove ```json fences if present
@@ -113,7 +204,7 @@ export default async function handler(request, _context){
         });
     }
     
-	const { id_usuario, lugar, objetivo, dias, dias_semana, Altura, Peso_actual, Peso_objetivo, Edad} = payload;
+	const { id_usuario, lugar, objetivo, dias, dias_semana, Altura, Peso_actual, Peso_objetivo, Edad, ejercicios_seleccionados } = payload;
     if (!id_usuario) {
         return new Response(JSON.stringify({ error: "Missing id_usuario" }), {
             status: 400,
@@ -176,6 +267,9 @@ export default async function handler(request, _context){
 
     const diasSeleccionados = normalizeSelectedDays();
     const diasSeleccionadosJson = JSON.stringify(diasSeleccionados);
+
+    const ejerciciosSeleccionados = normalizeSelectedExercises(ejercicios_seleccionados);
+    const ejerciciosSeleccionadosJson = JSON.stringify(ejerciciosSeleccionados);
 
     const canonicalDayKey = (dayLabel) => stripAccents(dayLabel).toLowerCase();
 
@@ -300,6 +394,13 @@ Regla de dias seleccionados:
 
 Dias seleccionados para entrenar (SOLO estos dias deben tener ejercicios; los otros dias deben ser descanso con ejercicios []):
 ${diasSeleccionadosJson}
+
+Preferencias opcionales de ejercicios (puede venir vacio):
+- Si la lista NO esta vacia, prioriza incluir estos ejercicios durante la semana (siempre que sean compatibles con entorno/objetivo).
+- Reparte los ejercicios preferidos a lo largo de los dias seleccionados sin repetir en exceso.
+- Si faltan ejercicios para completar una sesion, completa con ejercicios de la lista general.
+Ejercicios preferidos:
+${ejerciciosSeleccionadosJson}
 
 Ahora genera el plan semanal para:
 - entorno: ${lugar}

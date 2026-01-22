@@ -1,5 +1,6 @@
 
 :root{
+	overscroll-behavior-y: none;
 	--bg0: #070A12;
 	--bg1: #0A1226;
 	--text: rgba(255,255,255,.92);

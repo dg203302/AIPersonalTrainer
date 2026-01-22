@@ -95,14 +95,27 @@ const escapeHtml = (value) => String(value)
     .replaceAll('"', "&quot;")
     .replaceAll("'", "&#39;");
 
-const renderListaEjerciciosBreve = () => {
+const renderListaEjerciciosSelectable = () => {
     const parts = [];
     for (const [grupo, items] of Object.entries(EJERCICIOS_INDICE)) {
-        const li = items.map((e) => `<li>${escapeHtml(e)}</li>`).join("");
+        const checks = items
+            .map((e) => {
+                const safe = escapeHtml(e);
+                return `
+                    <label class="swal-check">
+                        <input type="checkbox" name="ejercicios" value="${safe}">
+                        <span>${safe}</span>
+                    </label>
+                `;
+            })
+            .join("");
+
         parts.push(`
-            <details class="swal-details">
+            <details class="swal-details" data-grupo="${escapeHtml(grupo)}">
                 <summary>${escapeHtml(grupo)} <span class="swal-chip">${items.length}</span></summary>
-                <ul class="swal-lista">${li}</ul>
+                <div class="swal-checklist">
+                    ${checks}
+                </div>
             </details>
         `);
     }
@@ -154,6 +167,17 @@ const openGenerarPlanModal = async () => {
     const lastDias =
         normalizeDiasSeleccionados(localStorage.getItem("plan_dias")) ||
         ["L", "M", "X", "J", "V"]; // default: lunes a viernes
+    const lastEjEnabled = (localStorage.getItem("plan_ejercicios_enabled") || "0") === "1";
+    const lastEjSeleccionados = (() => {
+        const raw = localStorage.getItem("plan_ejercicios_selected");
+        if (!raw) return [];
+        try {
+            const parsed = JSON.parse(raw);
+            return Array.isArray(parsed) ? parsed.map((x) => String(x)) : [];
+        } catch {
+            return [];
+        }
+    })();
 
     const result = await sweetalert.fire({
         title: "Generar Plan de Entrenamiento con IA",
@@ -186,9 +210,13 @@ const openGenerarPlanModal = async () => {
 
                 <section class="swal-section" aria-label="Ejercicios disponibles">
                     <h3>Ejercicios disponibles (índice)</h3>
-                    <p class="swal-helper">Lista breve de ejercicios que la IA usa como base para armar el plan.</p>
+                    <p class="swal-helper">Opcional: si querés, marcá ejercicios preferidos. Si no seleccionás nada, la IA elige automáticamente.</p>
+                    <label class="swal-toggle">
+                        <input type="checkbox" id="swal_ej_toggle">
+                        <span>Quiero elegir ejercicios</span>
+                    </label>
                     <div class="swal-ejercicios">
-                        ${renderListaEjerciciosBreve()}
+                        ${renderListaEjerciciosSelectable()}
                     </div>
                 </section>
             </div>
@@ -225,12 +253,47 @@ const openGenerarPlanModal = async () => {
                 btn.classList.toggle("is-selected", next);
                 btn.setAttribute("aria-pressed", next ? "true" : "false");
             });
+
+            // ejercicios (opcional)
+            const toggle = popup?.querySelector("#swal_ej_toggle");
+            if (toggle instanceof HTMLInputElement) {
+                toggle.checked = lastEjEnabled;
+            }
+
+            const selectedSet = new Set(lastEjSeleccionados.map((x) => String(x)));
+            popup?.querySelectorAll('input[name="ejercicios"]')?.forEach((el) => {
+                if (!(el instanceof HTMLInputElement)) return;
+                el.checked = selectedSet.has(el.value);
+            });
+
+            const setEjEnabled = (enabled) => {
+                popup?.classList.toggle("is-ej-disabled", !enabled);
+                popup?.querySelectorAll('input[name="ejercicios"]')?.forEach((el) => {
+                    if (!(el instanceof HTMLInputElement)) return;
+                    el.disabled = !enabled;
+                });
+            };
+
+            setEjEnabled(lastEjEnabled);
+            toggle?.addEventListener("change", () => {
+                const enabled = toggle instanceof HTMLInputElement ? toggle.checked : false;
+                setEjEnabled(enabled);
+            });
         },
         preConfirm: () => {
             const popup = (typeof sweetalert.getPopup === "function" && sweetalert.getPopup()) || document.querySelector(".swal2-popup");
             const lugar = popup?.querySelector('input[name="lugar"]:checked')?.value;
             const objetivo = popup?.querySelector('input[name="objetivo"]:checked')?.value;
             const dias = Array.from(popup?.querySelectorAll('.swal-dia-btn[aria-pressed="true"]') ?? []).map((b) => String(b.getAttribute("data-dia") ?? "").toUpperCase());
+            const ejEnabled = !!(popup?.querySelector("#swal_ej_toggle") instanceof HTMLInputElement)
+                ? popup.querySelector("#swal_ej_toggle").checked
+                : false;
+            const ejercicios = ejEnabled
+                ? Array.from(popup?.querySelectorAll('input[name="ejercicios"]:checked') ?? []).map((el) => {
+                    if (el instanceof HTMLInputElement) return String(el.value);
+                    return "";
+                }).filter(Boolean)
+                : null;
 
             if (!lugar || !objetivo) {
                 if (typeof sweetalert.showValidationMessage === "function") {
@@ -246,14 +309,15 @@ const openGenerarPlanModal = async () => {
                 return false;
             }
 
-            return { lugar, objetivo, dias };
+            return { lugar, objetivo, dias, ejEnabled, ejercicios };
         },
     });
 
     if (!result.isConfirmed) return;
-    const { lugar, objetivo, dias } = result.value;
+    const { lugar, objetivo, dias, ejEnabled, ejercicios } = result.value;
 
-    await crearPlanEntreno(lugar, objetivo, dias);
+
+    await crearPlanEntreno(lugar, objetivo, dias, ejercicios);
 };
 window.onload = async () => {
     sweetalert.fire({
@@ -308,7 +372,7 @@ function verificacion_plan_entrenamiento() {
         }
     }
 }
-async function crearPlanEntreno(lugar, objetivo, diasSeleccionados){
+async function crearPlanEntreno(lugar, objetivo, diasSeleccionados, ejerciciosSeleccionados){
 
     const diasCodes = Array.isArray(diasSeleccionados) ? diasSeleccionados : [];
     const diasSem = diasCodes
@@ -322,7 +386,7 @@ async function crearPlanEntreno(lugar, objetivo, diasSeleccionados){
         toast: true,
         position: "top-end",
         showConfirmButton: false,
-        timer: 50000,
+        timer: 5000,
     });
 
     const response = await fetch('/generar_plan_entreno', {
@@ -334,6 +398,7 @@ async function crearPlanEntreno(lugar, objetivo, diasSeleccionados){
             objetivo: objetivo,
             dias: diasCodes,
             dias_semana: diasSem,
+            ejercicios_seleccionados: Array.isArray(ejerciciosSeleccionados) ? ejerciciosSeleccionados : null,
             Altura: localStorage.getItem("altura_usuario"),
             Peso_actual: localStorage.getItem("peso_actual_usuario"),
             Peso_objetivo: localStorage.getItem("peso_objetivo_usuario"),

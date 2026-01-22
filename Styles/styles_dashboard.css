@@ -1,5 +1,6 @@
 
 :root{
+	overscroll-behavior-y: none;
 	--bg0: #070A12;
 	--bg1: #0A1226;
 	--text: rgba(255,255,255,.92);
@@ -666,6 +667,50 @@ footer a{
 	display: grid;
 	gap: 8px;
 }
+
+.dashboard-swal .swal-toggle{
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	margin: 0 0 10px;
+	padding: 10px 12px;
+	border-radius: 14px;
+	border: 1px solid color-mix(in srgb, #fff 12%, transparent);
+	background: color-mix(in srgb, #fff 6%, transparent);
+	color: var(--muted);
+	user-select: none;
+}
+
+.dashboard-swal .swal-toggle input{ accent-color: color-mix(in srgb, var(--accent) 75%, #fff); }
+
+.dashboard-swal.is-ej-disabled .swal-ejercicios{
+	opacity: .55;
+	filter: grayscale(.15);
+}
+
+.dashboard-swal .swal-checklist{
+	display: grid;
+	gap: 8px;
+	margin-top: 10px;
+}
+
+.dashboard-swal .swal-check{
+	display: flex;
+	align-items: flex-start;
+	gap: 10px;
+	padding: 10px 12px;
+	border-radius: 12px;
+	border: 1px solid color-mix(in srgb, #fff 10%, transparent);
+	background: color-mix(in srgb, #fff 5%, transparent);
+	color: var(--muted);
+}
+
+.dashboard-swal .swal-check input{
+	margin-top: 2px;
+	accent-color: color-mix(in srgb, var(--accent) 75%, #fff);
+}
+
+.dashboard-swal .swal-check span{ color: var(--text); }
 
 .dashboard-swal .swal-details{
 	border-radius: 14px;
