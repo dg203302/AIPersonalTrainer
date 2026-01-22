@@ -5,8 +5,10 @@ const supabase = createClient(supabaseUrl, supabaseKey, {auth: {persistSession: 
 
 const updateFixedChromeHeights = () => {
     const header = document.querySelector("header");
+    const footer = document.querySelector("footer");
     const root = document.documentElement;
     if (header) root.style.setProperty("--header-fixed", `${header.offsetHeight}px`);
+    if (footer) root.style.setProperty("--footer-fixed", `${footer.offsetHeight}px`);
 };
 
 const initFixedChromeObservers = () => {
@@ -14,7 +16,9 @@ const initFixedChromeObservers = () => {
     if ("ResizeObserver" in window) {
         const ro = new ResizeObserver(() => updateFixedChromeHeights());
         const header = document.querySelector("header");
+        const footer = document.querySelector("footer");
         if (header) ro.observe(header);
+        if (footer) ro.observe(footer);
     } else {
         window.addEventListener("resize", updateFixedChromeHeights, { passive: true });
     }

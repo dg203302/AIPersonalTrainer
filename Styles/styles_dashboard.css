@@ -18,6 +18,7 @@
 	--radius-md: 14px;
 	--pad: 16px;
 	--content-max: 980px;
+	--footer-fixed: 0px;
 }
 
 *, *::before, *::after{ box-sizing: border-box; }
@@ -165,7 +166,7 @@ main{
 		calc(var(--header-fixed, 72px) + env(safe-area-inset-top))
 		auto
 		0;
-	padding: 18px var(--pad) 24px;
+	padding: 18px var(--pad) calc(24px + var(--footer-fixed, 0px));
 	display: grid;
 	gap: 14px;
 }
@@ -228,12 +229,18 @@ button:active{ transform: translateY(1px); }
 	border-radius: var(--radius-lg);
 	border: 1px solid var(--stroke2);
 	background: color-mix(in srgb, #000 12%, transparent);
-	overflow-x: auto;
+	width: 100%;
+	max-width: 100%;
+	max-height: clamp(260px, calc(70svh - var(--footer-fixed, 0px) - 12px), 720px);
+	overflow: auto;
+	overscroll-behavior: contain;
+	scrollbar-gutter: stable;
 }
 
 /* Plan de entrenamiento (render desde JS) */
 .plan-container{
 	width: 100%;
+	min-width: 0;
 	display: grid;
 	gap: 12px;
 }
@@ -367,10 +374,35 @@ button:active{ transform: translateY(1px); }
 }
 
 footer{
+	position: fixed;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	z-index: 50;
 	padding: 14px var(--pad) calc(14px + env(safe-area-inset-bottom));
 	color: var(--muted2);
 	text-align: center;
+	background:
+		linear-gradient(0deg, color-mix(in srgb, #FFFFFF 12%, transparent), color-mix(in srgb, #FFFFFF 6%, transparent));
+	backdrop-filter: blur(18px) saturate(155%);
+	-webkit-backdrop-filter: blur(18px) saturate(155%);
+	border-top: 1px solid var(--stroke);
+	box-shadow: 0 -10px 30px rgba(0,0,0,.22);
+	overflow: hidden;
 }
+
+footer::before{
+	content: "";
+	position: absolute;
+	inset: 0;
+	pointer-events: none;
+	background:
+		radial-gradient(900px 140px at 10% 100%, color-mix(in srgb, var(--accent) 18%, transparent) 0%, transparent 60%),
+		radial-gradient(900px 140px at 90% 80%, color-mix(in srgb, var(--accent2) 16%, transparent) 0%, transparent 65%);
+	opacity: .85;
+}
+
+footer > *{ position: relative; z-index: 1; }
 
 footer a{
 	color: var(--text);
@@ -752,4 +784,3 @@ footer a{
 @media (min-width: 720px){
 	.dashboard-swal .swal-grid{ grid-template-columns: 1fr 1fr; }
 }
-
