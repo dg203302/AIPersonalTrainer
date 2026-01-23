@@ -528,10 +528,72 @@ footer::before{
 
 footer > *{ position: relative; z-index: 1; }
 
-footer a{
+/* Footer nav (botones inferiores) */
+.footer-nav{
+	width: min(var(--content-max), 100%);
+	margin: 0 auto;
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 12px;
+}
+
+.footer-btn{
+	flex: 1 1 0;
+	min-width: 0;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 10px;
+
+	appearance: none;
+	border: 1px solid color-mix(in srgb, #fff 22%, transparent);
+	background: color-mix(in srgb, #fff 8%, transparent);
 	color: var(--text);
+	border-radius: 999px;
+	padding: 12px 14px;
+	min-height: 48px;
+	font: inherit;
+	font-weight: 650;
+	letter-spacing: .15px;
+	box-shadow: var(--shadow-soft);
 	text-decoration: none;
-	border-bottom: 1px solid color-mix(in srgb, var(--text) 26%, transparent);
+	user-select: none;
+}
+
+.footer-btn:hover{
+	background: color-mix(in srgb, #fff 10%, transparent);
+}
+
+.footer-btn:active{
+	transform: translateY(1px);
+}
+
+.footer-btn:focus-visible{
+	outline: 3px solid color-mix(in srgb, var(--accent) 70%, transparent);
+	outline-offset: 3px;
+}
+
+.footer-btn img{
+	width: 18px;
+	height: 18px;
+	opacity: .9;
+}
+
+.footer-btn.is-active{
+	border-color: color-mix(in srgb, var(--accent) 35%, var(--stroke2));
+	background:
+		linear-gradient(135deg,
+			color-mix(in srgb, var(--accent) 18%, transparent),
+			color-mix(in srgb, var(--accent2) 16%, transparent));
+}
+
+@media (max-width: 380px){
+	.footer-btn{
+		padding: 12px 10px;
+		font-size: 13.5px;
+	}
+	.footer-btn img{ width: 17px; height: 17px; }
 }
 
 @media (min-width: 860px){

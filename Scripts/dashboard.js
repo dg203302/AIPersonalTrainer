@@ -469,6 +469,8 @@ function verificacion_plan_entrenamiento() {
         contenedor_ejercicios.style.display = "block";
         contenedor_ejercicios.innerHTML = mapear_plan(plan_entrenamiento)
         boton_ejercicios.innerHTML = '<img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9ImN1cnJlbnRDb2xvciIgc3Ryb2tlLXdpZHRoPSIyIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiIGNsYXNzPSJsdWNpZGUgbHVjaWRlLXJlZnJlc2gtY2N3LWljb24gbHVjaWRlLXJlZnJlc2gtY2N3Ij48cGF0aCBkPSJNMjEgMTJhOSA5IDAgMCAwLTktOSA5Ljc1IDkuNzUgMCAwIDAtNi43NCAyLjc0TDMgOCIvPjxwYXRoIGQ9Ik0zIDN2NWg1Ii8+PHBhdGggZD0iTTMgMTJhOSA5IDAgMCAwIDkgOSA5Ljc1IDkuNzUgMCAwIDAgNi43NC0yLjc0TDIxIDE2Ii8+PHBhdGggZD0iTTE2IDE2aDV2NSIvPjwvc3ZnPg==">';
+        boton_ejercicios.style.width = "50px";
+        boton_ejercicios.style.height = "50px";
         boton_ejercicios.onclick = async () => {
             await recuperar_planes();
             sweetalert.fire({
@@ -486,6 +488,8 @@ function verificacion_plan_entrenamiento() {
         if (desc) desc.style.display = "block";
         boton_eliminar_plan_eje.style.display = "none";
         boton_ejercicios.innerHTML = "generar plan de entrenamiento";
+        boton_ejercicios.style.width = "auto";
+        boton_ejercicios.style.height = "auto";
         boton_ejercicios.onclick = async () => {
             await openGenerarPlanModal();
         }
@@ -989,6 +993,7 @@ document.getElementById("boton_eliminar")?.addEventListener("click", async () =>
     await actualizar_cambios_plan_entreno();
     document.getElementById("Plan_ejercicio").innerHTML = "";
     document.getElementById("Plan_ejercicio").style.display = "none";
+    document.getElementById("boton_regenerar").style.display = "none";
     verificacion_plan_entrenamiento();
 
     sweetalert.fire({

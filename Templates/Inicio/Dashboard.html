@@ -13,10 +13,9 @@
             <h1>Inicio</h1>
             <h2>Personal TrAIner</h2>
         </div>
-        <div id="usuario">
-            <h2 id="username">...</h2>
+        <div id="usuario" style="display: flex;flex-direction: column;align-items:end;gap: 5px;cursor: pointer;">
             <img src="https://www.gravatar.com/avatar/00000000000000000000000000000000?d=mp&f=y" alt="avatar" id="icono_usuario">
-            <a href="/Templates/Inicio/perfil_usuario.html"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9ImN1cnJlbnRDb2xvciIgc3Ryb2tlLXdpZHRoPSIyIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiIGNsYXNzPSJsdWNpZGUgbHVjaWRlLXVzZXItaWNvbiBsdWNpZGUtdXNlciI+PHBhdGggZD0iTTE5IDIxdi0yYTQgNCAwIDAgMC00LTRIOWE0IDQgMCAwIDAtNCA0djIiLz48Y2lyY2xlIGN4PSIxMiIgY3k9IjciIHI9IjQiLz48L3N2Zz4=" alt="Perfil"></a>
+            <h2 id="username">...</h2>
         </div>
     </header>
     <main>
@@ -28,7 +27,7 @@
                     Para armarlo se tiene en cuenta dónde entrenás (en casa o en gimnasio), tu objetivo principal (priorizar pérdida de grasa o ganancia muscular) y tus datos básicos (edad, altura, peso actual y peso objetivo).
                 </p>
                 <div style="display: flex;flex-direction: row;gap: 10px;justify-content: space-between;width: 100%;">
-                    <button id="boton_ejercicios" style="width: 50px; height: 50px;">...</button>
+                    <button id="boton_ejercicios">...</button>
                     <div style="display: flex;flex-direction: column;gap: 10px;">
                         <button id="boton_regenerar" style="display: none;">Regenerar Plan</button>
                         <button id="boton_eliminar" style="display: none;">Eliminar Plan</button>
@@ -72,6 +71,7 @@
                         <h3>3) Ver el plan y gestionarlo</h3>
                         <ul>
                             <li>Cuando termine de generarse, el plan aparece debajo en <strong>Plan de Ejercicio</strong>. Si es largo, podés <strong>scrollear</strong> dentro del recuadro.</li>
+                            <li><strong>Ver detalle por día</strong>: tocá el encabezado de un día (por ejemplo “Lunes”, “Martes”, etc.) para abrir un <strong>modal</strong> con el detalle de cada ejercicio de ese día (series, repeticiones y descanso).</li>
                             <li>Si querés volver a generar, repetí el proceso y elegí nuevas opciones.</li>
                             <li><strong>Regenerar Plan</strong>: te permite crear un plan nuevo <em>basado en la configuración previa</em>. Al tocarlo, se te pedirá confirmación; si aceptás, se elimina el plan actual y se abre el modal con las opciones <strong>precompletadas</strong> (lugar, objetivo, días y, si aplica, ejercicios) para que ajustes lo que quieras y generes nuevamente.</li>
                             <li>Si aparece el botón <strong>Eliminar Plan</strong>, podés borrar el plan actual para empezar de cero.</li>
@@ -104,9 +104,12 @@
         -->
     </main>
     <footer>
-        <div id="creditos">
-            <p>2026 &copy; <a href="https://diegogarcia-dev.com.ar">Diego Garcia</a></p>
-        </div>
+        <nav class="footer-nav" aria-label="Navegación inferior">
+            <a class="footer-btn is-active" href="/Templates/Inicio/Dashboard.html">Plan de Entreno</a>
+            <a class="footer-btn" href="/Templates/Inicio/perfil_usuario.html">
+                <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9ImN1cnJlbnRDb2xvciIgc3Ryb2tlLXdpZHRoPSIyIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiIGNsYXNzPSJsdWNpZGUgbHVjaWRlLXVzZXItaWNvbiBsdWNpZGUtdXNlciI+PHBhdGggZD0iTTE5IDIxdi0yYTQgNCAwIDAgMC00LTRIOWE0IDQgMCAwIDAtNCA0djIiLz48Y2lyY2xlIGN4PSIxMiIgY3k9IjciIHI9IjQiLz48L3N2Zz4=" alt="" aria-hidden="true"> Perfil
+            </a>
+        </nav>
     </footer>
 
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
