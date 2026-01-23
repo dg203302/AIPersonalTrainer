@@ -32,20 +32,21 @@ window.onload = () =>{
                 localStorage.setItem("peso_objetivo_usuario", datos[0].Peso_Obj);
                 const {data, error} = await supabase
                     .from("Planes")
-                    .select("*")
+                    .select("Plan_entreno, Plan_alimenta")
                     .eq("ID_user", user.id)
                     .limit(1);
-                const planes = data ?? [];
+                const plane_entreno = data.Plan_entreno;
+                const plane_alimenta = data.Plan_alimenta;
                 if (error) {
                     alert("Error al obtener el plan de entrenamiento del usuario: " + error.message);
                     return;
                 }
-                if (planes.length === 0) {
+                if (!plane_entreno && !plane_alimenta) {
                     localStorage.setItem("plan_entreno_usuario", "Ninguno");
                     localStorage.setItem("plan_dieta_usuario", "Ninguno");
                 } else {
-                    localStorage.setItem("plan_entreno_usuario", planes[0].Plan_entreno);
-                    localStorage.setItem("plan_dieta_usuario", planes[0].Plan_alimenta);
+                    localStorage.setItem("plan_entreno_usuario", plane_entreno);
+                    localStorage.setItem("plan_dieta_usuario", plane_alimenta);
                 }
                 window.location.href = "/Templates/Inicio/Dashboard.html";
                 return

@@ -165,14 +165,14 @@ const renderDiasSelector = () => {
     `;
 };
 
-const openGenerarPlanModal = async () => {
-    const lastLugar = localStorage.getItem("plan_lugar") || "casa";
-    const lastObjetivo = localStorage.getItem("plan_objetivo") || "musculo";
-    const lastDias =
+const openGenerarPlanModal = async (planPrevioRaw = null) => {
+    const baseLugar = localStorage.getItem("plan_lugar") || "casa";
+    const baseObjetivo = localStorage.getItem("plan_objetivo") || "musculo";
+    const baseDias =
         normalizeDiasSeleccionados(localStorage.getItem("plan_dias")) ||
         ["L", "M", "X", "J", "V"]; // default: lunes a viernes
-    const lastEjEnabled = (localStorage.getItem("plan_ejercicios_enabled") || "0") === "1";
-    const lastEjSeleccionados = (() => {
+    const baseEjEnabled = (localStorage.getItem("plan_ejercicios_enabled") || "0") === "1";
+    const baseEjSeleccionados = (() => {
         const raw = localStorage.getItem("plan_ejercicios_selected");
         if (!raw) return [];
         try {
@@ -182,6 +182,114 @@ const openGenerarPlanModal = async () => {
             return [];
         }
     })();
+
+    const stripAccents = (text) => String(text ?? "")
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "");
+
+    const extractLikelyJson = (text) => {
+        const s = String(text ?? "");
+        const unfenced = s
+            .replace(/^```(?:json)?\s*/i, "")
+            .replace(/\s*```\s*$/i, "")
+            .trim();
+
+        const firstObj = unfenced.indexOf("{");
+        const firstArr = unfenced.indexOf("[");
+        if (firstObj === -1 && firstArr === -1) return unfenced;
+        const start = firstArr === -1 ? firstObj : (firstObj === -1 ? firstArr : Math.min(firstObj, firstArr));
+        const lastObj = unfenced.lastIndexOf("}");
+        const lastArr = unfenced.lastIndexOf("]");
+        const end = Math.max(lastObj, lastArr);
+        if (end <= start) return unfenced;
+        return unfenced.slice(start, end + 1);
+    };
+
+    const tryParseJson = (value) => {
+        if (value == null) return null;
+        if (typeof value === "object") return value;
+        try {
+            return JSON.parse(String(value));
+        } catch {
+            return null;
+        }
+    };
+
+    const mapEntornoToLugar = (entorno) => {
+        const v = stripAccents(entorno).trim().toLowerCase();
+        if (!v) return null;
+        if (v.includes("gim")) return "gimnasio";
+        if (v.includes("casa") || v.includes("hogar")) return "casa";
+        return null;
+    };
+
+    const mapObjetivoToCode = (obj) => {
+        const v = stripAccents(obj).trim().toLowerCase();
+        if (!v) return null;
+        if (v.includes("grasa") || v.includes("perdida") || v.includes("defin")) return "grasa";
+        if (v.includes("mus") || v.includes("hipert") || v.includes("ganancia")) return "musculo";
+        return null;
+    };
+
+    const mapDiaToCode = (dia) => {
+        const v = stripAccents(dia).trim().toLowerCase();
+        if (!v) return null;
+        const found = DIAS_SEMANA.find((d) => stripAccents(d.name).toLowerCase() === v);
+        return found?.code ?? null;
+    };
+
+    const buildPrefillFromPlanPrevio = (raw) => {
+        if (!raw) return null;
+        const parsed = tryParseJson(extractLikelyJson(raw)) ?? tryParseJson(raw);
+        if (!parsed || typeof parsed !== "object") return null;
+
+        const root =
+            parsed.plan_entrenamiento_hipertrofia ??
+            parsed.plan_entrenamiento ??
+            parsed.plan ??
+            parsed;
+
+        const usuario = (root && typeof root === "object") ? (root.usuario ?? root.user ?? null) : null;
+        const entorno = usuario?.entorno;
+        const objetivo = usuario?.objetivo;
+
+        const lugar = mapEntornoToLugar(entorno);
+        const objetivoCode = mapObjetivoToCode(objetivo);
+
+        const config = root?.configuracion_semanal;
+        const diasConEjercicios = Array.isArray(config)
+            ? config
+                .filter((d) => Array.isArray(d?.ejercicios) && d.ejercicios.length > 0)
+                .map((d) => mapDiaToCode(d?.dia))
+                .filter(Boolean)
+            : [];
+        const dias = diasConEjercicios.length ? diasConEjercicios : null;
+
+        const ejercicios = Array.isArray(config)
+            ? Array.from(
+                new Set(
+                    config
+                        .flatMap((d) => Array.isArray(d?.ejercicios) ? d.ejercicios : [])
+                        .map((e) => String(e?.nombre ?? e?.ejercicio ?? e?.exercise ?? e?.name ?? "").trim())
+                        .filter(Boolean)
+                )
+            )
+            : null;
+
+        return {
+            lugar: lugar || null,
+            objetivo: objetivoCode || null,
+            dias,
+            ejercicios,
+        };
+    };
+
+    const prefillPlan = buildPrefillFromPlanPrevio(planPrevioRaw);
+    const lastLugar = prefillPlan?.lugar || baseLugar;
+    const lastObjetivo = prefillPlan?.objetivo || baseObjetivo;
+    const lastDias = prefillPlan?.dias || baseDias;
+    const lastEjSeleccionados = Array.isArray(prefillPlan?.ejercicios) ? prefillPlan.ejercicios : baseEjSeleccionados;
+    const lastEjEnabled = Array.isArray(prefillPlan?.ejercicios) ? true : baseEjEnabled;
 
     const result = await sweetalert.fire({
         title: "Generar Plan de Entrenamiento con IA",
@@ -347,8 +455,13 @@ function verificacion_plan_entrenamiento() {
     const plan_entrenamiento = localStorage.getItem("plan_entreno_usuario");
     const boton_ejercicios = document.getElementById("boton_ejercicios");
     const boton_eliminar_plan_eje = document.getElementById("boton_eliminar");
+    const boton_regenerar =  document.getElementById("boton_regenerar");
     if (plan_entrenamiento != "Ninguno" && plan_entrenamiento != null) {
         desc.style.display = "none";
+        if (boton_regenerar) {
+            boton_regenerar.style.display = "inline-block";
+            boton_regenerar.onclick = () => Regen_plan();
+        }
         boton_eliminar_plan_eje.style.display = "inline-block";
         const contenedor_ejercicios = document.getElementById("Plan_ejercicio");
         contenedor_ejercicios.style.display = "block";
@@ -453,7 +566,7 @@ async function recuperar_planes() {
     const {user} = await supabase.auth.getUser().then(({data: {user}}) => user);
     if (user){
         const {datos2, error2 } = await supabase
-        .from("Planes").select("*").eq("ID_user", user.id).limit(1);
+        .from("Planes").select("Plan_entreno, Plan_alimenta").eq("ID_user", user.id).limit(1);
         if (error2) {
             swal.fire({
                 title: "Error",
@@ -465,8 +578,10 @@ async function recuperar_planes() {
             })
             return;
         }
-        localStorage.setItem("plan_entreno_usuario", datos2.length === 0 ? "Ninguno" : datos2[0].Plan_entreno ?? "Ninguno");
-        localStorage.setItem("plan_dieta_usuario", datos2.length === 0 ? "Ninguno" : datos2[0].Plan_alimenta ?? "Ninguno");
+        const plan_entreno = datos2.Plan_entreno;
+        const plan_alimenta = datos2.Plan_alimenta;
+        localStorage.setItem("plan_entreno_usuario", plan_entreno ?? "Ninguno");
+        localStorage.setItem("plan_dieta_usuario",  plan_alimenta ?? "Ninguno");
     }
 }
 
@@ -698,6 +813,56 @@ async function actualizar_cambios_plan_entreno(){
     }
 }
 
+async function Regen_plan(){
+    const plan_entreno_actual = localStorage.getItem("plan_entreno_usuario");
+
+    const result = await swal.fire({
+        title: "Regenerando plan de entrenamiento",
+        text: "Se eliminará el plan actual y se generará uno nuevo basado en la configuración previa.",
+        icon: "info",
+
+        showCancelButton: true,
+        confirmButtonText: "Sí, regenerar",
+        cancelButtonText: "Cancelar",
+    });
+
+    if (!result.isConfirmed) {
+        swal.fire({
+            title: "Regeneración cancelada",
+            text: "El plan de entrenamiento actual se mantiene sin cambios.",
+            icon: "info",
+            toast: true,
+            position: "top-end",
+            showConfirmButton: false,
+            timer: 3000,
+        });
+        return;
+    }
+
+    if (plan_entreno_actual == null || plan_entreno_actual === "Ninguno") {
+        sweetalert.fire({
+            title: "No hay plan para regenerar",
+            text: "Primero debés generar un plan de entrenamiento.",
+            icon: "error",
+            toast: true,
+            position: "top-end",
+            showConfirmButton: false,
+            timer: 3000,
+        });
+        return;
+    }
+
+    localStorage.setItem("plan_entreno_usuario", "Ninguno");
+    await actualizar_cambios_plan_entreno();
+
+    document.getElementById("Plan_ejercicio").innerHTML = "";
+    document.getElementById("Plan_ejercicio").style.display = "none";
+    verificacion_plan_entrenamiento();
+
+    const botonRegenerar = document.getElementById("boton_regenerar");
+    if (botonRegenerar) botonRegenerar.style.display = "none";
+    await openGenerarPlanModal(plan_entreno_actual);
+}
 //temporal
 
 //aca falta poner el script para los botones que tendran los planes de entreno, editar, eliminar (por ejercicio) y el boton para eliminar el plan. todo esto estara en el html del plan mismo

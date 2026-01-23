@@ -29,14 +29,57 @@
                 </p>
                 <div style="display: flex;flex-direction: row;gap: 10px;justify-content: space-between;width: 100%;">
                     <button id="boton_ejercicios">...</button>
+                    <button id="boton_regenerar" style="display: none;">Regenerar Plan</button>
                     <button id="boton_eliminar" style="display: none;">Eliminar Plan</button>
                 </div>
                 <!--
                 <button id="boton_plan_propio">Crea tu propio plan - PROXIMAMENTE</button>
                 -->
-            </div>
-            <div id="Plan_ejercicio" style="display: none;">
-            </div>
+                </div>
+                <div id="Plan_ejercicio" style="display: none;">
+                </div>
+                <details id="ayuda_contraible" class="ayuda-box">
+                    <summary>
+                        <span>Ayuda: cómo generar y ver tu plan</span>
+                        <span class="ayuda-summary-right" aria-hidden="true">
+                            <span class="ayuda-chip">Guía</span>
+                            <span class="ayuda-chevron"></span>
+                        </span>
+                    </summary>
+                    <div class="ayuda-content">
+                        <p>
+                            Desde esta sección podés generar un <strong>plan semanal</strong> con ejercicios, series/repeticiones, descansos y una progresión sugerida.
+                            El plan se arma con IA usando tu perfil (edad, altura, peso actual y objetivo) + las opciones que elijas.
+                        </p>
+
+                        <h3>1) Generar el plan</h3>
+                        <ol>
+                            <li>Presioná el botón principal de <strong>Plan de Entreno</strong> (el que está arriba del plan).</li>
+                            <li>Se abre una ventana con opciones. Completalas y tocá <strong>Generar</strong>.</li>
+                        </ol>
+
+                        <h3>2) Cómo elegir cada opción</h3>
+                        <ul>
+                            <li><strong>¿Dónde entrenás?</strong> Elegí <em>casa</em> o <em>gimnasio</em> para que el plan use ejercicios y equipo acordes.</li>
+                            <li><strong>¿Qué priorizás?</strong> Elegí <em>pérdida de grasa</em> o <em>ganancia muscular</em> para ajustar el enfoque y la progresión.</li>
+                            <li><strong>Días de la semana</strong> Tocá las letras (L, M, X, J, V, S, D) para marcar qué días vas a entrenar.</li>
+                            <li><strong>Ejercicios disponibles (índice)</strong> (opcional) Activá <em>“Quiero elegir ejercicios”</em> y marcá ejercicios preferidos.
+                                Si no marcás nada, la IA elige automáticamente.</li>
+                        </ul>
+
+                        <h3>3) Ver el plan y gestionarlo</h3>
+                        <ul>
+                            <li>Cuando termine de generarse, el plan aparece debajo en <strong>Plan de Ejercicio</strong>. Si es largo, podés <strong>scrollear</strong> dentro del recuadro.</li>
+                            <li>Si querés volver a generar, repetí el proceso y elegí nuevas opciones.</li>
+                            <li><strong>Regenerar Plan</strong>: te permite crear un plan nuevo <em>basado en la configuración previa</em>. Al tocarlo, se te pedirá confirmación; si aceptás, se elimina el plan actual y se abre el modal con las opciones <strong>precompletadas</strong> (lugar, objetivo, días y, si aplica, ejercicios) para que ajustes lo que quieras y generes nuevamente.</li>
+                            <li>Si aparece el botón <strong>Eliminar Plan</strong>, podés borrar el plan actual para empezar de cero.</li>
+                        </ul>
+
+                        <p class="ayuda-note">
+                            Tip: si no ves cambios, revisá tu conexión y que tu perfil esté completo.
+                        </p>
+                    </div>
+                </details>
         </section>
         <!--
         <section id="Alimentacion">
