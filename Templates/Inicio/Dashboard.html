@@ -28,9 +28,11 @@
                     Para armarlo se tiene en cuenta dónde entrenás (en casa o en gimnasio), tu objetivo principal (priorizar pérdida de grasa o ganancia muscular) y tus datos básicos (edad, altura, peso actual y peso objetivo).
                 </p>
                 <div style="display: flex;flex-direction: row;gap: 10px;justify-content: space-between;width: 100%;">
-                    <button id="boton_ejercicios">...</button>
-                    <button id="boton_regenerar" style="display: none;">Regenerar Plan</button>
-                    <button id="boton_eliminar" style="display: none;">Eliminar Plan</button>
+                    <button id="boton_ejercicios" style="width: 50px; height: 50px;">...</button>
+                    <div style="display: flex;flex-direction: column;gap: 10px;">
+                        <button id="boton_regenerar" style="display: none;">Regenerar Plan</button>
+                        <button id="boton_eliminar" style="display: none;">Eliminar Plan</button>
+                    </div>
                 </div>
                 <!--
                 <button id="boton_plan_propio">Crea tu propio plan - PROXIMAMENTE</button>
@@ -40,7 +42,7 @@
                 </div>
                 <details id="ayuda_contraible" class="ayuda-box">
                     <summary>
-                        <span>Ayuda: cómo generar y ver tu plan</span>
+                        <span>Ayuda</span>
                         <span class="ayuda-summary-right" aria-hidden="true">
                             <span class="ayuda-chip">Guía</span>
                             <span class="ayuda-chevron"></span>
@@ -73,6 +75,16 @@
                             <li>Si querés volver a generar, repetí el proceso y elegí nuevas opciones.</li>
                             <li><strong>Regenerar Plan</strong>: te permite crear un plan nuevo <em>basado en la configuración previa</em>. Al tocarlo, se te pedirá confirmación; si aceptás, se elimina el plan actual y se abre el modal con las opciones <strong>precompletadas</strong> (lugar, objetivo, días y, si aplica, ejercicios) para que ajustes lo que quieras y generes nuevamente.</li>
                             <li>Si aparece el botón <strong>Eliminar Plan</strong>, podés borrar el plan actual para empezar de cero.</li>
+                        </ul>
+
+                        <h3>4) Cómo moverte por la interfaz</h3>
+                        <ul>
+                            <li><strong>Encabezado</strong>: arriba a la derecha ves tu nombre y avatar. Tocá el ícono de <strong>Perfil</strong> para ir a tus datos.</li>
+                            <li><strong>Botón principal</strong>: el botón grande de arriba sirve para <strong>generar</strong> tu plan (si no tenés uno) o <strong>refrescar/actualizar</strong> el plan (si ya existe).</li>
+                            <li><strong>Regenerar Plan</strong>: aparece cuando ya tenés un plan. Te guía para crear uno nuevo usando la configuración previa.</li>
+                            <li><strong>Eliminar Plan</strong>: borra el plan actual. Útil si querés empezar desde cero.</li>
+                            <li><strong>Zona del plan</strong>: el recuadro de <strong>Plan de Ejercicio</strong> puede tener scroll propio. En celular, deslizá dentro del recuadro para leer todo.</li>
+                            <li><strong>Ayuda</strong>: esta guía se puede abrir/cerrar tocando el título “Ayuda: cómo generar y ver tu plan”.</li>
                         </ul>
 
                         <p class="ayuda-note">
