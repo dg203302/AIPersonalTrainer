@@ -390,6 +390,23 @@ button:active{ transform: translateY(1px); }
 	margin-bottom: 10px;
 }
 
+.plan-dia-header[role="button"]{
+	cursor: pointer;
+	user-select: none;
+	border-radius: 14px;
+	padding: 6px 6px;
+	margin: -6px -6px 10px;
+}
+
+.plan-dia-header[role="button"]:hover{
+	background: color-mix(in srgb, #fff 6%, transparent);
+}
+
+.plan-dia-header[role="button"]:focus-visible{
+	outline: 3px solid color-mix(in srgb, var(--accent) 60%, transparent);
+	outline-offset: 3px;
+}
+
 .plan-dia-titulos{
 	min-width: 0;
 	display: flex;

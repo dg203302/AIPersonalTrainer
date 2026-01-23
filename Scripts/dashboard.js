@@ -448,6 +448,8 @@ window.onload = async () => {
 
     verificacion_plan_entrenamiento();
     verificacion_plan_alimentacion();
+
+    initDetallePorDiaPlan();
 }
 
 function verificacion_plan_entrenamiento() {
@@ -720,7 +722,7 @@ function mapear_plan(plan_entrenamiento_json){
         `;
     };
 
-    const renderDaySection = (diaLabel, ejerciciosList, enfoque) => {
+    const renderDaySection = (diaLabel, ejerciciosList, enfoque, dayIdx) => {
         const normalized = (Array.isArray(ejerciciosList) ? ejerciciosList : [])
             .map(normalizeExercise)
             .filter(Boolean);
@@ -731,7 +733,7 @@ function mapear_plan(plan_entrenamiento_json){
 
         return `
             <section class="plan-dia">
-                <div class="plan-dia-header">
+                <div class="plan-dia-header" role="button" tabindex="0" data-day-idx="${escapeHtml(dayIdx)}" aria-label="Ver detalle de ${escapeHtml(diaLabel)}">
                     <div class="plan-dia-titulos">
                         <h2 class="plan-dia-titulo">${escapeHtml(diaLabel)}</h2>
                         ${enfoque ? `<div class="plan-dia-subtitle">${escapeHtml(enfoque)}</div>` : ""}
@@ -751,7 +753,7 @@ function mapear_plan(plan_entrenamiento_json){
                 const dia = d.dia ?? d.nombre ?? d.day ?? `Día ${i + 1}`;
                 const enfoque = d.enfoque ?? d.focus ?? d.objetivo ?? d.titulo ?? d.title;
                 const ejercicios = d.ejercicios ?? d.entrenamiento ?? d.exercises ?? d.rutina ?? d.items ?? [];
-                return renderDaySection(dia, ejercicios, enfoque);
+                return renderDaySection(dia, ejercicios, enfoque, i);
             })
             .join("");
         html = sections;
@@ -761,7 +763,7 @@ function mapear_plan(plan_entrenamiento_json){
             const ib = diasOrden.indexOf(String(b).toLowerCase());
             return (ia === -1 ? 999 : ia) - (ib === -1 ? 999 : ib);
         });
-        html = orderedKeys.map((k) => renderDaySection(k, root[k])).join("");
+        html = orderedKeys.map((k, i) => renderDaySection(k, root[k], null, i)).join("");
     } else {
         const ejercicios = root.ejercicios ?? root.plan ?? root.entrenamiento ?? root.exercises ?? root.rutina ?? [];
         const normalized = (Array.isArray(ejercicios) ? ejercicios : [])
@@ -774,6 +776,202 @@ function mapear_plan(plan_entrenamiento_json){
     }
 
     return `<div class="plan-container">${html}</div>`;
+}
+
+function parsePlanDiasDetallados(planRaw) {
+    if (planRaw == null) return null;
+    const asString = typeof planRaw === "string" ? planRaw.trim() : JSON.stringify(planRaw);
+    if (!asString || asString === "Ninguno") return null;
+
+    const extractLikelyJsonText = (text) => {
+        const s = String(text ?? "");
+        const unfenced = s
+            .replace(/^```(?:json)?\s*/i, "")
+            .replace(/\s*```\s*$/i, "")
+            .trim();
+
+        const firstObj = unfenced.indexOf("{");
+        const firstArr = unfenced.indexOf("[");
+        if (firstObj === -1 && firstArr === -1) return unfenced;
+        const start = firstArr === -1 ? firstObj : (firstObj === -1 ? firstArr : Math.min(firstObj, firstArr));
+        const lastObj = unfenced.lastIndexOf("}");
+        const lastArr = unfenced.lastIndexOf("]");
+        const end = Math.max(lastObj, lastArr);
+        if (end <= start) return unfenced;
+        return unfenced.slice(start, end + 1);
+    };
+
+    const safeJsonParse = (text) => {
+        try {
+            return JSON.parse(text);
+        } catch {
+            return null;
+        }
+    };
+
+    const parsed = safeJsonParse(extractLikelyJsonText(asString)) ?? safeJsonParse(asString);
+    if (!parsed || typeof parsed !== "object") return null;
+
+    let root = Array.isArray(parsed) ? { ejercicios: parsed } : parsed;
+    if (root && typeof root === "object") {
+        root = root.plan_entrenamiento_hipertrofia ?? root.plan_entrenamiento ?? root.plan ?? root;
+    }
+
+    const diasOrden = [
+        "lunes",
+        "martes",
+        "miércoles",
+        "miercoles",
+        "jueves",
+        "viernes",
+        "sábado",
+        "sabado",
+        "domingo",
+        "monday",
+        "tuesday",
+        "wednesday",
+        "thursday",
+        "friday",
+        "saturday",
+        "sunday",
+    ];
+
+    const normalizeExDet = (ex) => {
+        if (!ex || typeof ex !== "object") return null;
+        const nombre = ex.nombre ?? ex.ejercicio ?? ex.exercise ?? ex.name ?? ex.titulo ?? ex.title;
+        const descripcion = ex.descripcion ?? ex.description ?? ex.detalle ?? ex.detalles ?? ex.instrucciones ?? ex.instruccion;
+        const series = ex.series ?? ex.series_por_ejercicio ?? ex.sets ?? ex.set ?? ex.seriesTotales;
+        const repeticiones = ex.repeticiones ?? ex.reps ?? ex.repetitions ?? ex.rep ?? ex.repeticion;
+        const descanso_segundos = ex.descanso_segundos ?? ex.descanso ?? ex.rest ?? ex.rest_seconds ?? ex.restSeconds;
+        if (!nombre && !series && !repeticiones && !descripcion) return null;
+        return {
+            nombre: String(nombre ?? "Ejercicio"),
+            descripcion: String(descripcion ?? ""),
+            series: series ?? "-",
+            repeticiones: repeticiones ?? "-",
+            descanso_segundos: descanso_segundos ?? "-",
+        };
+    };
+
+    const maybeDiasArray =
+        root?.configuracion_semanal ??
+        root?.configuracionSemanal ??
+        root?.dias ??
+        root?.semana ??
+        root?.plan_semanal ??
+        root?.planSemanal;
+
+    if (Array.isArray(maybeDiasArray)) {
+        return maybeDiasArray.map((d, i) => {
+            const dia = d?.dia ?? d?.nombre ?? d?.day ?? `Día ${i + 1}`;
+            const enfoque = d?.enfoque ?? d?.focus ?? d?.objetivo ?? d?.titulo ?? d?.title ?? "";
+            const ejercicios = Array.isArray(d?.ejercicios)
+                ? d.ejercicios.map(normalizeExDet).filter(Boolean)
+                : [];
+            return { dia, enfoque, ejercicios };
+        });
+    }
+
+    const weekdayKeys = Object.keys(root || {}).filter((k) => diasOrden.includes(String(k).toLowerCase()));
+    if (weekdayKeys.length > 0) {
+        const orderedKeys = [...weekdayKeys].sort((a, b) => {
+            const ia = diasOrden.indexOf(String(a).toLowerCase());
+            const ib = diasOrden.indexOf(String(b).toLowerCase());
+            return (ia === -1 ? 999 : ia) - (ib === -1 ? 999 : ib);
+        });
+        return orderedKeys.map((k) => {
+            const ejercicios = Array.isArray(root[k]) ? root[k].map(normalizeExDet).filter(Boolean) : [];
+            return { dia: k, enfoque: "", ejercicios };
+        });
+    }
+
+    return null;
+}
+
+function initDetallePorDiaPlan() {
+    const contenedor = document.getElementById("Plan_ejercicio");
+    if (!contenedor) return;
+    if (contenedor.dataset.detalleDiaInit === "1") return;
+    contenedor.dataset.detalleDiaInit = "1";
+
+    const openDetalle = async (headerEl) => {
+        const idx = Number(headerEl?.getAttribute?.("data-day-idx"));
+        if (!Number.isFinite(idx)) return;
+
+        const planRaw = localStorage.getItem("plan_entreno_usuario");
+        const dias = parsePlanDiasDetallados(planRaw);
+        if (!Array.isArray(dias) || !dias[idx]) return;
+
+        const diaInfo = dias[idx];
+        const ejercicios = Array.isArray(diaInfo.ejercicios) ? diaInfo.ejercicios : [];
+
+        const cards = ejercicios.length
+            ? ejercicios.map((ex) => {
+                const nombre = escapeHtml(ex.nombre);
+                const descripcion = escapeHtml(ex.descripcion || "");
+                const series = escapeHtml(ex.series);
+                const reps = escapeHtml(ex.repeticiones);
+                const descanso = escapeHtml(ex.descanso_segundos);
+                return `
+                    <article class="plan-card">
+                        <h3 class="plan-nombre">${nombre}</h3>
+                        ${descripcion ? `<p class="plan-desc">${descripcion}</p>` : ""}
+                        <div class="plan-meta">
+                            <span class="plan-chip">Series: <strong>${series}</strong></span>
+                            <span class="plan-chip">Reps: <strong>${reps}</strong></span>
+                            <span class="plan-chip">Descanso: <strong>${descanso}</strong></span>
+                        </div>
+                    </article>
+                `;
+            }).join("")
+            : `<div class="plan-vacio">No hay ejercicios cargados para este día.</div>`;
+
+        const html = `
+            <div style="max-height: 62vh; overflow: auto; padding-right: 2px;">
+                <div class="plan-container">
+                    <section class="plan-dia">
+                        <div class="plan-dia-header" style="cursor: default;" aria-hidden="true">
+                            <div class="plan-dia-titulos">
+                                <h2 class="plan-dia-titulo">${escapeHtml(diaInfo.dia)}</h2>
+                                ${diaInfo.enfoque ? `<div class="plan-dia-subtitle">${escapeHtml(diaInfo.enfoque)}</div>` : ""}
+                            </div>
+                            <span class="plan-dia-chip">${escapeHtml(ejercicios.length)} ejercicios</span>
+                        </div>
+                        <div class="plan-grid">${cards}</div>
+                    </section>
+                </div>
+            </div>
+        `;
+
+        await sweetalert.fire({
+            title: `Detalle: ${String(diaInfo.dia ?? "Día")}`,
+            html,
+            showCancelButton: false,
+            confirmButtonText: "Cerrar",
+            customClass: {
+                popup: "dashboard-swal",
+                confirmButton: "dashboard-swal-confirm",
+            },
+        });
+    };
+
+    contenedor.addEventListener("click", async (ev) => {
+        const target = ev.target;
+        if (!(target instanceof HTMLElement)) return;
+        const headerEl = target.closest(".plan-dia-header");
+        if (!(headerEl instanceof HTMLElement)) return;
+        await openDetalle(headerEl);
+    });
+
+    contenedor.addEventListener("keydown", async (ev) => {
+        const target = ev.target;
+        if (!(target instanceof HTMLElement)) return;
+        if (ev.key !== "Enter" && ev.key !== " ") return;
+        const headerEl = target.closest(".plan-dia-header");
+        if (!(headerEl instanceof HTMLElement)) return;
+        ev.preventDefault();
+        await openDetalle(headerEl);
+    });
 }
 document.getElementById("boton_eliminar")?.addEventListener("click", async () => {
     const confirmResult = await sweetalert.fire({
