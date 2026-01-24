@@ -10,8 +10,8 @@ export async function logout() {
         localStorage.removeItem("supabase.auth.token");
         localStorage.clear();
         sessionStorage.clear();
-        //window.location.href = "https://aipersonaltr.netlify.app"; ESTO PARA PRODUCCION
-        window.location.href = "http://localhost:8888";
+        window.location.href = "https://aipersonaltr.netlify.app";
+        //window.location.href = "http://localhost:8888";
     }
 }
 document.getElementById("logout_button").addEventListener("click", async () => {
