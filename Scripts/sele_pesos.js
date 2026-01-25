@@ -1,5 +1,5 @@
 import Swal from "https://esm.sh/sweetalert2@11";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { createClient } from '@supabase/supabase-js';
 const supabaseUrl = "https://lhecmoeilmhzgxpcetto.supabase.co";
 const supabaseKey = "sb_publishable_oLC8LcDLa3jR72Hpd_jJsA_eXjMlP3-";
 const supabase = createClient(supabaseUrl, supabaseKey, {auth: {persistSession: true,autoRefreshToken: false, storage: localStorage}});
