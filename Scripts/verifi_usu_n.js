@@ -41,13 +41,9 @@ window.onload = () =>{
                     alert("Error al obtener el plan de entrenamiento del usuario: " + error.message);
                     return;
                 }
-                if (!plane_entreno && !plane_alimenta) {
-                    localStorage.setItem("plan_entreno_usuario", "Ninguno");
-                    localStorage.setItem("plan_dieta_usuario", "Ninguno");
-                } else {
-                    localStorage.setItem("plan_entreno_usuario", plane_entreno);
-                    localStorage.setItem("plan_dieta_usuario", plane_alimenta);
-                }
+                localStorage.setItem("plan_entreno_usuario", plane_entreno);
+                localStorage.setItem("plan_dieta_usuario", plane_alimenta);
+                
                 window.location.href = "/Templates/Inicio/Dashboard.html";
                 return
             }
