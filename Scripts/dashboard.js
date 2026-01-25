@@ -586,8 +586,8 @@ async function recuperar_planes() {
         }
         const plan_entreno = datos2.Plan_entreno;
         const plan_alimenta = datos2.Plan_alimenta;
-        localStorage.setItem("plan_entreno_usuario", plan_entreno ?? "Ninguno");
-        localStorage.setItem("plan_dieta_usuario",  plan_alimenta ?? "Ninguno");
+        localStorage.setItem("plan_entreno_usuario", plan_entreno);
+        localStorage.setItem("plan_dieta_usuario",  plan_alimenta);
     }
 }
 
