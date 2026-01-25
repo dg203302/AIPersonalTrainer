@@ -572,7 +572,7 @@ async function recuperar_planes() {
     const {user} = await supabase.auth.getUser().then(({data: {user}}) => user);
     if (user){
         const {datos2, error2 } = await supabase
-        .from("Planes").select("Plan_entreno, Plan_alimenta").eq("ID_user", user.id).limit(1);
+        .from("Planes").select("Plan_entreno, Plan_alimenta").eq("ID_user", user.id).single();
         if (error2) {
             swal.fire({
                 title: "Error",

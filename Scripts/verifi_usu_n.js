@@ -34,7 +34,7 @@ window.onload = () =>{
                     .from("Planes")
                     .select("Plan_entreno, Plan_alimenta")
                     .eq("ID_user", user.id)
-                    .limit(1);
+                    .single();
                 const plane_entreno = data.Plan_entreno;
                 const plane_alimenta = data.Plan_alimenta;
                 if (error) {
@@ -43,7 +43,7 @@ window.onload = () =>{
                 }
                 localStorage.setItem("plan_entreno_usuario", plane_entreno);
                 localStorage.setItem("plan_dieta_usuario", plane_alimenta);
-                
+
                 window.location.href = "/Templates/Inicio/Dashboard.html";
                 return
             }
