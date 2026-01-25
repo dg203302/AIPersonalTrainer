@@ -35,15 +35,22 @@ window.onload = () =>{
                     .select("Plan_entreno, Plan_alimenta")
                     .eq("ID_user", user.id)
                     .single();
-                const plane_entreno = data?.Plan_entreno ?? "Ninguno";
-                const plane_alimenta = data?.Plan_alimenta ?? "Proximamente";
+                if (data){
+                    const plane_entreno = data?.Plan_entreno ?? "Ninguno";
+                    const plane_alimenta = data?.Plan_alimenta ?? "Proximamente";
+                    localStorage.setItem("plan_entreno_usuario", plane_entreno );
+                    localStorage.setItem("plan_dieta_usuario", plane_alimenta);
+                }
+                else{
+                    localStorage.setItem("plan_entreno_usuario", "Ninguno" );
+                    localStorage.setItem("plan_dieta_usuario", "Proximamente");
+                    window.location.href = "/Templates/Inicio/Dashboard.html";
+                    return
+                }
                 if (error) {
                     alert("Error al obtener el plan de entrenamiento del usuario: " + error.message);
                     return;
                 }
-                localStorage.setItem("plan_entreno_usuario", plane_entreno );
-                localStorage.setItem("plan_dieta_usuario", plane_alimenta);
-
                 window.location.href = "/Templates/Inicio/Dashboard.html";
                 return
             }
