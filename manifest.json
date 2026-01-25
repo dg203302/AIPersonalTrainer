@@ -9,24 +9,30 @@
 "theme_color": "#9DF3FF",
 "background_color": "#9DF3FF",
 "orientation": "any",
-"icons": [
+  "icons": [
     {
-        "src": "Icons/apple-icon-180.png",
-        "sizes": "180x180",
-        "type": "image/png",
-        "purpose": "any"
+      "src": "Icons/manifest-icon-192.maskable.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
     },
     {
-        "src": "Icons/manifest-icon-192.maskable.png",
-        "sizes": "192x192",
-        "type": "image/png",
-        "purpose": "maskable"
+      "src": "Icons/manifest-icon-192.maskable.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
     },
     {
-        "src": "Icons/manifest-icon-512.maskable.png",
-        "sizes": "512x512",
-        "type": "image/png",
-        "purpose": "maskable"
+      "src": "Icons/manifest-icon-512.maskable.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "Icons/manifest-icon-512.maskable.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
     }
-]
+  ]
 }
