@@ -1,5 +1,5 @@
 import { GoogleGenAI } from "https://esm.sh/@google/genai@1.38.0";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { createClient } from '@supabase/supabase-js';
 
 
 const supabaseUrl = "https://lhecmoeilmhzgxpcetto.supabase.co";
