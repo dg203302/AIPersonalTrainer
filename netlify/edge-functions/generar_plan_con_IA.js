@@ -204,7 +204,20 @@ export default async function handler(request, _context){
         });
     }
     
-	const { id_usuario, lugar, objetivo, dias, dias_semana, Altura, Peso_actual, Peso_objetivo, Edad, ejercicios_seleccionados } = payload;
+    const {
+        id_usuario,
+        lugar,
+        objetivo,
+        intensidad,
+        ejercicios_por_dia,
+        dias,
+        dias_semana,
+        Altura,
+        Peso_actual,
+        Peso_objetivo,
+        Edad,
+        ejercicios_seleccionados,
+    } = payload;
     if (!id_usuario) {
         return new Response(JSON.stringify({ error: "Missing id_usuario" }), {
             status: 400,
@@ -216,6 +229,23 @@ export default async function handler(request, _context){
         .normalize("NFD")
         .replace(/[\u0300-\u036f]/g, "")
         .trim();
+
+    const normalizeIntensidad = (value) => {
+        const v = stripAccents(value).toLowerCase();
+        if (v.includes("baj")) return "baja";
+        if (v.includes("alt")) return "alta";
+        if (v.includes("med")) return "media";
+        return "media";
+    };
+
+    const intensidadNorm = normalizeIntensidad(intensidad);
+
+    const clamp = (n, min, max) => Math.max(min, Math.min(max, n));
+    const ejerciciosPorDiaFromPayload = Number(ejercicios_por_dia);
+    const ejerciciosPorDiaFromInt = ({ baja: 4, media: 6, alta: 8 })[intensidadNorm] ?? 6;
+    const ejerciciosPorDiaObjetivo = Number.isFinite(ejerciciosPorDiaFromPayload)
+        ? clamp(Math.round(ejerciciosPorDiaFromPayload), 1, 12)
+        : ejerciciosPorDiaFromInt;
 
     const ALL_DIAS = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"];
     const DIA_BY_CODE = {
@@ -278,6 +308,11 @@ export default async function handler(request, _context){
         const root = planObj.plan_entrenamiento_hipertrofia;
         if (!root || typeof root !== "object") return planObj;
 
+        // Persistir en el JSON final la configuración usada
+        root.usuario = (root.usuario && typeof root.usuario === "object") ? root.usuario : {};
+        root.usuario.intensidad = intensidadNorm;
+        root.usuario.ejercicios_por_dia = ejerciciosPorDiaObjetivo;
+
         const semanalRaw = root.configuracion_semanal;
         const semanalArr = Array.isArray(semanalRaw) ? semanalRaw : [];
 
@@ -316,6 +351,28 @@ export default async function handler(request, _context){
             };
         };
 
+        const allExercises = Object.values(EJERCICIOS_INDICE).flat();
+        const pickFallbackPool = () => {
+            const entornoKey = normalizeKey(lugar);
+            if (entornoKey.includes("casa")) {
+                // Heurística simple: evitar máquinas/poleas/barra cuando dice "casa"
+                return allExercises.filter((name) => {
+                    const k = normalizeKey(name);
+                    return !k.includes("polea") && !k.includes("maquina") && !k.includes("prensa") && !k.includes("barra") && !k.includes("predicador");
+                });
+            }
+            return allExercises;
+        };
+        const fallbackPool = pickFallbackPool();
+
+        const makeFallbackExercise = (nombre) => ({
+            nombre,
+            descripcion: "Movimiento controlado, técnica correcta, rango completo. Ajustá carga según tu nivel.",
+            series: 4,
+            repeticiones: "10-12",
+            descanso_segundos: 90,
+        });
+
         const semanalFixed = ALL_DIAS.map((diaCanonical) => {
             const key = canonicalDayKey(diaCanonical);
             const isSelected = selectedKeys.has(key);
@@ -336,7 +393,22 @@ export default async function handler(request, _context){
 
             const enfoque = (typeof base.enfoque === "string" && base.enfoque.trim()) ? base.enfoque.trim() : "Entrenamiento";
             const ejerciciosRaw = Array.isArray(base.ejercicios) ? base.ejercicios : [];
-            const ejerciciosNorm = ejerciciosRaw.map(normalizeExercise).filter(Boolean);
+            let ejerciciosNorm = ejerciciosRaw.map(normalizeExercise).filter(Boolean);
+
+            // Enforce intensidad (cantidad de ejercicios por día)
+            if (ejerciciosNorm.length > ejerciciosPorDiaObjetivo) {
+                ejerciciosNorm = ejerciciosNorm.slice(0, ejerciciosPorDiaObjetivo);
+            }
+            if (ejerciciosNorm.length < ejerciciosPorDiaObjetivo) {
+                const existing = new Set(ejerciciosNorm.map((e) => normalizeKey(e.nombre)));
+                for (const name of fallbackPool) {
+                    const key = normalizeKey(name);
+                    if (existing.has(key)) continue;
+                    ejerciciosNorm.push(makeFallbackExercise(name));
+                    existing.add(key);
+                    if (ejerciciosNorm.length >= ejerciciosPorDiaObjetivo) break;
+                }
+            }
 
             return {
                 dia: diaCanonical,
@@ -364,7 +436,9 @@ Usa SIEMPRE este formato EXACTO (mismas claves y tipos):
             "estatura_cm": ${Number(Altura) || 0},
             "peso_objetivo_kg": ${Number(Peso_objetivo) || 0},
             "entorno": "${String(lugar ?? "").toLowerCase() === "gimnasio" ? "Gimnasio" : "Casa"}",
-            "objetivo": "${String(objetivo ?? "").toLowerCase() === "grasa" ? "grasa" : "musculo"}"
+            "objetivo": "${String(objetivo ?? "").toLowerCase() === "grasa" ? "grasa" : "musculo"}",
+            "intensidad": "${intensidadNorm}",
+            "ejercicios_por_dia": ${ejerciciosPorDiaObjetivo}
         },
         "configuracion_semanal": [
             {"dia":"Lunes","enfoque":"<string>","ejercicios":[{"nombre":"<string>","descripcion":"<string>","series":4,"repeticiones":"10-12","descanso_segundos":90}]},
@@ -387,6 +461,11 @@ Reglas extra:
 - repeticiones SIEMPRE string (ej: "10-12" o "45-60 segundos").
 - descripcion SIEMPRE string con instrucciones claras y breves.
 - configuracion_semanal debe tener exactamente 7 dias (Lunes a Domingo).
+
+Regla de intensidad (OBLIGATORIA):
+- intensidad seleccionada: ${intensidadNorm}
+- Para CADA dia seleccionado (no descanso) devuelve EXACTAMENTE ${ejerciciosPorDiaObjetivo} ejercicios.
+- Para dias NO seleccionados: ejercicios []
 
 Regla de dias seleccionados:
 - Si el dia NO esta en la lista de dias seleccionados, entonces ese dia debe ser descanso: enfoque "Descanso" o "Descanso Total" y ejercicios [].

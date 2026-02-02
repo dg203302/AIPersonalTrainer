@@ -165,9 +165,27 @@ const renderDiasSelector = () => {
     `;
 };
 
+const renderSelectorIntensidad = () => {
+    return `
+        <section class="swal-section" aria-label="Intensidad de entrenamiento">
+            <h3>Intensidad</h3>
+            <div class="swal-grid">
+                <div class="swal-field">
+                    <p class="swal-label">Elige la intensidad</p>
+                    <label class="swal-radio"><input type="radio" name="intensidad" value="baja"> Intensidad baja</label>
+                    <label class="swal-radio"><input type="radio" name="intensidad" value="media"> Intensidad media</label>
+                    <label class="swal-radio"><input type="radio" name="intensidad" value="alta"> Intensidad alta</label>
+                    <p class="swal-helper">La intensidad afecta la cantidad de ejercicios por día (baja: 4, media: 6, alta: 8).</p>
+                </div>
+            </div>
+        </section>
+    `;
+}
+
 const openGenerarPlanModal = async (planPrevioRaw = null) => {
     const baseLugar = localStorage.getItem("plan_lugar") || "casa";
     const baseObjetivo = localStorage.getItem("plan_objetivo") || "musculo";
+    const baseIntensidad = localStorage.getItem("plan_intensidad") || "media";
     const baseDias =
         normalizeDiasSeleccionados(localStorage.getItem("plan_dias")) ||
         ["L", "M", "X", "J", "V"]; // default: lunes a viernes
@@ -238,6 +256,15 @@ const openGenerarPlanModal = async (planPrevioRaw = null) => {
         return found?.code ?? null;
     };
 
+    const mapIntensidadToCode = (value) => {
+        const v = stripAccents(value).trim().toLowerCase();
+        if (!v) return null;
+        if (v.includes("baj")) return "baja";
+        if (v.includes("alt")) return "alta";
+        if (v.includes("med")) return "media";
+        return null;
+    };
+
     const buildPrefillFromPlanPrevio = (raw) => {
         if (!raw) return null;
         const parsed = tryParseJson(extractLikelyJson(raw)) ?? tryParseJson(raw);
@@ -252,6 +279,12 @@ const openGenerarPlanModal = async (planPrevioRaw = null) => {
         const usuario = (root && typeof root === "object") ? (root.usuario ?? root.user ?? null) : null;
         const entorno = usuario?.entorno;
         const objetivo = usuario?.objetivo;
+        const intensidadCode = mapIntensidadToCode(usuario?.intensidad);
+
+        const ejerciciosPorDia = Number(usuario?.ejercicios_por_dia);
+        const intensidadFromN = Number.isFinite(ejerciciosPorDia)
+            ? (ejerciciosPorDia <= 4 ? "baja" : (ejerciciosPorDia <= 6 ? "media" : "alta"))
+            : null;
 
         const lugar = mapEntornoToLugar(entorno);
         const objetivoCode = mapObjetivoToCode(objetivo);
@@ -279,6 +312,7 @@ const openGenerarPlanModal = async (planPrevioRaw = null) => {
         return {
             lugar: lugar || null,
             objetivo: objetivoCode || null,
+            intensidad: intensidadCode || intensidadFromN || null,
             dias,
             ejercicios,
         };
@@ -290,6 +324,7 @@ const openGenerarPlanModal = async (planPrevioRaw = null) => {
     const lastDias = prefillPlan?.dias || baseDias;
     const lastEjSeleccionados = Array.isArray(prefillPlan?.ejercicios) ? prefillPlan.ejercicios : baseEjSeleccionados;
     const lastEjEnabled = Array.isArray(prefillPlan?.ejercicios) ? true : baseEjEnabled;
+    const lastIntensidad = prefillPlan?.intensidad || baseIntensidad;
 
     const result = await sweetalert.fire({
         title: "Generar Plan de Entrenamiento con IA",
@@ -314,6 +349,8 @@ const openGenerarPlanModal = async (planPrevioRaw = null) => {
                         </div>
                     </div>
                 </section>
+                
+                ${renderSelectorIntensidad()}
 
                 <section class="swal-section" aria-label="Días de entrenamiento">
                     <h3>Días de la semana</h3>
@@ -345,6 +382,7 @@ const openGenerarPlanModal = async (planPrevioRaw = null) => {
             const popup = (typeof sweetalert.getPopup === "function" && sweetalert.getPopup()) || document.querySelector(".swal2-popup");
             popup?.querySelector(`input[name="lugar"][value="${lastLugar}"]`)?.click();
             popup?.querySelector(`input[name="objetivo"][value="${lastObjetivo}"]`)?.click();
+            popup?.querySelector(`input[name="intensidad"][value="${lastIntensidad}"]`)?.click();
 
             const diasSet = new Set(lastDias);
             popup?.querySelectorAll(".swal-dia-btn")?.forEach((btn) => {
@@ -397,6 +435,7 @@ const openGenerarPlanModal = async (planPrevioRaw = null) => {
             const lugar = popup?.querySelector('input[name="lugar"]:checked')?.value;
             const objetivo = popup?.querySelector('input[name="objetivo"]:checked')?.value;
             const dias = Array.from(popup?.querySelectorAll('.swal-dia-btn[aria-pressed="true"]') ?? []).map((b) => String(b.getAttribute("data-dia") ?? "").toUpperCase());
+            const intensidad = popup?.querySelector('input[name="intensidad"]:checked')?.value || null;
             const ejEnabled = !!(popup?.querySelector("#swal_ej_toggle") instanceof HTMLInputElement)
                 ? popup.querySelector("#swal_ej_toggle").checked
                 : false;
@@ -421,15 +460,15 @@ const openGenerarPlanModal = async (planPrevioRaw = null) => {
                 return false;
             }
 
-            return { lugar, objetivo, dias, ejEnabled, ejercicios };
+            return { lugar, objetivo, dias, ejEnabled, ejercicios, intensidad };
         },
     });
 
     if (!result.isConfirmed) return;
-    const { lugar, objetivo, dias, ejEnabled, ejercicios } = result.value;
+    const { lugar, objetivo, dias, ejEnabled, ejercicios, intensidad } = result.value;
 
 
-    await crearPlanEntreno(lugar, objetivo, dias, ejercicios);
+    await crearPlanEntreno(lugar, objetivo, dias, ejercicios, intensidad);
 };
 window.onload = async () => {
     sweetalert.fire({
@@ -495,16 +534,20 @@ function verificacion_plan_entrenamiento() {
         }
     }
 }
-async function crearPlanEntreno(lugar, objetivo, diasSeleccionados, ejerciciosSeleccionados){
+async function crearPlanEntreno(lugar, objetivo, diasSeleccionados, ejerciciosSeleccionados, intensidad = 'media'){
 
     const diasCodes = Array.isArray(diasSeleccionados) ? diasSeleccionados : [];
     const diasSem = diasCodes
         .map((code) => DIAS_SEMANA.find((d) => d.code === String(code ?? "").toUpperCase())?.name)
         .filter(Boolean);
+    const ejerciciosPorDiaMap = { baja: 4, media: 6, alta: 8 };
+    const ejerciciosPorDia = ejerciciosPorDiaMap[intensidad] ?? ejerciciosPorDiaMap.media;
+    // persist user choice for next time
+    try { localStorage.setItem("plan_intensidad", intensidad); } catch (e) {}
 
     sweetalert.fire({
         title: "Plan en Generación",
-        text: `Lugar de entreno: ${lugar ?? "-"} | Objetivo de entreno: ${objetivo ?? "-"} | Días: ${(diasCodes || []).join(", ") || "-"}. Próximamente se generará el plan automáticamente.`,
+        text: `Lugar: ${lugar ?? "-"} | Objetivo: ${objetivo ?? "-"} | Intensidad: ${intensidad ?? "media"} | Días: ${(diasCodes || []).join(", ") || "-"}. Generando plan...`,
         icon: "info",
         toast: true,
         position: "top-end",
@@ -519,6 +562,8 @@ async function crearPlanEntreno(lugar, objetivo, diasSeleccionados, ejerciciosSe
             id_usuario: localStorage.getItem("id_usuario"),
             lugar: lugar,
             objetivo: objetivo,
+            intensidad: intensidad,
+            ejercicios_por_dia: ejerciciosPorDia,
             dias: diasCodes,
             dias_semana: diasSem,
             ejercicios_seleccionados: Array.isArray(ejerciciosSeleccionados) ? ejerciciosSeleccionados : null,
@@ -1019,9 +1064,78 @@ async function actualizar_cambios_plan_entreno(){
 async function Regen_plan(){
     const plan_entreno_actual = localStorage.getItem("plan_entreno_usuario");
 
+    const detectIntensidadFromPlan = (raw) => {
+        if (raw == null) return null;
+        const asString = typeof raw === "string" ? raw.trim() : JSON.stringify(raw);
+        if (!asString || asString === "Ninguno") return null;
+
+        const extractLikelyJson = (text) => {
+            const s = String(text ?? "");
+            const unfenced = s
+                .replace(/^```(?:json)?\s*/i, "")
+                .replace(/\s*```\s*$/i, "")
+                .trim();
+
+            const firstObj = unfenced.indexOf("{");
+            const firstArr = unfenced.indexOf("[");
+            if (firstObj === -1 && firstArr === -1) return unfenced;
+            const start = firstArr === -1 ? firstObj : (firstObj === -1 ? firstArr : Math.min(firstObj, firstArr));
+            const lastObj = unfenced.lastIndexOf("}");
+            const lastArr = unfenced.lastIndexOf("]");
+            const end = Math.max(lastObj, lastArr);
+            if (end <= start) return unfenced;
+            return unfenced.slice(start, end + 1);
+        };
+
+        const safeJsonParse = (text) => {
+            try {
+                return JSON.parse(text);
+            } catch {
+                return null;
+            }
+        };
+
+        const stripAccents = (text) => String(text ?? "")
+            .normalize("NFD")
+            .replace(/[\u0300-\u036f]/g, "");
+
+        const mapIntensidad = (value) => {
+            const v = stripAccents(value).trim().toLowerCase();
+            if (!v) return null;
+            if (v.includes("baj")) return "baja";
+            if (v.includes("alt")) return "alta";
+            if (v.includes("med")) return "media";
+            return null;
+        };
+
+        const parsed = safeJsonParse(extractLikelyJson(asString)) ?? safeJsonParse(asString);
+        if (!parsed || typeof parsed !== "object") return null;
+
+        const root = parsed?.plan_entrenamiento_hipertrofia ?? parsed?.plan_entrenamiento ?? parsed?.plan ?? parsed;
+        const usuario = (root && typeof root === "object") ? (root.usuario ?? root.user ?? null) : null;
+        const fromText = mapIntensidad(usuario?.intensidad);
+        if (fromText) return fromText;
+
+        const n = Number(usuario?.ejercicios_por_dia);
+        if (Number.isFinite(n)) {
+            if (n <= 4) return "baja";
+            if (n <= 6) return "media";
+            return "alta";
+        }
+        return null;
+    };
+
+    const intensidadDetectada =
+        detectIntensidadFromPlan(plan_entreno_actual) ||
+        localStorage.getItem("plan_intensidad") ||
+        "media";
+
+    const ejerciciosPorDiaMap = { baja: 4, media: 6, alta: 8 };
+    const ejerciciosPorDiaDetectados = ejerciciosPorDiaMap[intensidadDetectada] ?? 6;
+
     const result = await swal.fire({
         title: "Regenerando plan de entrenamiento",
-        text: "Se eliminará el plan actual y se generará uno nuevo basado en la configuración previa.",
+        text: `Se eliminará el plan actual y se generará uno nuevo basado en la configuración previa. Intensidad detectada: ${intensidadDetectada} (${ejerciciosPorDiaDetectados} ejercicios por día).`,
         icon: "info",
 
         showCancelButton: true,
