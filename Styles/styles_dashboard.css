@@ -21,6 +21,10 @@
 	--footer-fixed: 0px;
 }
 
+button, a, label, input{
+	-webkit-tap-highlight-color: transparent;
+}
+
 *, *::before, *::after{ box-sizing: border-box; }
 html{ scroll-behavior: smooth; text-size-adjust: 100%; }
 
@@ -889,7 +893,7 @@ footer > *{ position: relative; z-index: 1; }
 .dashboard-swal .swal-toggle{
 	display: flex;
 	align-items: center;
-	gap: 10px;
+	gap: 0;
 	margin: 0 0 10px;
 	padding: 10px 12px;
 	border-radius: 14px;
@@ -897,9 +901,59 @@ footer > *{ position: relative; z-index: 1; }
 	background: color-mix(in srgb, #fff 6%, transparent);
 	color: var(--muted);
 	user-select: none;
+	position: relative;
 }
 
-.dashboard-swal .swal-toggle input{ accent-color: color-mix(in srgb, var(--accent) 75%, #fff); }
+/* Ocultar checkbox nativo (mantener accesible) */
+.dashboard-swal .swal-toggle input{
+	position: absolute;
+	opacity: 0;
+	width: 1px;
+	height: 1px;
+	pointer-events: none;
+}
+
+.dashboard-swal .swal-toggle span{
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 12px;
+	width: 100%;
+	color: var(--text);
+}
+
+.dashboard-swal .swal-toggle span::after{
+	content: "OFF";
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	min-width: 44px;
+	height: 26px;
+	padding: 0 10px;
+	border-radius: 999px;
+	border: 1px solid color-mix(in srgb, #fff 14%, transparent);
+	background: color-mix(in srgb, #000 16%, transparent);
+	color: var(--muted);
+	font-weight: 700;
+	letter-spacing: .6px;
+	font-size: 11px;
+}
+
+.dashboard-swal .swal-toggle input:checked + span::after{
+	content: "ON";
+	border-color: color-mix(in srgb, var(--accent) 55%, transparent);
+	background: linear-gradient(135deg,
+		color-mix(in srgb, var(--accent) 24%, transparent),
+		color-mix(in srgb, var(--accent2) 16%, transparent));
+	color: var(--text);
+}
+
+@supports(selector(:has(*))){
+	.dashboard-swal .swal-toggle:has(input:checked){
+		border-color: color-mix(in srgb, var(--accent) 50%, transparent);
+		background: color-mix(in srgb, #fff 8%, transparent);
+	}
+}
 
 .dashboard-swal.is-ej-disabled .swal-ejercicios{
 	opacity: .55;
@@ -915,20 +969,57 @@ footer > *{ position: relative; z-index: 1; }
 .dashboard-swal .swal-check{
 	display: flex;
 	align-items: flex-start;
-	gap: 10px;
+	gap: 0;
 	padding: 10px 12px;
 	border-radius: 12px;
 	border: 1px solid color-mix(in srgb, #fff 10%, transparent);
 	background: color-mix(in srgb, #fff 5%, transparent);
 	color: var(--muted);
+	position: relative;
 }
 
+/* Ocultar checkbox nativo (mantener accesible) */
 .dashboard-swal .swal-check input{
-	margin-top: 2px;
-	accent-color: color-mix(in srgb, var(--accent) 75%, #fff);
+	position: absolute;
+	opacity: 0;
+	width: 1px;
+	height: 1px;
+	pointer-events: none;
 }
 
-.dashboard-swal .swal-check span{ color: var(--text); }
+.dashboard-swal .swal-check span{
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 12px;
+	width: 100%;
+	color: var(--text);
+}
+
+.dashboard-swal .swal-check input:checked + span{
+	font-weight: 650;
+}
+
+.dashboard-swal .swal-check input:checked + span::after{
+	content: "✓";
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 26px;
+	height: 26px;
+	border-radius: 999px;
+	border: 1px solid color-mix(in srgb, var(--accent) 55%, transparent);
+	background: color-mix(in srgb, var(--accent) 14%, transparent);
+	color: color-mix(in srgb, var(--accent) 85%, #fff);
+	font-weight: 900;
+}
+
+@supports(selector(:has(*))){
+	.dashboard-swal .swal-check:has(input:checked){
+		border-color: color-mix(in srgb, var(--accent) 45%, transparent);
+		background: color-mix(in srgb, #fff 7%, transparent);
+	}
+}
 
 .dashboard-swal .swal-details{
 	border-radius: 14px;
