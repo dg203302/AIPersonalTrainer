@@ -560,26 +560,48 @@ async function crearPlanEntreno(lugar, objetivo, diasSeleccionados, ejerciciosSe
         }
     });
 
-    const response = await fetch('/generar_plan_entreno', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-            id_usuario: localStorage.getItem("id_usuario"),
-            lugar: lugar,
-            objetivo: objetivo,
-            intensidad: intensidad,
-            ejercicios_por_dia: ejerciciosPorDia,
-            dias: diasCodes,
-            dias_semana: diasSem,
-            ejercicios_seleccionados: Array.isArray(ejerciciosSeleccionados) ? ejerciciosSeleccionados : null,
-            Altura: localStorage.getItem("altura_usuario"),
-            Peso_actual: localStorage.getItem("peso_actual_usuario"),
-            Peso_objetivo: localStorage.getItem("peso_objetivo_usuario"),
-            Edad: localStorage.getItem("edad_usuario"),
-        }),
-    })
+    let response;
+    try {
+        response = await fetch('/generar_plan_entreno', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                id_usuario: localStorage.getItem("id_usuario"),
+                lugar: lugar,
+                objetivo: objetivo,
+                intensidad: intensidad,
+                ejercicios_por_dia: ejerciciosPorDia,
+                dias: diasCodes,
+                dias_semana: diasSem,
+                ejercicios_seleccionados: Array.isArray(ejerciciosSeleccionados) ? ejerciciosSeleccionados : null,
+                Altura: localStorage.getItem("altura_usuario"),
+                Peso_actual: localStorage.getItem("peso_actual_usuario"),
+                Peso_objetivo: localStorage.getItem("peso_objetivo_usuario"),
+                Edad: localStorage.getItem("edad_usuario"),
+            }),
+        });
+    } catch (err) {
+        console.log("[EdgeFunction:/generar_plan_entreno] Error de red:", err);
+        sweetalert.fire({
+            title: "Error",
+            text: "No se pudo contactar al servidor para generar el plan. Revisá tu conexión e intentá de nuevo.",
+            icon: "error",
+            toast: true,
+            position: "top-end",
+            showConfirmButton: false,
+            timer: 5000,
+        });
+        return;
+    }
 
     if (!response.ok) {
+        let bodyText = "";
+        try { bodyText = await response.text(); } catch { bodyText = ""; }
+        console.log("[EdgeFunction:/generar_plan_entreno] Error:", {
+            status: response.status,
+            statusText: response.statusText,
+            body: bodyText,
+        });
         sweetalert.fire({
             title: "Error",
             text: "Error al generar el plan de entrenamiento. Por favor, intentá nuevamente más tarde.",
@@ -590,8 +612,7 @@ async function crearPlanEntreno(lugar, objetivo, diasSeleccionados, ejerciciosSe
             timer: 5000,
         });
         return;
-    }
-    else {
+    } else {
         try {
             const { data, error } = await supabase.from("Planes").select("*").eq("ID_user", localStorage.getItem("id_usuario")).limit(1);
             if (error) { throw new Error(error.message); }
@@ -1064,12 +1085,25 @@ document.getElementById("boton_eliminar")?.addEventListener("click", async () =>
     });
 });
 async function actualizar_cambios_plan_entreno() {
-    const res = await fetch('/actualizar_cambios_plan', {
-        method: 'POST',
-        body: JSON.stringify({ plan_entreno: localStorage.getItem("plan_entreno_usuario"), id_usuario: localStorage.getItem("id_usuario") }),
-    })
+    let res;
+    try {
+        res = await fetch('/actualizar_cambios_plan', {
+            method: 'POST',
+            body: JSON.stringify({ plan_entreno: localStorage.getItem("plan_entreno_usuario"), id_usuario: localStorage.getItem("id_usuario") }),
+        });
+    } catch (err) {
+        console.log("[EdgeFunction:/actualizar_cambios_plan] Error de red:", err);
+        return;
+    }
+
     if (!res.ok) {
-        console.error("Error al actualizar el plan de entrenamiento en el servidor.");
+        let bodyText = "";
+        try { bodyText = await res.text(); } catch { bodyText = ""; }
+        console.log("[EdgeFunction:/actualizar_cambios_plan] Error:", {
+            status: res.status,
+            statusText: res.statusText,
+            body: bodyText,
+        });
     }
 }
 
