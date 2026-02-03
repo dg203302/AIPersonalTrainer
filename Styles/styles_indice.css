@@ -225,8 +225,8 @@ header {
 
 	background:
 		linear-gradient(135deg,
-			color-mix(in srgb, var(--accent) 55%, transparent),
-			color-mix(in srgb, var(--accent2) 45%, transparent));
+			color-mix(in srgb, var(--accent) 85%, transparent),
+			color-mix(in srgb, var(--accent2) 80%, transparent));
 	color: color-mix(in srgb, #000 88%, var(--text));
 	font-weight: 750;
 	letter-spacing: .2px;

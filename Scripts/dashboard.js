@@ -546,13 +546,15 @@ async function crearPlanEntreno(lugar, objetivo, diasSeleccionados, ejerciciosSe
     try { localStorage.setItem("plan_intensidad", intensidad); } catch (e) { }
 
     sweetalert.fire({
-        title: "Plan en Generación",
-        text: `Lugar: ${lugar ?? "-"} | Objetivo: ${objetivo ?? "-"} | Intensidad: ${intensidad ?? "media"} | Días: ${(diasCodes || []).join(", ") || "-"}. Generando plan...`,
+        title: "Generando Plan",
+        text: `Lugar: ${lugar ?? "-"} | Objetivo: ${objetivo ?? "-"} | Intensidad: ${intensidad ?? "media"} | Días: ${(diasCodes || []).join(", ") || "-"}. Por favor, esperá...`,
         icon: "info",
-        toast: true,
-        position: "top-end",
+        allowOutsideClick: false,
+        allowEscapeKey: false,
         showConfirmButton: false,
-        timer: 5000,
+        didOpen: () => {
+            sweetalert.showLoading();
+        }
     });
 
     const response = await fetch('/generar_plan_entreno', {
@@ -594,6 +596,13 @@ async function crearPlanEntreno(lugar, objetivo, diasSeleccionados, ejerciciosSe
             localStorage.setItem("plan_dieta_usuario", data.length === 0 ? "Ninguno" : data[0].Plan_alimenta ?? "Ninguno");
             await recuperar_planes();
             verificacion_plan_entrenamiento();
+            sweetalert.fire({
+                title: "¡Plan Generado!",
+                text: "Tu rutina se ha creado correctamente.",
+                icon: "success",
+                timer: 4000,
+                showConfirmButton: false
+            });
         } catch (error) {
             sweetalert.fire({
                 title: "Error",
