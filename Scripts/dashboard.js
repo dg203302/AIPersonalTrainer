@@ -1,7 +1,7 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 const supabaseUrl = "https://lhecmoeilmhzgxpcetto.supabase.co";
 const supabaseKey = "sb_publishable_oLC8LcDLa3jR72Hpd_jJsA_eXjMlP3-";
-const supabase = createClient(supabaseUrl, supabaseKey, {auth: {persistSession: true,autoRefreshToken: false, storage: localStorage}});
+const supabase = createClient(supabaseUrl, supabaseKey, { auth: { persistSession: true, autoRefreshToken: false, storage: localStorage } });
 
 const updateFixedChromeHeights = () => {
     const header = document.querySelector("header");
@@ -496,7 +496,7 @@ function verificacion_plan_entrenamiento() {
     const plan_entrenamiento = localStorage.getItem("plan_entreno_usuario");
     const boton_ejercicios = document.getElementById("boton_ejercicios");
     const boton_eliminar_plan_eje = document.getElementById("boton_eliminar");
-    const boton_regenerar =  document.getElementById("boton_regenerar");
+    const boton_regenerar = document.getElementById("boton_regenerar");
     if (plan_entrenamiento != "Ninguno" && plan_entrenamiento != null) {
         desc.style.display = "none";
         if (boton_regenerar) {
@@ -534,7 +534,7 @@ function verificacion_plan_entrenamiento() {
         }
     }
 }
-async function crearPlanEntreno(lugar, objetivo, diasSeleccionados, ejerciciosSeleccionados, intensidad = 'media'){
+async function crearPlanEntreno(lugar, objetivo, diasSeleccionados, ejerciciosSeleccionados, intensidad = 'media') {
 
     const diasCodes = Array.isArray(diasSeleccionados) ? diasSeleccionados : [];
     const diasSem = diasCodes
@@ -543,69 +543,92 @@ async function crearPlanEntreno(lugar, objetivo, diasSeleccionados, ejerciciosSe
     const ejerciciosPorDiaMap = { baja: 4, media: 6, alta: 8 };
     const ejerciciosPorDia = ejerciciosPorDiaMap[intensidad] ?? ejerciciosPorDiaMap.media;
     // persist user choice for next time
-    try { localStorage.setItem("plan_intensidad", intensidad); } catch (e) {}
+    try { localStorage.setItem("plan_intensidad", intensidad); } catch (e) { }
 
     sweetalert.fire({
-        title: "Plan en Generación",
-        text: `Lugar: ${lugar ?? "-"} | Objetivo: ${objetivo ?? "-"} | Intensidad: ${intensidad ?? "media"} | Días: ${(diasCodes || []).join(", ") || "-"}. Generando plan...`,
-        icon: "info",
-        toast: true,
-        position: "top-end",
+        title: "Generando tu plan...",
+        html: `
+            <div style="display:flex; flex-direction:column; align-items:center; gap:15px; margin-top:10px;">
+                <div class="loader-mark">
+                    <svg class="ring" viewBox="0 0 120 120" width="80" height="80" xmlns="http://www.w3.org/2000/svg">
+                        <circle cx="60" cy="60" r="50" fill="none" stroke="currentColor" stroke-width="8" opacity="0.25"></circle>
+                        <circle cx="60" cy="60" r="50" fill="none" stroke="currentColor" stroke-width="8"></circle>
+                    </svg>
+                </div>
+                <p style="color:var(--muted); font-size:14px; text-align:center;">
+                    Analizando perfil (${lugar}, ${objetivo})...<br>
+                    Esto puede tomar unos segundos.
+                </p>
+            </div>
+        `,
+        allowOutsideClick: false,
+        allowEscapeKey: false,
         showConfirmButton: false,
-        timer: 5000,
+        customClass: {
+            popup: 'dashboard-swal'
+        }
     });
 
-    const response = await fetch('/generar_plan_entreno', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-            id_usuario: localStorage.getItem("id_usuario"),
-            lugar: lugar,
-            objetivo: objetivo,
-            intensidad: intensidad,
-            ejercicios_por_dia: ejerciciosPorDia,
-            dias: diasCodes,
-            dias_semana: diasSem,
-            ejercicios_seleccionados: Array.isArray(ejerciciosSeleccionados) ? ejerciciosSeleccionados : null,
-            Altura: localStorage.getItem("altura_usuario"),
-            Peso_actual: localStorage.getItem("peso_actual_usuario"),
-            Peso_objetivo: localStorage.getItem("peso_objetivo_usuario"),
-            Edad: localStorage.getItem("edad_usuario"),
-        }),
-    })
+    try {
+        const response = await fetch('/generar_plan_entreno', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                id_usuario: localStorage.getItem("id_usuario"),
+                lugar: lugar,
+                objetivo: objetivo,
+                intensidad: intensidad,
+                ejercicios_por_dia: ejerciciosPorDia,
+                dias: diasCodes,
+                dias_semana: diasSem,
+                ejercicios_seleccionados: Array.isArray(ejerciciosSeleccionados) ? ejerciciosSeleccionados : null,
+                Altura: localStorage.getItem("altura_usuario"),
+                Peso_actual: localStorage.getItem("peso_actual_usuario"),
+                Peso_objetivo: localStorage.getItem("peso_objetivo_usuario"),
+                Edad: localStorage.getItem("edad_usuario"),
+            }),
+        });
 
-    if (!response.ok) {
+        if (!response.ok) {
+            throw new Error("Error en la respuesta del servidor");
+        }
+
+        const { data, error } = await supabase
+            .from("Planes")
+            .select("*")
+            .eq("ID_user", localStorage.getItem("id_usuario"))
+            .limit(1);
+
+        if (error) throw new Error(error.message);
+
+        localStorage.setItem("plan_entreno_usuario", data.length === 0 ? "Ninguno" : data[0].Plan_entreno ?? "Ninguno");
+        localStorage.setItem("plan_dieta_usuario", data.length === 0 ? "Ninguno" : data[0].Plan_alimenta ?? "Ninguno");
+        await recuperar_planes();
+        verificacion_plan_entrenamiento();
+
+        // Close loading and show success
+        sweetalert.fire({
+            title: "¡Plan listo!",
+            text: "Tu plan de entrenamiento se ha generado correctamente.",
+            icon: 'success',
+            timer: 3000,
+            showConfirmButton: false,
+            customClass: {
+                popup: 'dashboard-swal'
+            }
+        });
+
+    } catch (err) {
         sweetalert.fire({
             title: "Error",
-            text: "Error al generar el plan de entrenamiento. Por favor, intentá nuevamente más tarde.",
+            text: "Hubo un problema al generar el plan. " + err.message,
             icon: "error",
-            toast: true,
-            position: "top-end",
-            showConfirmButton: false,
-            timer: 5000,
+            confirmButtonText: "Entendido",
+            customClass: {
+                popup: 'dashboard-swal',
+                confirmButton: 'dashboard-swal-confirm'
+            }
         });
-        return;
-    }
-    else {
-        try{
-            const {data,error}=await supabase.from("Planes").select("*").eq("ID_user", localStorage.getItem("id_usuario")).limit(1);
-            if (error){throw new Error(error.message);}
-            localStorage.setItem("plan_entreno_usuario", data.length === 0 ? "Ninguno" : data[0].Plan_entreno ?? "Ninguno");
-            localStorage.setItem("plan_dieta_usuario", data.length === 0 ? "Ninguno" : data[0].Plan_alimenta ?? "Ninguno");
-            await recuperar_planes();
-            verificacion_plan_entrenamiento();
-        }catch(error){
-            sweetalert.fire({
-                title: "Error",
-                text: "Error al guardar la configuración: " + error.message,
-                icon: "error",
-                toast: true,
-                position: "top-end",
-                showConfirmButton: false,
-                timer: 5000,
-            });
-            return;
-        }
     }
 }
 
@@ -614,10 +637,10 @@ function verificacion_plan_alimentacion() {
 }
 
 async function recuperar_planes() {
-    const {user} = await supabase.auth.getUser().then(({data: {user}}) => user);
-    if (user){
-        const {datos2, error2 } = await supabase
-        .from("Planes").select("Plan_entreno, Plan_alimenta").eq("ID_user", user.id).single();
+    const { user } = await supabase.auth.getUser().then(({ data: { user } }) => user);
+    if (user) {
+        const { datos2, error2 } = await supabase
+            .from("Planes").select("Plan_entreno, Plan_alimenta").eq("ID_user", user.id).single();
         if (error2) {
             swal.fire({
                 title: "Error",
@@ -632,11 +655,11 @@ async function recuperar_planes() {
         const plan_entreno = datos2.Plan_entreno;
         const plan_alimenta = datos2.Plan_alimenta;
         localStorage.setItem("plan_entreno_usuario", plan_entreno);
-        localStorage.setItem("plan_dieta_usuario",  plan_alimenta);
+        localStorage.setItem("plan_dieta_usuario", plan_alimenta);
     }
 }
 
-function mapear_plan(plan_entrenamiento_json){
+function mapear_plan(plan_entrenamiento_json) {
     const raw = plan_entrenamiento_json;
     if (raw == null) {
         return "<div class=\"plan-vacio\">No hay plan cargado.</div>";
@@ -1051,17 +1074,17 @@ document.getElementById("boton_eliminar")?.addEventListener("click", async () =>
         timer: 3000,
     });
 });
-async function actualizar_cambios_plan_entreno(){
+async function actualizar_cambios_plan_entreno() {
     const res = await fetch('/actualizar_cambios_plan', {
         method: 'POST',
-        body: JSON.stringify({ plan_entreno: localStorage.getItem("plan_entreno_usuario"), id_usuario: localStorage.getItem("id_usuario")}),
+        body: JSON.stringify({ plan_entreno: localStorage.getItem("plan_entreno_usuario"), id_usuario: localStorage.getItem("id_usuario") }),
     })
     if (!res.ok) {
         console.error("Error al actualizar el plan de entrenamiento en el servidor.");
     }
 }
 
-async function Regen_plan(){
+async function Regen_plan() {
     const plan_entreno_actual = localStorage.getItem("plan_entreno_usuario");
 
     const detectIntensidadFromPlan = (raw) => {
