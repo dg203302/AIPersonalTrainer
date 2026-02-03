@@ -243,6 +243,32 @@ button:active {
 	transform: translateY(1px);
 }
 
+/* Botón principal (CTA) */
+.btn-primary {
+	border: 0;
+	color: #071018;
+	font-weight: 800;
+	letter-spacing: .3px;
+	text-transform: none;
+	background: linear-gradient(
+		135deg,
+		color-mix(in srgb, var(--accent) 92%, #ffffff 8%),
+		color-mix(in srgb, var(--accent2) 92%, #ffffff 8%)
+	);
+	box-shadow:
+		0 18px 50px rgba(0, 0, 0, .36),
+		0 0 0 1px rgba(255, 255, 255, .14) inset;
+}
+
+.btn-primary:hover {
+	filter: saturate(1.1) brightness(1.03);
+}
+
+.btn-primary:focus-visible {
+	outline: 3px solid color-mix(in srgb, var(--accent) 70%, transparent);
+	outline-offset: 3px;
+}
+
 /* Botón destructivo */
 #boton_eliminar {
 	border-color: color-mix(in srgb, #FF4D4D 55%, transparent);
@@ -705,9 +731,21 @@ footer>* {
 
 .swal2-container .swal2-popup:not(.swal2-toast) .swal2-styled.swal2-confirm {
 	border: 0 !important;
-	color: color-mix(in srgb, #000 88%, var(--text)) !important;
-	background:
-		linear-gradient(135deg, color-mix(in srgb, var(--accent) 55%, transparent), color-mix(in srgb, var(--accent2) 45%, transparent)) !important;
+	color: #071018 !important;
+	font-weight: 800 !important;
+	letter-spacing: .3px !important;
+	background: linear-gradient(
+		135deg,
+		color-mix(in srgb, var(--accent) 92%, #ffffff 8%),
+		color-mix(in srgb, var(--accent2) 92%, #ffffff 8%)
+	) !important;
+	box-shadow:
+		0 18px 50px rgba(0, 0, 0, .36),
+		0 0 0 1px rgba(255, 255, 255, .14) inset !important;
+}
+
+.swal2-container .swal2-popup:not(.swal2-toast) .swal2-styled.swal2-confirm:hover {
+	filter: saturate(1.1) brightness(1.03);
 }
 
 .swal2-container .swal2-popup:not(.swal2-toast) .swal2-styled:focus-visible {
@@ -842,9 +880,21 @@ footer>* {
 
 .dashboard-swal-confirm {
 	border: 0 !important;
-	color: color-mix(in srgb, #000 88%, var(--text)) !important;
-	background:
-		linear-gradient(135deg, color-mix(in srgb, var(--accent) 55%, transparent), color-mix(in srgb, var(--accent2) 45%, transparent)) !important;
+	color: #071018 !important;
+	font-weight: 800 !important;
+	letter-spacing: .3px !important;
+	background: linear-gradient(
+		135deg,
+		color-mix(in srgb, var(--accent) 92%, #ffffff 8%),
+		color-mix(in srgb, var(--accent2) 92%, #ffffff 8%)
+	) !important;
+	box-shadow:
+		0 18px 50px rgba(0, 0, 0, .36),
+		0 0 0 1px rgba(255, 255, 255, .14) inset !important;
+}
+
+.dashboard-swal-confirm:hover {
+	filter: saturate(1.1) brightness(1.03);
 }
 
 .dashboard-swal-cancel {
@@ -887,19 +937,74 @@ footer>* {
 }
 
 .dashboard-swal .swal-radio {
+	position: relative;
 	display: flex;
 	align-items: center;
-	gap: 10px;
-	padding: 10px 12px;
+	gap: 0;
+	padding: 12px 14px;
 	border-radius: 14px;
 	border: 1px solid color-mix(in srgb, #fff 12%, transparent);
 	background: color-mix(in srgb, #fff 6%, transparent);
 	color: var(--muted);
 	user-select: none;
+	cursor: pointer;
+	transition: background .15s ease, border-color .15s ease, color .15s ease, box-shadow .15s ease, transform .05s ease;
 }
 
 .dashboard-swal .swal-radio input {
-	accent-color: color-mix(in srgb, var(--accent) 75%, #fff);
+	position: absolute;
+	opacity: 0;
+	pointer-events: none;
+	width: 1px;
+	height: 1px;
+}
+
+.dashboard-swal .swal-radio span {
+	display: block;
+	width: 100%;
+	font-weight: 650;
+	line-height: 1.25;
+}
+
+.dashboard-swal .swal-radio:hover {
+	background: color-mix(in srgb, #fff 10%, transparent);
+	border-color: color-mix(in srgb, #fff 18%, transparent);
+}
+
+.dashboard-swal .swal-radio:active {
+	transform: translateY(1px);
+}
+
+/* Opción seleccionada: iluminada y legible */
+.dashboard-swal .swal-radio:has(input:checked) {
+	color: var(--text);
+	border-color: color-mix(in srgb, var(--accent) 55%, transparent);
+	background:
+		linear-gradient(180deg, color-mix(in srgb, var(--accent) 18%, transparent), color-mix(in srgb, #fff 6%, transparent));
+	box-shadow:
+		0 14px 40px rgba(0, 0, 0, .30),
+		0 0 0 1px color-mix(in srgb, var(--accent) 25%, transparent) inset;
+}
+
+.dashboard-swal .swal-radio:has(input:checked)::before {
+	content: "";
+	position: absolute;
+	left: 10px;
+	top: 10px;
+	bottom: 10px;
+	width: 4px;
+	border-radius: 999px;
+	background: linear-gradient(180deg, var(--accent), var(--accent2));
+	opacity: .95;
+}
+
+.dashboard-swal .swal-radio:has(input:checked) span {
+	padding-left: 12px;
+}
+
+.dashboard-swal .swal-radio:has(input:focus-visible) {
+	outline: 3px solid color-mix(in srgb, var(--accent) 70%, transparent);
+	outline-offset: 3px;
 }
 
 .dashboard-swal .swal-dias {

@@ -172,9 +172,9 @@ const renderSelectorIntensidad = () => {
             <div class="swal-grid">
                 <div class="swal-field">
                     <p class="swal-label">Elige la intensidad</p>
-                    <label class="swal-radio"><input type="radio" name="intensidad" value="baja"> Intensidad baja</label>
-                    <label class="swal-radio"><input type="radio" name="intensidad" value="media"> Intensidad media</label>
-                    <label class="swal-radio"><input type="radio" name="intensidad" value="alta"> Intensidad alta</label>
+                    <label class="swal-radio"><input type="radio" name="intensidad" value="baja"><span>Intensidad baja</span></label>
+                    <label class="swal-radio"><input type="radio" name="intensidad" value="media"><span>Intensidad media</span></label>
+                    <label class="swal-radio"><input type="radio" name="intensidad" value="alta"><span>Intensidad alta</span></label>
                     <p class="swal-helper">La intensidad afecta la cantidad de ejercicios por día (baja: 4, media: 6, alta: 8).</p>
                 </div>
             </div>
@@ -339,13 +339,13 @@ const openGenerarPlanModal = async (planPrevioRaw = null) => {
                     <div class="swal-grid">
                         <div class="swal-field">
                             <p class="swal-label">¿Dónde entrenás?</p>
-                            <label class="swal-radio"><input type="radio" name="lugar" value="casa"> Entreno en casa</label>
-                            <label class="swal-radio"><input type="radio" name="lugar" value="gimnasio"> Entreno en gimnasio</label>
+                            <label class="swal-radio"><input type="radio" name="lugar" value="casa"><span>Entreno en casa</span></label>
+                            <label class="swal-radio"><input type="radio" name="lugar" value="gimnasio"><span>Entreno en gimnasio</span></label>
                         </div>
                         <div class="swal-field">
                             <p class="swal-label">¿Qué priorizás?</p>
-                            <label class="swal-radio"><input type="radio" name="objetivo" value="grasa"> Priorizar pérdida de grasa</label>
-                            <label class="swal-radio"><input type="radio" name="objetivo" value="musculo"> Priorizar ganancia muscular</label>
+                            <label class="swal-radio"><input type="radio" name="objetivo" value="grasa"><span>Priorizar pérdida de grasa</span></label>
+                            <label class="swal-radio"><input type="radio" name="objetivo" value="musculo"><span>Priorizar ganancia muscular</span></label>
                         </div>
                     </div>
                 </section>
@@ -499,6 +499,7 @@ function verificacion_plan_entrenamiento() {
     const boton_regenerar = document.getElementById("boton_regenerar");
     if (plan_entrenamiento != "Ninguno" && plan_entrenamiento != null) {
         desc.style.display = "none";
+        boton_ejercicios?.classList.remove("btn-primary");
         if (boton_regenerar) {
             boton_regenerar.style.display = "inline-block";
             boton_regenerar.onclick = () => Regen_plan();
@@ -526,7 +527,9 @@ function verificacion_plan_entrenamiento() {
     else if (plan_entrenamiento == "Ninguno" || plan_entrenamiento == null) {
         if (desc) desc.style.display = "block";
         boton_eliminar_plan_eje.style.display = "none";
-        boton_ejercicios.innerHTML = "generar plan de entrenamiento";
+        boton_ejercicios?.classList.add("btn-primary");
+        boton_ejercicios.innerHTML = "Generar plan";
+        boton_ejercicios.setAttribute("aria-label", "Generar plan de entrenamiento");
         boton_ejercicios.style.width = "auto";
         boton_ejercicios.style.height = "auto";
         boton_ejercicios.onclick = async () => {
