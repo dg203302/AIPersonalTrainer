@@ -1,23 +1,10 @@
 import { GoogleGenAI } from "https://esm.sh/@google/genai@1.38.0";
-import { createClient } from "@supabase/supabase-js";
+import { createClient } from '@supabase/supabase-js';
 
 
-const envGet = (key) => {
-    try {
-        return globalThis?.Deno?.env?.get?.(key);
-    } catch {
-        return undefined;
-    }
-};
-
-const supabaseUrl = envGet("SUPABASE_URL") ?? "https://lhecmoeilmhzgxpcetto.supabase.co";
-const supabaseKey = envGet("SUPABASE_SERVICE_ROLE_KEY")
-    ?? envGet("SUPABASE_ANON_KEY")
-    ?? "sb_secret_8pOt21ZHhoru6-VbtV6sEQ_TYL8DivC";
-
-const supabase = createClient(supabaseUrl, supabaseKey, {
-    auth: { persistSession: false },
-});
+const supabaseUrl = "https://lhecmoeilmhzgxpcetto.supabase.co";
+const supabaseKey = "sb_secret_8pOt21ZHhoru6-VbtV6sEQ_TYL8DivC";
+const supabase = createClient(supabaseUrl, supabaseKey);
 
 let aiClientPromise;
 const getAiClient = () => {
