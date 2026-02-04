@@ -169,13 +169,81 @@ if (document.readyState === "loading") {
 }
 
 async function registrar_datos(id,edad, altura, peso_act, peso_desea){
-    const response = await fetch('/registrar_usuario_nuevo', {
-        method: 'POST',
-        body: JSON.stringify({ id_usuario: id, edad, altura, peso_act, peso_desea })
-    });
+    const NETLIFY_EDGE_UNCAUGHT = "uncaught exception during edge function invocation";
+    const isNetlifyEdgeUncaughtInvocation = (text) =>
+        String(text ?? "")
+            .toLowerCase()
+            .includes(NETLIFY_EDGE_UNCAUGHT);
 
-    const result = await response.json().catch(() => ({}));
+    const escapeHtml = (value) => String(value)
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#39;");
+
+    const showNetlifyHostingErrorAlert = async ({ endpoint, status, statusText, bodyText }) => {
+        const safeEndpoint = String(endpoint ?? "").trim() || "(desconocido)";
+        const safeStatus = Number.isFinite(Number(status)) ? Number(status) : "-";
+        const safeStatusText = String(statusText ?? "").trim() || "";
+        const safeBody = String(bodyText ?? "").trim();
+
+        await Swal.fire({
+            icon: "error",
+            title: "Error del servidor",
+            html: `
+                <div class="server-error">
+                    <div class="server-error__hero">${escapeHtml(NETLIFY_EDGE_UNCAUGHT)}</div>
+                    <div class="server-error__meta">
+                        <div><strong>Endpoint:</strong> ${escapeHtml(safeEndpoint)}</div>
+                        <div><strong>HTTP:</strong> ${escapeHtml(safeStatus)}${safeStatusText ? ` (${escapeHtml(safeStatusText)})` : ""}</div>
+                    </div>
+                    ${safeBody ? `<pre class="server-error__body">${escapeHtml(safeBody.slice(0, 1200))}</pre>` : ""}
+                    <p class="server-error__note">
+                        Este es un error del servidor de hosting (<strong>Netlify</strong>). Por favor, aguardá unos minutos e intentá nuevamente cuando se restaure el servicio.
+                    </p>
+                </div>
+            `,
+            allowOutsideClick: false,
+            allowEscapeKey: true,
+            confirmButtonText: "Entendido",
+            customClass: {
+                popup: "server-error-swal",
+            },
+        });
+    };
+
+    let response;
+    try {
+        response = await fetch('/registrar_usuario_nuevo', {
+            method: 'POST',
+            body: JSON.stringify({ id_usuario: id, edad, altura, peso_act, peso_desea })
+        });
+    } catch (e) {
+        console.log("[EdgeFunction:/registrar_usuario_nuevo] Error de red:", e);
+        await showError("No se pudo conectar con el servidor. Intentá nuevamente.");
+        return false;
+    }
+
+    const bodyText = await response.text().catch(() => "");
+    let result = {};
+    try { result = JSON.parse(bodyText || "{}"); } catch { result = {}; }
+
     if (!response.ok) {
+        console.log("[EdgeFunction:/registrar_usuario_nuevo] Error:", {
+            status: response.status,
+            statusText: response.statusText,
+            body: bodyText,
+        });
+        if (isNetlifyEdgeUncaughtInvocation(bodyText)) {
+            await showNetlifyHostingErrorAlert({
+                endpoint: "/registrar_usuario_nuevo",
+                status: response.status,
+                statusText: response.statusText,
+                bodyText,
+            });
+            return false;
+        }
         showError("Error al registrar los datos: " + (result?.error ?? result?.message ?? response.statusText));
         return false;
     }

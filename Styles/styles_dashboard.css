@@ -1224,6 +1224,42 @@ footer>* {
 	line-height: 1.55;
 }
 
+/* SweetAlert2: error de hosting (Netlify) */
+.server-error-swal .server-error__hero {
+	font-size: 18px;
+	font-weight: 850;
+	letter-spacing: .2px;
+	color: var(--text);
+	margin: 6px 0 12px;
+}
+
+.server-error-swal .server-error__meta {
+	font-size: 13px;
+	color: var(--muted);
+	line-height: 1.5;
+	margin-bottom: 10px;
+}
+
+.server-error-swal .server-error__body {
+	margin: 10px 0 12px;
+	padding: 10px 12px;
+	border-radius: 14px;
+	border: 1px solid color-mix(in srgb, #fff 12%, transparent);
+	background: color-mix(in srgb, #000 18%, transparent);
+	color: color-mix(in srgb, var(--text) 85%, white 15%);
+	font-size: 12px;
+	line-height: 1.45;
+	white-space: pre-wrap;
+	word-break: break-word;
+}
+
+.server-error-swal .server-error__note {
+	margin: 0;
+	font-size: 13.5px;
+	line-height: 1.55;
+	color: var(--muted);
+}
+
 @media (min-width: 720px) {
 	.dashboard-swal .swal-grid {
 		grid-template-columns: 1fr 1fr;

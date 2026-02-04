@@ -7,6 +7,52 @@ const edad_usuario = localStorage.getItem("edad_usuario")
 const peso_usuario = localStorage.getItem("peso_usuario")
 const peso_objetivo_usuario = localStorage.getItem("peso_objetivo_usuario")
 
+const NETLIFY_EDGE_UNCAUGHT = "uncaught exception during edge function invocation";
+
+const escapeHtml = (value) => String(value)
+	.replaceAll("&", "&amp;")
+	.replaceAll("<", "&lt;")
+	.replaceAll(">", "&gt;")
+	.replaceAll('"', "&quot;")
+	.replaceAll("'", "&#39;");
+
+const isNetlifyEdgeUncaughtInvocation = (text) =>
+	String(text ?? "")
+		.toLowerCase()
+		.includes(NETLIFY_EDGE_UNCAUGHT);
+
+const showNetlifyHostingErrorAlert = async ({ endpoint, status, statusText, bodyText }) => {
+	const safeEndpoint = String(endpoint ?? "").trim() || "(desconocido)";
+	const safeStatus = Number.isFinite(Number(status)) ? Number(status) : "-";
+	const safeStatusText = String(statusText ?? "").trim() || "";
+	const safeBody = String(bodyText ?? "").trim();
+
+	await swal.fire({
+		icon: "error",
+		title: "Error del servidor",
+		html: `
+			<div class="server-error">
+				<div class="server-error__hero">${escapeHtml(NETLIFY_EDGE_UNCAUGHT)}</div>
+				<div class="server-error__meta">
+					<div><strong>Endpoint:</strong> ${escapeHtml(safeEndpoint)}</div>
+					<div><strong>HTTP:</strong> ${escapeHtml(safeStatus)}${safeStatusText ? ` (${escapeHtml(safeStatusText)})` : ""}</div>
+				</div>
+				${safeBody ? `<pre class="server-error__body">${escapeHtml(safeBody.slice(0, 1200))}</pre>` : ""}
+				<p class="server-error__note">
+					Este es un error del servidor de hosting (<strong>Netlify</strong>). Por favor, aguardá unos minutos e intentá nuevamente cuando se restaure el servicio.
+				</p>
+			</div>
+		`,
+		allowOutsideClick: false,
+		allowEscapeKey: true,
+		confirmButtonText: "Entendido",
+		customClass: {
+			popup: "perfil-swal server-error-swal",
+			confirmButton: "perfil-swal-confirm",
+		},
+	});
+};
+
 const WHEEL_ITEM_HEIGHT = 44;
 
 const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
@@ -421,7 +467,25 @@ async function EliminarPerfil(){
 	}
 
 	if (!response.ok) {
-		const payload = await response.json().catch(() => ({}));
+		const bodyText = await response.text().catch(() => "");
+		console.log("[EdgeFunction:/eliminar_cuenta_perfil] Error:", {
+			status: response.status,
+			statusText: response.statusText,
+			body: bodyText,
+		});
+
+		if (isNetlifyEdgeUncaughtInvocation(bodyText)) {
+			await showNetlifyHostingErrorAlert({
+				endpoint: "/eliminar_cuenta_perfil",
+				status: response.status,
+				statusText: response.statusText,
+				bodyText,
+			});
+			return;
+		}
+
+		let payload = {};
+		try { payload = JSON.parse(bodyText || "{}"); } catch { payload = {}; }
 		await swal.fire({
 			icon: 'error',
 			title: 'Error al eliminar',
@@ -451,17 +515,36 @@ async function EliminarPerfil(){
 }
 
 async function subirCambiosPerfil(){
-	const response = await fetch('/cargar_cambios_perfil', {
-		method: 'POST',
-		body: JSON.stringify({
-			id_usuario: id_usuario,
-			altura_usuario: localStorage.getItem("altura_usuario"),
-			edad_usuario: localStorage.getItem("edad_usuario"),
-			peso_usuario: localStorage.getItem("peso_usuario"),
-			peso_objetivo_usuario: localStorage.getItem("peso_objetivo_usuario"),
-		}),
-	});
-	const result = await response.json().catch(() => ({}));
+	let response;
+	try {
+		response = await fetch('/cargar_cambios_perfil', {
+			method: 'POST',
+			body: JSON.stringify({
+				id_usuario: id_usuario,
+				altura_usuario: localStorage.getItem("altura_usuario"),
+				edad_usuario: localStorage.getItem("edad_usuario"),
+				peso_usuario: localStorage.getItem("peso_usuario"),
+				peso_objetivo_usuario: localStorage.getItem("peso_objetivo_usuario"),
+			}),
+		});
+	} catch (e) {
+		console.log("[EdgeFunction:/cargar_cambios_perfil] Error de red:", e);
+		await swal.fire({
+			icon: 'error',
+			title: 'Error',
+			text: 'No se pudo conectar con el servidor. Intentá nuevamente.',
+			customClass: {
+				popup: 'perfil-swal',
+				confirmButton: 'perfil-swal-confirm',
+			},
+		});
+		return;
+	}
+
+	const bodyText = await response.text().catch(() => "");
+	let result = {};
+	try { result = JSON.parse(bodyText || "{}"); } catch { result = {}; }
+
 	if (response.ok) {
 		swal.fire({
 			icon: 'success',
@@ -475,6 +558,20 @@ async function subirCambiosPerfil(){
 		});
 		console.log("Cambios de perfil subidos correctamente:", result);
 	} else {
+		console.log("[EdgeFunction:/cargar_cambios_perfil] Error:", {
+			status: response.status,
+			statusText: response.statusText,
+			body: bodyText,
+		});
+		if (isNetlifyEdgeUncaughtInvocation(bodyText)) {
+			await showNetlifyHostingErrorAlert({
+				endpoint: "/cargar_cambios_perfil",
+				status: response.status,
+				statusText: response.statusText,
+				bodyText,
+			});
+			return;
+		}
 		console.error("Error al subir cambios de perfil:", result);
 	}
 }

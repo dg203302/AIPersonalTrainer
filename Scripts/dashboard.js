@@ -32,6 +32,46 @@ if (document.readyState === "loading") {
 
 
 const sweetalert = window.swal;
+
+const NETLIFY_EDGE_UNCAUGHT = "uncaught exception during edge function invocation";
+
+const isNetlifyEdgeUncaughtInvocation = (text) =>
+    String(text ?? "")
+        .toLowerCase()
+        .includes(NETLIFY_EDGE_UNCAUGHT);
+
+const showNetlifyHostingErrorAlert = async ({ endpoint, status, statusText, bodyText }) => {
+    const safeEndpoint = String(endpoint ?? "").trim() || "(desconocido)";
+    const safeStatus = Number.isFinite(Number(status)) ? Number(status) : "-";
+    const safeStatusText = String(statusText ?? "").trim() || "";
+    const safeBody = String(bodyText ?? "").trim();
+
+    await sweetalert.fire({
+        icon: "error",
+        title: "Error del servidor",
+        html: `
+            <div class="server-error">
+                <div class="server-error__hero">${escapeHtml(NETLIFY_EDGE_UNCAUGHT)}</div>
+                <div class="server-error__meta">
+                    <div><strong>Endpoint:</strong> ${escapeHtml(safeEndpoint)}</div>
+                    <div><strong>HTTP:</strong> ${escapeHtml(safeStatus)}${safeStatusText ? ` (${escapeHtml(safeStatusText)})` : ""}</div>
+                </div>
+                ${safeBody ? `<pre class="server-error__body">${escapeHtml(safeBody.slice(0, 1200))}</pre>` : ""}
+                <p class="server-error__note">
+                    Este es un error del servidor de hosting (<strong>Netlify</strong>). Por favor, aguardá unos minutos e intentá nuevamente cuando se restaure el servicio.
+                </p>
+            </div>
+        `,
+        allowOutsideClick: false,
+        allowEscapeKey: true,
+        confirmButtonText: "Entendido",
+        customClass: {
+            popup: "dashboard-swal server-error-swal",
+            confirmButton: "dashboard-swal-confirm",
+        },
+    });
+};
+
 const username = localStorage.getItem("username_usuario")
 const avatar = localStorage.getItem("avatar_usuario")
 
@@ -602,6 +642,17 @@ async function crearPlanEntreno(lugar, objetivo, diasSeleccionados, ejerciciosSe
             statusText: response.statusText,
             body: bodyText,
         });
+
+        if (isNetlifyEdgeUncaughtInvocation(bodyText)) {
+            await showNetlifyHostingErrorAlert({
+                endpoint: "/generar_plan_entreno",
+                status: response.status,
+                statusText: response.statusText,
+                bodyText,
+            });
+            return;
+        }
+
         sweetalert.fire({
             title: "Error",
             text: "Error al generar el plan de entrenamiento. Por favor, intentá nuevamente más tarde.",
@@ -1104,6 +1155,15 @@ async function actualizar_cambios_plan_entreno() {
             statusText: res.statusText,
             body: bodyText,
         });
+
+        if (isNetlifyEdgeUncaughtInvocation(bodyText)) {
+            await showNetlifyHostingErrorAlert({
+                endpoint: "/actualizar_cambios_plan",
+                status: res.status,
+                statusText: res.statusText,
+                bodyText,
+            });
+        }
     }
 }
 
