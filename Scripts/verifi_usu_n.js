@@ -57,7 +57,7 @@ window.onload = () =>{
         } else {
             localStorage.clear();
             sessionStorage.clear();
-            return window.location.href = "/";
+            return window.location.href = "/Templates/Inicio/inicio_indice.html";
         }
     });
 }
