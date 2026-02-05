@@ -5,6 +5,14 @@
     "https://esm.sh/iceberg-js@^0.8.1?target=denonext": "https://esm.sh/iceberg-js@0.8.1?target=denonext"
   },
   "remote": {
+    "https://cdn.jsdelivr.net/npm/@supabase/auth-js@2.94.1/+esm": "a0b582803ca21baf9fe54a7e442faad7033ca518ec9eddd30328dfe03f25cb19",
+    "https://cdn.jsdelivr.net/npm/@supabase/functions-js@2.94.1/+esm": "6304d28c84e81ddc06634665530a4119f0e414910a2b5b7a491f699532a994e4",
+    "https://cdn.jsdelivr.net/npm/@supabase/postgrest-js@2.94.1/+esm": "2a69d0d2fd18830632f3a9aacebd2278237bbca83cd4587ab5fe93b6043e4164",
+    "https://cdn.jsdelivr.net/npm/@supabase/realtime-js@2.94.1/+esm": "35c3f65d507c50217640f9d9020bb52b40e8a08ff83a4815534d4b254d6f9583",
+    "https://cdn.jsdelivr.net/npm/@supabase/storage-js@2.94.1/+esm": "aaaffa4084ed796d5be7deb281d12b3c3c4e753f33e7c3238a1ae469c6a2c821",
+    "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.94.1/+esm": "4291c78ae8b04df336007737a1d1a742fb4b7a76b544259dd545039e2d66869f",
+    "https://cdn.jsdelivr.net/npm/iceberg-js@0.8.1/+esm": "6bf9b9417587bb7cc5b600a421a41a657adf0cde0b9f04495cc17a902e6e65df",
+    "https://cdn.jsdelivr.net/npm/tslib@2.8.1/+esm": "63dd5e931cca88877daff82bc8424da8e423f07834cb5c15fbfb9e66c84b63d7",
     "https://edge.netlify.com/": "fd941d61d88673d5f28aab283fb86fcc50f08a3bc80ee5470498fcfa88c65cfb",
     "https://edge.netlify.com/bootstrap/config.ts": "6a2ce0e544e15e8f8883a5c18da5948e37fd0f2619f68cb31f3af53c51817025",
     "https://edge.netlify.com/bootstrap/context.ts": "e97240232121e2f369f6546ce961490f34d961ea1ea54be3ff09633e3f08373f",
