@@ -860,6 +860,9 @@ function mapear_plan(plan_entrenamiento_json) {
             .map(normalizeExercise)
             .filter(Boolean);
 
+        // No mostrar días sin ejercicios
+        if (!normalized.length) return "";
+
         const cards = normalized.length
             ? normalized.map(renderExerciseCard).join("")
             : `<div class="plan-vacio">No hay ejercicios para este día.</div>`;
@@ -881,22 +884,48 @@ function mapear_plan(plan_entrenamiento_json) {
     let html = "";
 
     if (hasDiasArray) {
-        const sections = maybeDiasArray
-            .map((d, i) => {
-                const dia = d.dia ?? d.nombre ?? d.day ?? `Día ${i + 1}`;
-                const enfoque = d.enfoque ?? d.focus ?? d.objetivo ?? d.titulo ?? d.title;
-                const ejercicios = d.ejercicios ?? d.entrenamiento ?? d.exercises ?? d.rutina ?? d.items ?? [];
-                return renderDaySection(dia, ejercicios, enfoque, i);
+        const days = (Array.isArray(maybeDiasArray) ? maybeDiasArray : [])
+            .map((d, originalIndex) => {
+                const dia = d?.dia ?? d?.nombre ?? d?.day ?? `Día ${originalIndex + 1}`;
+                const enfoque = d?.enfoque ?? d?.focus ?? d?.objetivo ?? d?.titulo ?? d?.title;
+                const ejercicios = d?.ejercicios ?? d?.entrenamiento ?? d?.exercises ?? d?.rutina ?? d?.items ?? [];
+                const normalized = (Array.isArray(ejercicios) ? ejercicios : [])
+                    .map(normalizeExercise)
+                    .filter(Boolean);
+                return { dia, enfoque, ejercicios, normalized, originalIndex };
             })
-            .join("");
-        html = sections;
+            .filter((d) => d.normalized.length > 0);
+
+        if (!days.length) {
+            html = `<div class="plan-vacio">No hay días con ejercicios asignados.</div>`;
+        } else {
+            html = days
+                .map((d, i) => renderDaySection(d.dia, d.ejercicios, d.enfoque, i))
+                .filter(Boolean)
+                .join("");
+        }
     } else if (hasWeekdayObject) {
         const orderedKeys = [...weekdayKeys].sort((a, b) => {
             const ia = diasOrden.indexOf(String(a).toLowerCase());
             const ib = diasOrden.indexOf(String(b).toLowerCase());
             return (ia === -1 ? 999 : ia) - (ib === -1 ? 999 : ib);
         });
-        html = orderedKeys.map((k, i) => renderDaySection(k, root[k], null, i)).join("");
+
+        const days = orderedKeys
+            .map((k) => {
+                const ejercicios = root[k];
+                const normalized = (Array.isArray(ejercicios) ? ejercicios : [])
+                    .map(normalizeExercise)
+                    .filter(Boolean);
+                return { key: k, ejercicios, normalized };
+            })
+            .filter((d) => d.normalized.length > 0);
+
+        if (!days.length) {
+            html = `<div class="plan-vacio">No hay días con ejercicios asignados.</div>`;
+        } else {
+            html = days.map((d, i) => renderDaySection(d.key, d.ejercicios, null, i)).filter(Boolean).join("");
+        }
     } else {
         const ejercicios = root.ejercicios ?? root.plan ?? root.entrenamiento ?? root.exercises ?? root.rutina ?? [];
         const normalized = (Array.isArray(ejercicios) ? ejercicios : [])
@@ -908,7 +937,7 @@ function mapear_plan(plan_entrenamiento_json) {
         html = `<div class="plan-grid">${cards}</div>`;
     }
 
-    return `<div class="plan-container">${html}</div>`;
+    return `<div class="plan-container plan-snap">${html}</div>`;
 }
 
 function parsePlanDiasDetallados(planRaw) {
@@ -995,7 +1024,7 @@ function parsePlanDiasDetallados(planRaw) {
         root?.planSemanal;
 
     if (Array.isArray(maybeDiasArray)) {
-        return maybeDiasArray.map((d, i) => {
+        const days = maybeDiasArray.map((d, i) => {
             const dia = d?.dia ?? d?.nombre ?? d?.day ?? `Día ${i + 1}`;
             const enfoque = d?.enfoque ?? d?.focus ?? d?.objetivo ?? d?.titulo ?? d?.title ?? "";
             const ejercicios = Array.isArray(d?.ejercicios)
@@ -1003,6 +1032,7 @@ function parsePlanDiasDetallados(planRaw) {
                 : [];
             return { dia, enfoque, ejercicios };
         });
+        return days.filter((d) => Array.isArray(d.ejercicios) && d.ejercicios.length > 0);
     }
 
     const weekdayKeys = Object.keys(root || {}).filter((k) => diasOrden.includes(String(k).toLowerCase()));
@@ -1012,16 +1042,151 @@ function parsePlanDiasDetallados(planRaw) {
             const ib = diasOrden.indexOf(String(b).toLowerCase());
             return (ia === -1 ? 999 : ia) - (ib === -1 ? 999 : ib);
         });
-        return orderedKeys.map((k) => {
+        const days = orderedKeys.map((k) => {
             const ejercicios = Array.isArray(root[k]) ? root[k].map(normalizeExDet).filter(Boolean) : [];
             return { dia: k, enfoque: "", ejercicios };
         });
+        return days.filter((d) => Array.isArray(d.ejercicios) && d.ejercicios.length > 0);
     }
 
     return null;
 }
 
 function initDetallePorDiaPlan() {
+
+    function initPlanDiaPager() {
+        const scroller = document.getElementById("Plan_ejercicio");
+        if (!scroller) return;
+        if (scroller.dataset.diaPagerInit === "1") return;
+        scroller.dataset.diaPagerInit = "1";
+
+        const getDays = () => Array.from(scroller.querySelectorAll(".plan-container.plan-snap .plan-dia"));
+
+        const findNearestIndex = () => {
+            const days = getDays();
+            if (!days.length) return 0;
+            const top = scroller.scrollTop;
+            let bestIdx = 0;
+            let bestDist = Infinity;
+            for (let i = 0; i < days.length; i++) {
+                const dist = Math.abs((days[i]?.offsetTop ?? 0) - top);
+                if (dist < bestDist) {
+                    bestDist = dist;
+                    bestIdx = i;
+                }
+            }
+            return bestIdx;
+        };
+
+        const scrollToIndex = (index, behavior = "smooth") => {
+            const days = getDays();
+            if (!days.length) return;
+            const clamped = Math.max(0, Math.min(days.length - 1, index));
+            const target = days[clamped];
+            if (!target) return;
+            scroller.scrollTo({ top: target.offsetTop, behavior });
+        };
+
+        let gestureLock = false;
+        const stepBy = (dir) => {
+            const days = getDays();
+            if (days.length <= 1) return;
+            if (gestureLock) return;
+            gestureLock = true;
+            const current = findNearestIndex();
+            scrollToIndex(current + dir, "smooth");
+            window.setTimeout(() => {
+                gestureLock = false;
+            }, 420);
+        };
+
+        const canScrollInnerGrid = (gridEl, deltaY) => {
+            if (!(gridEl instanceof HTMLElement)) return false;
+            const canScroll = gridEl.scrollHeight > gridEl.clientHeight + 1;
+            if (!canScroll) return false;
+            if (deltaY > 0) {
+                return gridEl.scrollTop < (gridEl.scrollHeight - gridEl.clientHeight - 1);
+            }
+            if (deltaY < 0) {
+                return gridEl.scrollTop > 0;
+            }
+            return false;
+        };
+
+        let wheelAccum = 0;
+        let wheelTimer = null;
+        const WHEEL_THRESHOLD = 26;
+
+        scroller.addEventListener("wheel", (e) => {
+            const days = getDays();
+            if (days.length <= 1) return;
+            if (e.ctrlKey) return; // pinch zoom
+
+            const deltaY = e.deltaY;
+            const target = e.target;
+            const grid = (target instanceof Element) ? target.closest(".plan-grid") : null;
+            if (grid && canScrollInnerGrid(grid, deltaY)) {
+                // Dejar que el usuario scrollee el contenido del día.
+                return;
+            }
+
+            // Capturar el gesto y convertirlo en 1 salto por día.
+            e.preventDefault();
+            wheelAccum += deltaY;
+
+            if (wheelTimer) window.clearTimeout(wheelTimer);
+            wheelTimer = window.setTimeout(() => {
+                wheelAccum = 0;
+            }, 140);
+
+            if (Math.abs(wheelAccum) < WHEEL_THRESHOLD) return;
+            const dir = wheelAccum > 0 ? 1 : -1;
+            wheelAccum = 0;
+            stepBy(dir);
+        }, { passive: false });
+
+        let touchStartY = 0;
+        let touchStartX = 0;
+        let touchArmed = false;
+        let touchFromGrid = false;
+        const TOUCH_THRESHOLD = 44;
+
+        scroller.addEventListener("touchstart", (e) => {
+            const days = getDays();
+            if (days.length <= 1) return;
+            if (!e.touches || e.touches.length !== 1) return;
+
+            const t = e.touches[0];
+            touchStartY = t.clientY;
+            touchStartX = t.clientX;
+            touchArmed = true;
+
+            const target = e.target;
+            const grid = (target instanceof Element) ? target.closest(".plan-grid") : null;
+            touchFromGrid = !!grid;
+        }, { passive: true });
+
+        scroller.addEventListener("touchend", (e) => {
+            if (!touchArmed) return;
+            touchArmed = false;
+
+            const days = getDays();
+            if (days.length <= 1) return;
+            const t = e.changedTouches && e.changedTouches[0];
+            if (!t) return;
+
+            const dy = t.clientY - touchStartY;
+            const dx = t.clientX - touchStartX;
+            if (Math.abs(dy) < TOUCH_THRESHOLD) return;
+            if (Math.abs(dy) < Math.abs(dx)) return;
+
+            // Si el gesto empezó dentro del grid, asumir scroll de contenido (no cambio de día)
+            if (touchFromGrid) return;
+
+            const dir = dy < 0 ? 1 : -1;
+            stepBy(dir);
+        }, { passive: true });
+    }
     const contenedor = document.getElementById("Plan_ejercicio");
     if (!contenedor) return;
     if (contenedor.dataset.detalleDiaInit === "1") return;
@@ -1107,6 +1272,7 @@ function initDetallePorDiaPlan() {
     });
 }
 document.getElementById("boton_eliminar")?.addEventListener("click", async () => {
+    initPlanDiaPager();
     const confirmResult = await sweetalert.fire({
         title: "¿Estás seguro?",
         text: "Esta acción eliminará tu plan de entrenamiento actual.",

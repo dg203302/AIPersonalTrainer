@@ -294,10 +294,15 @@ button:active {
 	background: color-mix(in srgb, #000 12%, transparent);
 	width: 100%;
 	max-width: 100%;
-	max-height: clamp(260px, calc(70svh - var(--footer-fixed, 0px) - 12px), 720px);
-	overflow: auto;
+	height: clamp(260px, calc(70svh - var(--footer-fixed, 0px) - 12px), 720px);
+	overflow-y: auto;
+	overflow-x: hidden;
 	overscroll-behavior: contain;
 	scrollbar-gutter: stable;
+	scroll-snap-type: y mandatory;
+	scroll-behavior: smooth;
+	-webkit-overflow-scrolling: touch;
+	touch-action: pan-y;
 }
 
 /* Ayuda contraíble (dashboard) */
@@ -407,6 +412,13 @@ button:active {
 	gap: 12px;
 }
 
+/* Navegación por día (deslizar vertical para cambiar) */
+.plan-container.plan-snap {
+	height: 100%;
+	display: block;
+	gap: 0;
+}
+
 .plan-aviso {
 	color: var(--muted);
 	font-size: 13px;
@@ -434,6 +446,12 @@ button:active {
 	border: 1px solid var(--stroke2);
 	background: color-mix(in srgb, #fff 6%, transparent);
 	padding: 12px;
+	height: 100%;
+	display: flex;
+	flex-direction: column;
+	overflow: hidden;
+	scroll-snap-align: start;
+	scroll-snap-stop: always;
 }
 
 .plan-dia-header {
@@ -496,6 +514,10 @@ button:active {
 	display: grid;
 	grid-template-columns: 1fr;
 	gap: 10px;
+	flex: 1 1 auto;
+	overflow: auto;
+	overscroll-behavior: contain;
+	scrollbar-gutter: stable;
 }
 
 .plan-card {

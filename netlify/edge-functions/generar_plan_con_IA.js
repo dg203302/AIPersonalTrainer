@@ -300,6 +300,7 @@ export default async function handler(request, _context){
 
     const ejerciciosSeleccionados = normalizeSelectedExercises(ejercicios_seleccionados);
     const ejerciciosSeleccionadosJson = JSON.stringify(ejerciciosSeleccionados);
+    const soloEjerciciosSeleccionados = ejerciciosSeleccionados.length > 0;
 
     const canonicalDayKey = (dayLabel) => stripAccents(dayLabel).toLowerCase();
 
@@ -325,10 +326,18 @@ export default async function handler(request, _context){
 
         const selectedKeys = new Set(diasSeleccionados.map(canonicalDayKey));
 
+        const selectedExerciseKeySet = new Set(ejerciciosSeleccionados.map((e) => normalizeKey(e)));
+        const isAllowedExerciseName = (name) => {
+            if (!soloEjerciciosSeleccionados) return true;
+            const k = normalizeKey(name);
+            return k && selectedExerciseKeySet.has(k);
+        };
+
         const normalizeExercise = (ex) => {
             if (!ex || typeof ex !== "object") return null;
             const nombre = typeof ex.nombre === "string" ? ex.nombre : String(ex.nombre ?? "").trim();
             if (!nombre) return null;
+            if (!isAllowedExerciseName(nombre)) return null;
 
             const descripcionRaw = (typeof ex.descripcion === "string" && ex.descripcion.trim())
                 ? ex.descripcion.trim()
@@ -353,6 +362,9 @@ export default async function handler(request, _context){
 
         const allExercises = Object.values(EJERCICIOS_INDICE).flat();
         const pickFallbackPool = () => {
+            if (soloEjerciciosSeleccionados) {
+                return ejerciciosSeleccionados;
+            }
             const entornoKey = normalizeKey(lugar);
             if (entornoKey.includes("casa")) {
                 // Heurística simple: evitar máquinas/poleas/barra cuando dice "casa"
@@ -395,18 +407,45 @@ export default async function handler(request, _context){
             const ejerciciosRaw = Array.isArray(base.ejercicios) ? base.ejercicios : [];
             let ejerciciosNorm = ejerciciosRaw.map(normalizeExercise).filter(Boolean);
 
+            // Si hay ejercicios seleccionados por el usuario, filtrar cualquier cosa fuera de esa lista.
+            if (soloEjerciciosSeleccionados) {
+                ejerciciosNorm = ejerciciosNorm.filter((e) => isAllowedExerciseName(e.nombre));
+            }
+
             // Enforce intensidad (cantidad de ejercicios por día)
             if (ejerciciosNorm.length > ejerciciosPorDiaObjetivo) {
                 ejerciciosNorm = ejerciciosNorm.slice(0, ejerciciosPorDiaObjetivo);
             }
             if (ejerciciosNorm.length < ejerciciosPorDiaObjetivo) {
                 const existing = new Set(ejerciciosNorm.map((e) => normalizeKey(e.nombre)));
-                for (const name of fallbackPool) {
-                    const key = normalizeKey(name);
-                    if (existing.has(key)) continue;
-                    ejerciciosNorm.push(makeFallbackExercise(name));
-                    existing.add(key);
-                    if (ejerciciosNorm.length >= ejerciciosPorDiaObjetivo) break;
+
+                // Si solo se permiten ejercicios seleccionados, permitir repeticiones si no alcanza.
+                if (soloEjerciciosSeleccionados) {
+                    const pool = Array.isArray(fallbackPool) ? fallbackPool : [];
+                    if (pool.length > 0) {
+                        let idx = 0;
+                        const guard = ejerciciosPorDiaObjetivo * 20;
+                        let steps = 0;
+                        while (ejerciciosNorm.length < ejerciciosPorDiaObjetivo && steps < guard) {
+                            const name = pool[idx % pool.length];
+                            idx++;
+                            steps++;
+
+                            const k = normalizeKey(name);
+                            // Evitar repetir dentro del mismo día si es posible; si ya están todos, permitir repetición.
+                            if (existing.has(k) && existing.size < pool.length) continue;
+                            ejerciciosNorm.push(makeFallbackExercise(name));
+                            existing.add(k);
+                        }
+                    }
+                } else {
+                    for (const name of fallbackPool) {
+                        const key = normalizeKey(name);
+                        if (existing.has(key)) continue;
+                        ejerciciosNorm.push(makeFallbackExercise(name));
+                        existing.add(key);
+                        if (ejerciciosNorm.length >= ejerciciosPorDiaObjetivo) break;
+                    }
                 }
             }
 
@@ -475,9 +514,9 @@ Dias seleccionados para entrenar (SOLO estos dias deben tener ejercicios; los ot
 ${diasSeleccionadosJson}
 
 Preferencias opcionales de ejercicios (puede venir vacio):
-- Si la lista NO esta vacia, prioriza incluir estos ejercicios durante la semana (siempre que sean compatibles con entorno/objetivo).
-- Reparte los ejercicios preferidos a lo largo de los dias seleccionados sin repetir en exceso.
-- Si faltan ejercicios para completar una sesion, completa con ejercicios de la lista general.
+- Si la lista NO esta vacia, entonces DEBES usar SOLAMENTE esos ejercicios en todo el plan.
+- PROHIBIDO incluir cualquier ejercicio que no este en la lista de ejercicios preferidos.
+- Si la lista NO alcanza para llenar todos los dias/sesiones, puedes REPETIR ejercicios preferidos (pero nunca inventar/agregar otros).
 Ejercicios preferidos:
 ${ejerciciosSeleccionadosJson}
 
