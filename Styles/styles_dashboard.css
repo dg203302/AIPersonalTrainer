@@ -571,6 +571,21 @@ button:active {
 	scrollbar-gutter: stable;
 }
 
+/* Detalle por día (modal): permitir scroll tocando/arrastrando sobre ejercicios */
+.plan-detalle-scroll {
+	max-height: 62vh;
+	overflow-y: auto;
+	overflow-x: hidden;
+	padding-right: 2px;
+	overscroll-behavior: contain;
+	-webkit-overflow-scrolling: touch;
+	touch-action: pan-y;
+}
+
+.plan-detalle-scroll .plan-grid {
+	overflow: visible;
+}
+
 .plan-card {
 	border-radius: 16px;
 	border: 1px solid var(--stroke2);
