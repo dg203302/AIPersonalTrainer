@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="/Styles/styles_dashboard.css">
+	<link rel="stylesheet" href="/Styles/styles_ayuda.css">
+    <meta name="theme-color" content="#0A1226">
+    <title>Ayuda</title>
+</head>
+<body>
+    
+    <header>
+        <div id="textos">
+            <h1>Ayuda</h1>
+            <h2>Personal TrAIner</h2>
+        </div>
+
+        <a id="usuario" class="header-user-link" href="/Templates/Inicio/perfil_usuario.html" aria-label="Ir a Perfil">
+            <img src="https://www.gravatar.com/avatar/00000000000000000000000000000000?d=mp&f=y" alt="avatar" id="icono_usuario">
+            <div class="header-user-text">
+                <h2 id="username">...</h2>
+                <span class="header-user-sub">Perfil</span>
+            </div>
+        </a>
+    </header>
+
+    <main>
+        <section class="ayuda-box" aria-labelledby="ayuda_title">
+            <div class="ayuda-header">
+                <div class="ayuda-title">
+                    <h1 id="ayuda_title">Guía del Plan de Ejercicio</h1>
+                    <p class="ayuda-subtitle">Paso a paso y funciones</p>
+                </div>
+                <span class="ayuda-chip">Guía</span>
+            </div>
+
+            <div class="ayuda-content">
+                <p>
+                    Acá tenés una guía completa para <strong>generar</strong>, <strong>ver</strong> y <strong>gestionar</strong> tu plan semanal.
+                    El plan se arma con IA usando tu perfil (edad, altura, peso actual y objetivo) + las opciones que elijas.
+                </p>
+
+                <div class="ayuda-grid" role="list">
+                    <div class="ayuda-card" role="listitem">
+                        <h4>Requisito</h4>
+                        <p>Tené tu perfil completo para mejores resultados.</p>
+                    </div>
+                    <div class="ayuda-card" role="listitem">
+                        <h4>Qué vas a ver</h4>
+                        <p>Solo se muestran los días que tienen ejercicios asignados.</p>
+                    </div>
+                </div>
+
+                <div class="ayuda-divider" aria-hidden="true"></div>
+
+                <h2>1) Generar el plan</h2>
+                <ol>
+                    <li>Entrá a <strong>Plan de Entreno</strong> (el botón del footer).</li>
+                    <li>Presioná el botón principal de arriba (Plan de Entreno / Generar).</li>
+                    <li>Se abre una ventana con opciones: completalas y tocá <strong>Generar</strong>.</li>
+                    <li>Cuando termine, el plan aparece en el recuadro <strong>Plan de Ejercicio</strong>.</li>
+                </ol>
+
+                <h2>2) Opciones disponibles (qué hace cada una)</h2>
+                <ul>
+                    <li><strong>¿Dónde entrenás?</strong> Elegí <em>casa</em> o <em>gimnasio</em> para que el plan use ejercicios y equipo acordes.</li>
+                    <li><strong>¿Qué priorizás?</strong> Elegí <em>pérdida de grasa</em> o <em>ganancia muscular</em> para ajustar el enfoque y la progresión.</li>
+                    <li><strong>Días de la semana</strong> Marcá L, M, X, J, V, S, D: esos serán tus días de entrenamiento.</li>
+                    <li><strong>Ejercicios disponibles (índice)</strong> (opcional):
+                        <ul>
+                            <li>Si activás “Quiero elegir ejercicios” y <strong>seleccionás ejercicios</strong>, el plan se crea usando <strong>solo esos ejercicios</strong> (no agrega otros).</li>
+                            <li>Si no seleccionás nada, la IA elige automáticamente del índice disponible.</li>
+                        </ul>
+                    </li>
+                </ul>
+
+                <p class="ayuda-note">
+                    Tip: si seleccionás muy pocos ejercicios para muchos días, algunos pueden repetirse para completar el plan.
+                </p>
+
+                <div class="ayuda-divider" aria-hidden="true"></div>
+
+                <h2>3) Cómo leer el plan</h2>
+                <ul>
+                    <li><strong>Día</strong>: cada “tarjeta” corresponde a un día (por ejemplo Lunes).</li>
+                    <li><strong>Ejercicio</strong>: lista de ejercicios del día.</li>
+                    <li><strong>Series</strong>: cuántas tandas hacés.</li>
+                    <li><strong>Repeticiones</strong>: cuántas reps por serie (o rango sugerido).</li>
+                    <li><strong>Descanso</strong>: tiempo recomendado entre series.</li>
+                    <li><strong>Progresión</strong>: sugerencia para ir subiendo carga/reps/series con el tiempo.</li>
+                </ul>
+
+                <h2>4) Navegación por días (scroll por “pantallas”)</h2>
+                <ul>
+                    <li>En celular, deslizá <strong>arriba/abajo</strong> sobre el recuadro del plan para pasar de un día al siguiente.</li>
+                    <li>En PC, usá la rueda del mouse sobre el recuadro para avanzar/retroceder día por día.</li>
+                    <li>Si un día tiene muchos ejercicios, podés <strong>scrollear dentro del día</strong> para ver todo el contenido.</li>
+                </ul>
+
+                <div class="ayuda-divider" aria-hidden="true"></div>
+
+                <h2>5) Ver detalle por día</h2>
+                <ul>
+                    <li>Tocá/clickeá el <strong>encabezado del día</strong> (por ejemplo “Martes”).</li>
+                    <li>Se abre un <strong>modal</strong> con el detalle de ese día (series, reps y descanso por ejercicio).</li>
+                </ul>
+
+                <h2>6) Gestionar tu plan</h2>
+                <ul>
+                    <li><strong>Botón principal</strong>: genera el plan si no tenés uno; si ya existe, puede actualizar/refrescar según el estado.</li>
+                    <li><strong>Regenerar Plan</strong>: crea un plan nuevo <em>basado en tu configuración previa</em>.
+                        <ul>
+                            <li>Te pide confirmación.</li>
+                            <li>Al aceptar, elimina el plan actual.</li>
+                            <li>Abre el modal con opciones <strong>precompletadas</strong> (lugar, objetivo, días y, si aplica, ejercicios) para que ajustes y generes de nuevo.</li>
+                        </ul>
+                    </li>
+                    <li><strong>Eliminar Plan</strong>: borra el plan actual para empezar desde cero.</li>
+                </ul>
+
+                <div class="ayuda-divider" aria-hidden="true"></div>
+
+                <h2>7) Solución rápida de problemas</h2>
+                <ul>
+                    <li><strong>No aparece el plan</strong>: revisá conexión, recargá la página y verificá que tu perfil esté completo.</li>
+                    <li><strong>El plan no cambia</strong>: al regenerar, confirmá la acción y volvé a generar con nuevas opciones.</li>
+                    <li><strong>Días “faltantes”</strong>: solo se muestran días con ejercicios asignados.</li>
+                </ul>
+
+                <p class="ayuda-note">
+                    Atajo: desde el encabezado (arriba a la derecha) tocá <strong>Perfil</strong> para editar tus datos.
+                </p>
+            </div>
+        </section>
+    </main>
+    
+    <footer>
+        <nav class="footer-nav" aria-label="Navegación inferior">
+            <a class="footer-btn is-active footer-btn--small" href="/Templates/Inicio/Dashboard.html">Plan de Entreno</a>
+            <a class="footer-btn is-active footer-btn--small" href="/Templates/Inicio/Plan_alimentacion.html">Plan de Alimentación</a>
+        </nav>
+    </footer>
+    <script src="/Scripts/Ayuda.js"></script>
+</body>
+</html>

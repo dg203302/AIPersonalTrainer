@@ -24,6 +24,53 @@ const initFixedChromeObservers = () => {
     }
 };
 
+const prefersReducedMotion = () => {
+    try {
+        return window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    } catch {
+        return false;
+    }
+};
+
+const getFixedHeaderOffset = () => {
+    const header = document.querySelector("header");
+    const headerH = header ? header.offsetHeight : 0;
+    return Math.max(0, headerH + 12);
+};
+
+const scrollToWithFixedHeader = (el, { behavior = "auto" } = {}) => {
+    if (!el) return;
+    const rect = el.getBoundingClientRect();
+    const top = rect.top + window.scrollY - getFixedHeaderOffset();
+    window.scrollTo({ top: Math.max(0, top), behavior });
+};
+
+const focusPlanEntrenoContainer = ({ behavior = "auto" } = {}) => {
+    const plan = document.getElementById("Plan_ejercicio");
+    const section = document.getElementById("Ejercicios");
+    const visiblePlan = plan && plan.style.display !== "none";
+
+    const target = visiblePlan ? plan : (section || plan);
+    if (!target) return;
+
+    scrollToWithFixedHeader(target, { behavior });
+    if (typeof target.focus === "function") {
+        target.focus({ preventScroll: true });
+    }
+};
+
+const autofocusPlanEntrenoOncePerSession = () => {
+    const behavior = prefersReducedMotion() ? "auto" : "smooth";
+    try {
+        const key = "autofocus_plan_entreno_done";
+        if (sessionStorage.getItem(key) === "1") return;
+        sessionStorage.setItem(key, "1");
+        focusPlanEntrenoContainer({ behavior });
+    } catch {
+        focusPlanEntrenoContainer({ behavior });
+    }
+};
+
 if (document.readyState === "loading") {
     document.addEventListener("DOMContentLoaded", initFixedChromeObservers, { once: true });
 } else {
@@ -528,7 +575,11 @@ window.onload = async () => {
     verificacion_plan_entrenamiento();
     verificacion_plan_alimentacion();
 
+    // Al cargar: llevar el foco al contenedor del plan de entreno.
+    autofocusPlanEntrenoOncePerSession();
+
     initDetallePorDiaPlan();
+    initPlanDiaPager();
 }
 
 function verificacion_plan_entrenamiento() {
@@ -548,6 +599,7 @@ function verificacion_plan_entrenamiento() {
         const contenedor_ejercicios = document.getElementById("Plan_ejercicio");
         contenedor_ejercicios.style.display = "block";
         contenedor_ejercicios.innerHTML = mapear_plan(plan_entrenamiento)
+        initPlanDiaPager();
         boton_ejercicios.innerHTML = '<img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9ImN1cnJlbnRDb2xvciIgc3Ryb2tlLXdpZHRoPSIyIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiIGNsYXNzPSJsdWNpZGUgbHVjaWRlLXJlZnJlc2gtY2N3LWljb24gbHVjaWRlLXJlZnJlc2gtY2N3Ij48cGF0aCBkPSJNMjEgMTJhOSA5IDAgMCAwLTktOSA5Ljc1IDkuNzUgMCAwIDAtNi43NCAyLjc0TDMgOCIvPjxwYXRoIGQ9Ik0zIDN2NWg1Ii8+PHBhdGggZD0iTTMgMTJhOSA5IDAgMCAwIDkgOSA5Ljc1IDkuNzUgMCAwIDAgNi43NC0yLjc0TDIxIDE2Ii8+PHBhdGggZD0iTTE2IDE2aDV2NSIvPjwvc3ZnPg==">';
         boton_ejercicios.style.width = "50px";
         boton_ejercicios.style.height = "50px";
@@ -694,7 +746,7 @@ async function crearPlanEntreno(lugar, objetivo, diasSeleccionados, ejerciciosSe
 }
 
 function verificacion_plan_alimentacion() {
-    // wip: evitar ReferenceError mientras se implementa el plan de alimentación
+    // inutil, solo para evitar reference error en el console.log de recuperar_planes() que rompe la ejecución
 }
 
 async function recuperar_planes() {
@@ -1053,140 +1105,6 @@ function parsePlanDiasDetallados(planRaw) {
 }
 
 function initDetallePorDiaPlan() {
-
-    function initPlanDiaPager() {
-        const scroller = document.getElementById("Plan_ejercicio");
-        if (!scroller) return;
-        if (scroller.dataset.diaPagerInit === "1") return;
-        scroller.dataset.diaPagerInit = "1";
-
-        const getDays = () => Array.from(scroller.querySelectorAll(".plan-container.plan-snap .plan-dia"));
-
-        const findNearestIndex = () => {
-            const days = getDays();
-            if (!days.length) return 0;
-            const top = scroller.scrollTop;
-            let bestIdx = 0;
-            let bestDist = Infinity;
-            for (let i = 0; i < days.length; i++) {
-                const dist = Math.abs((days[i]?.offsetTop ?? 0) - top);
-                if (dist < bestDist) {
-                    bestDist = dist;
-                    bestIdx = i;
-                }
-            }
-            return bestIdx;
-        };
-
-        const scrollToIndex = (index, behavior = "smooth") => {
-            const days = getDays();
-            if (!days.length) return;
-            const clamped = Math.max(0, Math.min(days.length - 1, index));
-            const target = days[clamped];
-            if (!target) return;
-            scroller.scrollTo({ top: target.offsetTop, behavior });
-        };
-
-        let gestureLock = false;
-        const stepBy = (dir) => {
-            const days = getDays();
-            if (days.length <= 1) return;
-            if (gestureLock) return;
-            gestureLock = true;
-            const current = findNearestIndex();
-            scrollToIndex(current + dir, "smooth");
-            window.setTimeout(() => {
-                gestureLock = false;
-            }, 420);
-        };
-
-        const canScrollInnerGrid = (gridEl, deltaY) => {
-            if (!(gridEl instanceof HTMLElement)) return false;
-            const canScroll = gridEl.scrollHeight > gridEl.clientHeight + 1;
-            if (!canScroll) return false;
-            if (deltaY > 0) {
-                return gridEl.scrollTop < (gridEl.scrollHeight - gridEl.clientHeight - 1);
-            }
-            if (deltaY < 0) {
-                return gridEl.scrollTop > 0;
-            }
-            return false;
-        };
-
-        let wheelAccum = 0;
-        let wheelTimer = null;
-        const WHEEL_THRESHOLD = 26;
-
-        scroller.addEventListener("wheel", (e) => {
-            const days = getDays();
-            if (days.length <= 1) return;
-            if (e.ctrlKey) return; // pinch zoom
-
-            const deltaY = e.deltaY;
-            const target = e.target;
-            const grid = (target instanceof Element) ? target.closest(".plan-grid") : null;
-            if (grid && canScrollInnerGrid(grid, deltaY)) {
-                // Dejar que el usuario scrollee el contenido del día.
-                return;
-            }
-
-            // Capturar el gesto y convertirlo en 1 salto por día.
-            e.preventDefault();
-            wheelAccum += deltaY;
-
-            if (wheelTimer) window.clearTimeout(wheelTimer);
-            wheelTimer = window.setTimeout(() => {
-                wheelAccum = 0;
-            }, 140);
-
-            if (Math.abs(wheelAccum) < WHEEL_THRESHOLD) return;
-            const dir = wheelAccum > 0 ? 1 : -1;
-            wheelAccum = 0;
-            stepBy(dir);
-        }, { passive: false });
-
-        let touchStartY = 0;
-        let touchStartX = 0;
-        let touchArmed = false;
-        let touchFromGrid = false;
-        const TOUCH_THRESHOLD = 44;
-
-        scroller.addEventListener("touchstart", (e) => {
-            const days = getDays();
-            if (days.length <= 1) return;
-            if (!e.touches || e.touches.length !== 1) return;
-
-            const t = e.touches[0];
-            touchStartY = t.clientY;
-            touchStartX = t.clientX;
-            touchArmed = true;
-
-            const target = e.target;
-            const grid = (target instanceof Element) ? target.closest(".plan-grid") : null;
-            touchFromGrid = !!grid;
-        }, { passive: true });
-
-        scroller.addEventListener("touchend", (e) => {
-            if (!touchArmed) return;
-            touchArmed = false;
-
-            const days = getDays();
-            if (days.length <= 1) return;
-            const t = e.changedTouches && e.changedTouches[0];
-            if (!t) return;
-
-            const dy = t.clientY - touchStartY;
-            const dx = t.clientX - touchStartX;
-            if (Math.abs(dy) < TOUCH_THRESHOLD) return;
-            if (Math.abs(dy) < Math.abs(dx)) return;
-
-            // Si el gesto empezó dentro del grid, asumir scroll de contenido (no cambio de día)
-            if (touchFromGrid) return;
-
-            const dir = dy < 0 ? 1 : -1;
-            stepBy(dir);
-        }, { passive: true });
-    }
     const contenedor = document.getElementById("Plan_ejercicio");
     if (!contenedor) return;
     if (contenedor.dataset.detalleDiaInit === "1") return;
@@ -1271,8 +1189,138 @@ function initDetallePorDiaPlan() {
         await openDetalle(headerEl);
     });
 }
+
+function initPlanDiaPager() {
+    const scroller = document.getElementById("Plan_ejercicio");
+    if (!scroller) return;
+    if (scroller.dataset.diaPagerInit === "1") return;
+    scroller.dataset.diaPagerInit = "1";
+
+    const getDays = () => Array.from(scroller.querySelectorAll(".plan-container.plan-snap .plan-dia"));
+
+    const findNearestIndex = () => {
+        const days = getDays();
+        if (!days.length) return 0;
+        const top = scroller.scrollTop;
+        let bestIdx = 0;
+        let bestDist = Infinity;
+        for (let i = 0; i < days.length; i++) {
+            const dist = Math.abs((days[i]?.offsetTop ?? 0) - top);
+            if (dist < bestDist) {
+                bestDist = dist;
+                bestIdx = i;
+            }
+        }
+        return bestIdx;
+    };
+
+    const scrollToIndex = (index, behavior = "smooth") => {
+        const days = getDays();
+        if (!days.length) return;
+        const clamped = Math.max(0, Math.min(days.length - 1, index));
+        const target = days[clamped];
+        if (!target) return;
+        scroller.scrollTo({ top: target.offsetTop, behavior });
+    };
+
+    let gestureLock = false;
+    const stepBy = (dir) => {
+        const days = getDays();
+        if (days.length <= 1) return;
+        if (gestureLock) return;
+        gestureLock = true;
+        const current = findNearestIndex();
+        scrollToIndex(current + dir, "smooth");
+        window.setTimeout(() => {
+            gestureLock = false;
+        }, 420);
+    };
+
+    const canScrollInnerGrid = (gridEl, deltaY) => {
+        if (!(gridEl instanceof HTMLElement)) return false;
+        const canScroll = gridEl.scrollHeight > gridEl.clientHeight + 1;
+        if (!canScroll) return false;
+        if (deltaY > 0) {
+            return gridEl.scrollTop < (gridEl.scrollHeight - gridEl.clientHeight - 1);
+        }
+        if (deltaY < 0) {
+            return gridEl.scrollTop > 0;
+        }
+        return false;
+    };
+
+    let wheelAccum = 0;
+    let wheelTimer = null;
+    const WHEEL_THRESHOLD = 26;
+
+    scroller.addEventListener("wheel", (e) => {
+        const days = getDays();
+        if (days.length <= 1) return;
+        if (e.ctrlKey) return; // pinch zoom
+
+        const deltaY = e.deltaY;
+        const target = e.target;
+        const grid = (target instanceof Element) ? target.closest(".plan-grid") : null;
+        if (grid && canScrollInnerGrid(grid, deltaY)) {
+            return;
+        }
+
+        e.preventDefault();
+        wheelAccum += deltaY;
+
+        if (wheelTimer) window.clearTimeout(wheelTimer);
+        wheelTimer = window.setTimeout(() => {
+            wheelAccum = 0;
+        }, 140);
+
+        if (Math.abs(wheelAccum) < WHEEL_THRESHOLD) return;
+        const dir = wheelAccum > 0 ? 1 : -1;
+        wheelAccum = 0;
+        stepBy(dir);
+    }, { passive: false });
+
+    let touchStartY = 0;
+    let touchStartX = 0;
+    let touchArmed = false;
+    let touchFromGrid = false;
+    const TOUCH_THRESHOLD = 44;
+
+    scroller.addEventListener("touchstart", (e) => {
+        const days = getDays();
+        if (days.length <= 1) return;
+        if (!e.touches || e.touches.length !== 1) return;
+
+        const t = e.touches[0];
+        touchStartY = t.clientY;
+        touchStartX = t.clientX;
+        touchArmed = true;
+
+        const target = e.target;
+        const grid = (target instanceof Element) ? target.closest(".plan-grid") : null;
+        touchFromGrid = !!grid;
+    }, { passive: true });
+
+    scroller.addEventListener("touchend", (e) => {
+        if (!touchArmed) return;
+        touchArmed = false;
+
+        const days = getDays();
+        if (days.length <= 1) return;
+        const t = e.changedTouches && e.changedTouches[0];
+        if (!t) return;
+
+        const dy = t.clientY - touchStartY;
+        const dx = t.clientX - touchStartX;
+        if (Math.abs(dy) < TOUCH_THRESHOLD) return;
+        if (Math.abs(dy) < Math.abs(dx)) return;
+
+        if (touchFromGrid) return;
+
+        const dir = dy < 0 ? 1 : -1;
+        stepBy(dir);
+    }, { passive: true });
+}
 document.getElementById("boton_eliminar")?.addEventListener("click", async () => {
-    initPlanDiaPager();
     const confirmResult = await sweetalert.fire({
         title: "¿Estás seguro?",
         text: "Esta acción eliminará tu plan de entrenamiento actual.",
@@ -1452,6 +1500,3 @@ async function Regen_plan() {
     if (botonRegenerar) botonRegenerar.style.display = "none";
     await openGenerarPlanModal(plan_entreno_actual);
 }
-//temporal
-
-//aca falta poner el script para los botones que tendran los planes de entreno, editar, eliminar (por ejercicio) y el boton para eliminar el plan. todo esto estara en el html del plan mismo

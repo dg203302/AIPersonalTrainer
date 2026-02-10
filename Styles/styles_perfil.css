@@ -26,8 +26,9 @@ input {
 	--radius-md: 14px;
 	--pad: 16px;
 	--content-max: 860px;
-	--header-fixed: 0px;
-	--footer-fixed: 0px;
+	/* Header/Footer son fijos; estas variables controlan el espacio útil. */
+	--header-fixed: 72px;
+	--footer-fixed: 92px;
 }
 
 *,
@@ -177,9 +178,9 @@ header #username {
 main {
 	max-width: var(--content-max);
 	margin:
-		calc(var(--header-fixed, 72px) + env(safe-area-inset-top)) auto calc(var(--footer-fixed, 56px) + env(safe-area-inset-bottom));
-	padding: 18px var(--pad);
-	min-height: calc(100svh - var(--header-fixed, 72px) - var(--footer-fixed, 56px) - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+		calc(var(--header-fixed, 72px) + env(safe-area-inset-top)) auto 0;
+	padding: 18px var(--pad) calc(24px + var(--footer-fixed, 0px) + env(safe-area-inset-bottom));
+	min-height: calc(100svh - var(--header-fixed, 72px) - var(--footer-fixed, 0px) - env(safe-area-inset-top) - env(safe-area-inset-bottom));
 	display: grid;
 	gap: 14px;
 }
@@ -342,7 +343,7 @@ footer {
 	right: 0;
 	bottom: 0;
 	z-index: 40;
-	padding: 10px var(--pad) calc(10px + env(safe-area-inset-bottom));
+	padding: 14px var(--pad) calc(14px + env(safe-area-inset-bottom));
 	background: color-mix(in srgb, #000 18%, transparent);
 	backdrop-filter: blur(16px) saturate(150%);
 	-webkit-backdrop-filter: blur(16px) saturate(150%);
@@ -351,9 +352,21 @@ footer {
 	justify-content: center;
 }
 
+/* Footer nav (botones inferiores) - en horizontal como dashboard */
+.footer-nav {
+	width: min(var(--content-max), 100%);
+	margin: 0 auto;
+	display: flex;
+	align-items: stretch;
+	justify-content: space-between;
+	gap: 12px;
+}
+
 /* Footer button (mismo estilo que dashboard) */
 .footer-btn {
-	min-width: min(420px, calc(100vw - (var(--pad) * 2)));
+	flex: 1 1 0;
+	min-width: 0;
+	align-self: stretch;
 	display: inline-flex;
 	align-items: center;
 	justify-content: center;
@@ -372,6 +385,11 @@ footer {
 	box-shadow: var(--shadow-soft);
 	text-decoration: none;
 	user-select: none;
+}
+
+.footer-btn--small {
+	font-size: 13px;
+	line-height: 1.05;
 }
 
 .footer-btn:hover {

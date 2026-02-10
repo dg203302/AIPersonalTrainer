@@ -51,13 +51,17 @@ window.onload = () =>{
                     alert("Error al obtener el plan de entrenamiento del usuario: " + error.message);
                     return;
                 }
+
                 window.location.href = "/Templates/Inicio/Dashboard.html";
+
                 return
             }
         } else {
             localStorage.clear();
             sessionStorage.clear();
+
             return window.location.href = "/Templates/Inicio/inicio_indice.html";
+        
         }
     });
 }
