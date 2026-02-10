@@ -1121,15 +1121,48 @@ function initDetallePorDiaPlan() {
         const diaInfo = dias[idx];
         const ejercicios = Array.isArray(diaInfo.ejercicios) ? diaInfo.ejercicios : [];
 
+        const openDetalleEjercicio = async (ex) => {
+            if (!ex || typeof ex !== "object") return;
+            const nombre = String(ex.nombre ?? "Ejercicio");
+            const descripcion = String(ex.descripcion ?? "");
+            const series = String(ex.series ?? "-");
+            const reps = String(ex.repeticiones ?? "-");
+            const descanso = String(ex.descanso_segundos ?? "-");
+
+            const html = `
+                <div class="plan-container">
+                    <article class="plan-card" style="box-shadow:none;">
+                        ${descripcion ? `<p class="plan-desc">${escapeHtml(descripcion)}</p>` : ""}
+                        <div class="plan-meta">
+                            <span class="plan-chip">Series: <strong>${escapeHtml(series)}</strong></span>
+                            <span class="plan-chip">Reps: <strong>${escapeHtml(reps)}</strong></span>
+                            <span class="plan-chip">Descanso: <strong>${escapeHtml(descanso)}</strong></span>
+                        </div>
+                    </article>
+                </div>
+            `;
+
+            await sweetalert.fire({
+                title: nombre,
+                html,
+                showCancelButton: false,
+                confirmButtonText: "Cerrar",
+                customClass: {
+                    popup: "dashboard-swal",
+                    confirmButton: "dashboard-swal-confirm",
+                },
+            });
+        };
+
         const cards = ejercicios.length
-            ? ejercicios.map((ex) => {
+            ? ejercicios.map((ex, exIdx) => {
                 const nombre = escapeHtml(ex.nombre);
                 const descripcion = escapeHtml(ex.descripcion || "");
                 const series = escapeHtml(ex.series);
                 const reps = escapeHtml(ex.repeticiones);
                 const descanso = escapeHtml(ex.descanso_segundos);
                 return `
-                    <article class="plan-card">
+                    <article class="plan-card" role="button" tabindex="0" data-ex-idx="${escapeHtml(exIdx)}" aria-label="Ver detalle de ${nombre}">
                         <h3 class="plan-nombre">${nombre}</h3>
                         ${descripcion ? `<p class="plan-desc">${descripcion}</p>` : ""}
                         <div class="plan-meta">
@@ -1143,19 +1176,19 @@ function initDetallePorDiaPlan() {
             : `<div class="plan-vacio">No hay ejercicios cargados para este día.</div>`;
 
         const html = `
-            <div style="max-height: 62vh; overflow: auto; padding-right: 2px;">
-                <div class="plan-container">
-                    <section class="plan-dia">
-                        <div class="plan-dia-header" style="cursor: default;" aria-hidden="true">
-                            <div class="plan-dia-titulos">
-                                <h2 class="plan-dia-titulo">${escapeHtml(diaInfo.dia)}</h2>
-                                ${diaInfo.enfoque ? `<div class="plan-dia-subtitle">${escapeHtml(diaInfo.enfoque)}</div>` : ""}
-                            </div>
-                            <span class="plan-dia-chip">${escapeHtml(ejercicios.length)} ejercicios</span>
+            <div class="plan-container">
+                <section class="plan-dia">
+                    <div class="plan-dia-header" style="cursor: default;" aria-hidden="true">
+                        <div class="plan-dia-titulos">
+                            <h2 class="plan-dia-titulo">${escapeHtml(diaInfo.dia)}</h2>
+                            ${diaInfo.enfoque ? `<div class="plan-dia-subtitle">${escapeHtml(diaInfo.enfoque)}</div>` : ""}
                         </div>
-                        <div class="plan-grid">${cards}</div>
-                    </section>
-                </div>
+                        <span class="plan-dia-chip">${escapeHtml(ejercicios.length)} ejercicios</span>
+                    </div>
+                    <div class="plan-grid js-plan-grid-detalle" style="max-height: 62vh; overflow-y: auto; -webkit-overflow-scrolling: touch; touch-action: pan-y; padding-right: 2px;">
+                        ${cards}
+                    </div>
+                </section>
             </div>
         `;
 
@@ -1167,6 +1200,80 @@ function initDetallePorDiaPlan() {
             customClass: {
                 popup: "dashboard-swal",
                 confirmButton: "dashboard-swal-confirm",
+            },
+            didOpen: () => {
+                const popup = (typeof sweetalert.getPopup === "function" && sweetalert.getPopup()) || document.querySelector(".swal2-popup");
+                const grid = popup?.querySelector(".js-plan-grid-detalle");
+                if (!(grid instanceof HTMLElement)) return;
+
+                let touchStartX = 0;
+                let touchStartY = 0;
+                let touchMoved = false;
+                let touchCard = null;
+                let lastTouchOpenAt = 0;
+                const TAP_MOVE_THRESHOLD = 10;
+
+                const getCardFromEventTarget = (target) => {
+                    if (!(target instanceof Element)) return null;
+                    const card = target.closest(".plan-card");
+                    return card instanceof HTMLElement ? card : null;
+                };
+
+                const openByCardEl = async (cardEl) => {
+                    if (!cardEl) return;
+                    const exIdx = Number(cardEl.getAttribute("data-ex-idx"));
+                    if (!Number.isFinite(exIdx)) return;
+                    const ex = ejercicios[exIdx];
+                    if (!ex) return;
+                    await openDetalleEjercicio(ex);
+                };
+
+                // Permitir scroll vertical con touch incluso al tocar tarjetas,
+                // y abrir detalle solo si fue un tap (sin arrastre).
+                grid.addEventListener("touchstart", (e) => {
+                    if (!e.touches || e.touches.length !== 1) return;
+                    const t = e.touches[0];
+                    touchStartX = t.clientX;
+                    touchStartY = t.clientY;
+                    touchMoved = false;
+                    touchCard = getCardFromEventTarget(e.target);
+                }, { passive: true });
+
+                grid.addEventListener("touchmove", (e) => {
+                    if (!e.touches || e.touches.length !== 1) return;
+                    const t = e.touches[0];
+                    const dx = Math.abs(t.clientX - touchStartX);
+                    const dy = Math.abs(t.clientY - touchStartY);
+                    if (dx > TAP_MOVE_THRESHOLD || dy > TAP_MOVE_THRESHOLD) {
+                        touchMoved = true;
+                    }
+                }, { passive: true });
+
+                grid.addEventListener("touchend", async () => {
+                    if (!touchCard) return;
+                    const cardEl = touchCard;
+                    touchCard = null;
+                    if (touchMoved) return;
+                    lastTouchOpenAt = Date.now();
+                    await openByCardEl(cardEl);
+                }, { passive: true });
+
+                // Mouse / click (evitar doble apertura después de touch)
+                grid.addEventListener("click", async (e) => {
+                    if (Date.now() - lastTouchOpenAt < 450) return;
+                    const cardEl = getCardFromEventTarget(e.target);
+                    if (!cardEl) return;
+                    await openByCardEl(cardEl);
+                });
+
+                // Accesibilidad teclado
+                grid.addEventListener("keydown", async (e) => {
+                    if (e.key !== "Enter" && e.key !== " ") return;
+                    const cardEl = getCardFromEventTarget(e.target);
+                    if (!cardEl) return;
+                    e.preventDefault();
+                    await openByCardEl(cardEl);
+                });
             },
         });
     };
