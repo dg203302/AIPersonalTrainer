@@ -24,6 +24,125 @@ const initFixedChromeObservers = () => {
     }
 };
 
+// Wake Lock (evita que la pantalla se bloquee mientras se está viendo el plan)
+// Nota: requiere HTTPS y soporte del navegador (Chromium/Android suele soportarlo).
+const wakeLockManager = (() => {
+    /** @type {any|null} */
+    let sentinel = null;
+    /** @type {Set<string>} */
+    const reasons = new Set();
+
+    const supported = () => {
+        try {
+            return typeof navigator !== "undefined" && !!navigator.wakeLock && typeof navigator.wakeLock.request === "function";
+        } catch {
+            return false;
+        }
+    };
+
+    const wanted = () => reasons.size > 0;
+
+    const requestIfNeeded = async () => {
+        if (!supported()) return;
+        if (!wanted()) return;
+        if (document.visibilityState !== "visible") return;
+        if (sentinel) return;
+
+        try {
+            sentinel = await navigator.wakeLock.request("screen");
+            // Si el sistema lo libera, intentamos recuperarlo cuando corresponda.
+            if (sentinel && typeof sentinel.addEventListener === "function") {
+                sentinel.addEventListener("release", () => {
+                    sentinel = null;
+                });
+            }
+        } catch (e) {
+            // Puede fallar por falta de gesto del usuario, contexto inseguro, etc.
+            sentinel = null;
+        }
+    };
+
+    const releaseIfPossible = async () => {
+        if (!sentinel) return;
+        try {
+            await sentinel.release();
+        } catch {
+            // ignore
+        } finally {
+            sentinel = null;
+        }
+    };
+
+    const setReason = (reason, isActive, { tryRequest = false } = {}) => {
+        const key = String(reason || "").trim() || "default";
+        if (isActive) reasons.add(key);
+        else reasons.delete(key);
+
+        if (!wanted()) {
+            void releaseIfPossible();
+            return;
+        }
+        if (tryRequest) void requestIfNeeded();
+    };
+
+    // Re-adquirir al volver a primer plano.
+    document.addEventListener("visibilitychange", () => {
+        if (document.visibilityState === "visible") {
+            void requestIfNeeded();
+        } else {
+            // En segundo plano liberamos para evitar errores en algunos navegadores.
+            void releaseIfPossible();
+        }
+    });
+
+    return {
+        supported,
+        setReason,
+        requestIfNeeded,
+        releaseIfPossible,
+    };
+})();
+
+const initWakeLockForPlanViews = () => {
+    const planEl = document.getElementById("Plan_ejercicio");
+    if (!planEl) return;
+    if (planEl.dataset.wakeLockInit === "1") return;
+    planEl.dataset.wakeLockInit = "1";
+
+    const isPlanVisible = () => {
+        // Consideramos visible si no está display:none y está en layout.
+        if (planEl.style.display === "none") return false;
+        return !!planEl.offsetParent;
+    };
+
+    const syncPlanReason = ({ tryRequest = false } = {}) => {
+        const visible = isPlanVisible();
+        wakeLockManager.setReason("plan", visible, { tryRequest });
+    };
+
+    // Estado inicial
+    syncPlanReason({ tryRequest: false });
+
+    // Si cambia el display del contenedor (por generar/eliminar plan), sincronizamos.
+    if ("MutationObserver" in window) {
+        const mo = new MutationObserver(() => syncPlanReason({ tryRequest: false }));
+        mo.observe(planEl, { attributes: true, attributeFilter: ["style", "class"] });
+    }
+
+    // Primer gesto del usuario dentro del plan: intentar adquirir.
+    const tryAcquireOnGesture = () => {
+        if (!isPlanVisible()) return;
+        syncPlanReason({ tryRequest: true });
+        void wakeLockManager.requestIfNeeded();
+    };
+
+    planEl.addEventListener("pointerdown", tryAcquireOnGesture, { passive: true });
+    planEl.addEventListener("touchstart", tryAcquireOnGesture, { passive: true });
+    planEl.addEventListener("wheel", tryAcquireOnGesture, { passive: true });
+    planEl.addEventListener("scroll", tryAcquireOnGesture, { passive: true });
+    planEl.addEventListener("keydown", tryAcquireOnGesture);
+};
+
 const prefersReducedMotion = () => {
     try {
         return window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -577,6 +696,8 @@ window.onload = async () => {
 
     // Al cargar: llevar el foco al contenedor del plan de entreno.
     autofocusPlanEntrenoOncePerSession();
+
+    initWakeLockForPlanViews();
 
     initDetallePorDiaPlan();
     initPlanDiaPager();
@@ -1159,6 +1280,11 @@ function initDetallePorDiaPlan() {
             </div>
         `;
 
+        // Al abrir el detalle por día, intentamos evitar que la pantalla se bloquee.
+        // En algunos navegadores esto requiere gesto del usuario (este click lo es).
+        wakeLockManager.setReason("detalle", true, { tryRequest: true });
+        void wakeLockManager.requestIfNeeded();
+
         await sweetalert.fire({
             title: `Detalle: ${String(diaInfo.dia ?? "Día")}`,
             html,
@@ -1167,6 +1293,9 @@ function initDetallePorDiaPlan() {
             customClass: {
                 popup: "dashboard-swal",
                 confirmButton: "dashboard-swal-confirm",
+            },
+            willClose: () => {
+                wakeLockManager.setReason("detalle", false);
             },
         });
     };
