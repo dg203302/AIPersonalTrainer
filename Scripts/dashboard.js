@@ -284,6 +284,19 @@ const EJERCICIOS_INDICE = {
         "Extensión de tríceps en polea alta",
         "Fondos entre bancos",
     ],
+    "Tríceps": [
+        "Press francés",
+        "Extensión de tríceps en polea alta",
+        "Fondos entre bancos",
+        "Extensión de tríceps con mancuerna sobre la cabeza",
+        "Patada de tríceps con mancuerna",
+    ],
+    "Antebrazos": [
+        "Curl de muñeca con barra",
+        "Curl de muñeca con mancuerna",
+        "Curl invertido con barra",
+        "Farmer's walk (caminata del granjero)",
+    ],
     "Abdomen / core": [
         "Plancha abdominal",
         "Crunch abdominal clásico",
@@ -935,12 +948,14 @@ function mapear_plan(plan_entrenamiento_json) {
         if (!ex || typeof ex !== "object") return null;
         const nombre = ex.nombre ?? ex.ejercicio ?? ex.exercise ?? ex.name ?? ex.titulo ?? ex.title;
         const descripcion = ex.descripcion ?? ex.description ?? ex.detalle ?? ex.detalles ?? ex.instrucciones ?? ex.instruccion;
+        const descripcion_detallada = ex.descripcion_detallada ?? ex.descripcionDetallada ?? ex.detailed_description ?? ex.detailedDescription ?? ex.detalle_detallado ?? ex.instrucciones_detalladas;
         const series = ex.series ?? ex.series_por_ejercicio ?? ex.sets ?? ex.set ?? ex.seriesTotales;
         const repeticiones = ex.repeticiones ?? ex.reps ?? ex.repetitions ?? ex.rep ?? ex.repeticion;
         if (!nombre && !series && !repeticiones) return null;
         return {
             nombre: nombre ?? "Ejercicio",
             descripcion: descripcion ?? "",
+            descripcion_detallada: descripcion_detallada ?? "",
             series: series ?? "-",
             repeticiones: repeticiones ?? "-",
         };
@@ -1175,6 +1190,7 @@ function parsePlanDiasDetallados(planRaw) {
         if (!ex || typeof ex !== "object") return null;
         const nombre = ex.nombre ?? ex.ejercicio ?? ex.exercise ?? ex.name ?? ex.titulo ?? ex.title;
         const descripcion = ex.descripcion ?? ex.description ?? ex.detalle ?? ex.detalles ?? ex.instrucciones ?? ex.instruccion;
+        const descripcion_detallada = ex.descripcion_detallada ?? ex.descripcionDetallada ?? ex.detailed_description ?? ex.detailedDescription ?? ex.detalle_detallado ?? ex.instrucciones_detalladas;
         const series = ex.series ?? ex.series_por_ejercicio ?? ex.sets ?? ex.set ?? ex.seriesTotales;
         const repeticiones = ex.repeticiones ?? ex.reps ?? ex.repetitions ?? ex.rep ?? ex.repeticion;
         const descanso_segundos = ex.descanso_segundos ?? ex.descanso ?? ex.rest ?? ex.rest_seconds ?? ex.restSeconds;
@@ -1182,6 +1198,7 @@ function parsePlanDiasDetallados(planRaw) {
         return {
             nombre: String(nombre ?? "Ejercicio"),
             descripcion: String(descripcion ?? ""),
+            descripcion_detallada: String(descripcion_detallada ?? ""),
             series: series ?? "-",
             repeticiones: repeticiones ?? "-",
             descanso_segundos: descanso_segundos ?? "-",
@@ -1242,10 +1259,11 @@ function initDetallePorDiaPlan() {
         const diaInfo = dias[idx];
         const ejercicios = Array.isArray(diaInfo.ejercicios) ? diaInfo.ejercicios : [];
 
-        const cards = ejercicios.length
+                const cards = ejercicios.length
             ? ejercicios.map((ex) => {
                 const nombre = escapeHtml(ex.nombre);
                 const descripcion = escapeHtml(ex.descripcion || "");
+                const descripcionDet = escapeHtml(ex.descripcion_detallada || "");
                 const series = escapeHtml(ex.series);
                 const reps = escapeHtml(ex.repeticiones);
                 const descanso = escapeHtml(ex.descanso_segundos);
@@ -1253,6 +1271,7 @@ function initDetallePorDiaPlan() {
                     <article class="plan-card">
                         <h3 class="plan-nombre">${nombre}</h3>
                         ${descripcion ? `<p class="plan-desc">${descripcion}</p>` : ""}
+                        ${descripcionDet ? `<p class="plan-desc-detailed">${descripcionDet}</p>` : ""}
                         <div class="plan-meta">
                             <span class="plan-chip">Series: <strong>${series}</strong></span>
                             <span class="plan-chip">Reps: <strong>${reps}</strong></span>

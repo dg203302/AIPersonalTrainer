@@ -81,6 +81,19 @@ const EJERCICIOS_INDICE = {
         "Extensión de tríceps en polea alta",
         "Fondos entre bancos",
     ],
+    "Tríceps": [
+        "Press francés",
+        "Extensión de tríceps en polea alta",
+        "Fondos entre bancos",
+        "Extensión de tríceps con mancuerna sobre la cabeza",
+        "Patada de tríceps con mancuerna",
+    ],
+    "Antebrazos": [
+        "Curl de muñeca con barra",
+        "Curl de muñeca con mancuerna",
+        "Curl invertido con barra",
+        "Farmer's walk (caminata del granjero)",
+    ],
     "Abdomen / core": [
         "Plancha abdominal",
         "Crunch abdominal clásico",
@@ -166,6 +179,7 @@ const validatePlanShape = (obj) => {
             if (!ex || typeof ex !== "object") return "Cada ejercicio debe ser un objeto";
             if (typeof ex.nombre !== "string" || !ex.nombre.trim()) return "Cada ejercicio debe tener nombre (string)";
             if (typeof ex.descripcion !== "string" || !ex.descripcion.trim()) return "Cada ejercicio debe tener descripcion (string)";
+            if (typeof ex.descripcion_detallada !== "string" || !ex.descripcion_detallada.trim()) return "Cada ejercicio debe tener descripcion_detallada (string)";
             if (typeof ex.series !== "number" || Number.isNaN(ex.series)) return "Cada ejercicio debe tener series (number)";
             if (typeof ex.repeticiones !== "string" || !ex.repeticiones.trim()) return "Cada ejercicio debe tener repeticiones (string)";
             if (typeof ex.descanso_segundos !== "number" || Number.isNaN(ex.descanso_segundos)) {
@@ -345,6 +359,12 @@ export default async function handler(request, _context){
                     ? ex.description.trim()
                     : "Realizá el movimiento controlado, con técnica correcta y rango completo.";
 
+            const descripcionDetalladaRaw = (typeof ex.descripcion_detallada === "string" && ex.descripcion_detallada.trim())
+                ? ex.descripcion_detallada.trim()
+                : (typeof ex.detailed_description === "string" && ex.detailed_description.trim())
+                    ? ex.detailed_description.trim()
+                    : descripcionRaw + " Técnica: mantén la postura, rango completo y control en la fase excéntrica.";
+
             const seriesNum = Number(ex.series);
             const descansoNum = Number(ex.descanso_segundos);
             const repeticiones = (typeof ex.repeticiones === "string" && ex.repeticiones.trim())
@@ -354,6 +374,7 @@ export default async function handler(request, _context){
             return {
                 nombre,
                 descripcion: descripcionRaw,
+                descripcion_detallada: descripcionDetalladaRaw,
                 series: Number.isFinite(seriesNum) ? seriesNum : 4,
                 repeticiones,
                 descanso_segundos: Number.isFinite(descansoNum) ? descansoNum : 90,
@@ -380,6 +401,7 @@ export default async function handler(request, _context){
         const makeFallbackExercise = (nombre) => ({
             nombre,
             descripcion: "Movimiento controlado, técnica correcta, rango completo. Ajustá carga según tu nivel.",
+            descripcion_detallada: "Ejecución detallada: postura neutra, respiración controlada, tempo 2-1-2. Ajustá la carga para completar las repeticiones con buena técnica.",
             series: 4,
             repeticiones: "10-12",
             descanso_segundos: 90,
@@ -480,13 +502,13 @@ Usa SIEMPRE este formato EXACTO (mismas claves y tipos):
             "ejercicios_por_dia": ${ejerciciosPorDiaObjetivo}
         },
         "configuracion_semanal": [
-            {"dia":"Lunes","enfoque":"<string>","ejercicios":[{"nombre":"<string>","descripcion":"<string>","series":4,"repeticiones":"10-12","descanso_segundos":90}]},
-            {"dia":"Martes","enfoque":"<string>","ejercicios":[{"nombre":"<string>","descripcion":"<string>","series":4,"repeticiones":"10-12","descanso_segundos":90}]},
-            {"dia":"Miércoles","enfoque":"<string>","ejercicios":[{"nombre":"<string>","descripcion":"<string>","series":4,"repeticiones":"10-12","descanso_segundos":90}]},
-            {"dia":"Jueves","enfoque":"<string>","ejercicios":[{"nombre":"<string>","descripcion":"<string>","series":4,"repeticiones":"10-12","descanso_segundos":90}]},
-            {"dia":"Viernes","enfoque":"<string>","ejercicios":[{"nombre":"<string>","descripcion":"<string>","series":4,"repeticiones":"10-12","descanso_segundos":90}]},
-            {"dia":"Sábado","enfoque":"<string>","ejercicios":[{"nombre":"<string>","descripcion":"<string>","series":4,"repeticiones":"10-12","descanso_segundos":90}]},
-            {"dia":"Domingo","enfoque":"<string>","ejercicios":[{"nombre":"<string>","descripcion":"<string>","series":4,"repeticiones":"10-12","descanso_segundos":90}]}
+            {"dia":"Lunes","enfoque":"<string>","ejercicios":[{"nombre":"<string>","descripcion":"<string>","descripcion_detallada":"<string>","series":4,"repeticiones":"10-12","descanso_segundos":90}]},
+            {"dia":"Martes","enfoque":"<string>","ejercicios":[{"nombre":"<string>","descripcion":"<string>","descripcion_detallada":"<string>","series":4,"repeticiones":"10-12","descanso_segundos":90}]},
+            {"dia":"Miércoles","enfoque":"<string>","ejercicios":[{"nombre":"<string>","descripcion":"<string>","descripcion_detallada":"<string>","series":4,"repeticiones":"10-12","descanso_segundos":90}]},
+            {"dia":"Jueves","enfoque":"<string>","ejercicios":[{"nombre":"<string>","descripcion":"<string>","descripcion_detallada":"<string>","series":4,"repeticiones":"10-12","descanso_segundos":90}]},
+            {"dia":"Viernes","enfoque":"<string>","ejercicios":[{"nombre":"<string>","descripcion":"<string>","descripcion_detallada":"<string>","series":4,"repeticiones":"10-12","descanso_segundos":90}]},
+            {"dia":"Sábado","enfoque":"<string>","ejercicios":[{"nombre":"<string>","descripcion":"<string>","descripcion_detallada":"<string>","series":4,"repeticiones":"10-12","descanso_segundos":90}]},
+            {"dia":"Domingo","enfoque":"<string>","ejercicios":[{"nombre":"<string>","descripcion":"<string>","descripcion_detallada":"<string>","series":4,"repeticiones":"10-12","descanso_segundos":90}]}
         ],
         "progresion_sugerida": {
             "metodo": "Sobrecarga progresiva",
@@ -498,7 +520,8 @@ Usa SIEMPRE este formato EXACTO (mismas claves y tipos):
 Reglas extra:
 - series y descanso_segundos deben ser NUMEROS (no strings).
 - repeticiones SIEMPRE string (ej: "10-12" o "45-60 segundos").
-- descripcion SIEMPRE string con instrucciones claras y breves.
+- descripcion SIEMPRE string con instrucciones claras y breves (resumen corto).
+- descripcion_detallada SIEMPRE string con instrucciones más completas y técnicas (detalle).
 - configuracion_semanal debe tener exactamente 7 dias (Lunes a Domingo).
 
 Regla de intensidad (OBLIGATORIA):
@@ -534,6 +557,8 @@ Espalda: Dominadas (peso corporal), Jalón al pecho en polea, Remo con barra, Re
 Piernas: Sentadilla libre, Prensa de piernas, Zancadas / estocadas, Peso muerto rumano, Hip thrust (empuje de cadera), Extensión de cuádriceps en máquina, Curl femoral tumbado o sentado, Elevación de talones, Sentadilla búlgara.
 Hombros: Press militar con barra o mancuernas, Elevaciones laterales con mancuernas, Pájaros / vuelos posteriores, Elevaciones frontales, Face pull (salud del hombro).
 Brazos: Curl de bíceps con barra, Curl martillo con mancuernas, Curl predicador, Press francés, Extensión de tríceps en polea alta, Fondos entre bancos.
+Tríceps: Press francés, Extensión de tríceps en polea alta, Fondos entre bancos, Extensión de tríceps con mancuerna sobre la cabeza, Patada de tríceps con mancuerna.
+Antebrazos: Curl de muñeca con barra, Curl de muñeca con mancuerna, Curl invertido con barra, Farmer's walk (caminata del granjero).
 Abdomen / core: Plancha abdominal, Crunch abdominal clásico, Elevación de piernas colgado o en suelo, Giros rusos, Rueda abdominal.
 Cardio / acondicionamiento: Burpees, Saltos de tijera, Salto a la cuerda.`;
 	try {
