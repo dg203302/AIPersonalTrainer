@@ -6,8 +6,8 @@
   "description": "A Personal Trainer powered by AI to help you achieve your fitness goals.",
   "lang": "es",
   "dir": "auto",
-  "theme_color": "#9DF3FF",
-  "background_color": "#9DF3FF",
+  "theme_color": "#000000",
+  "background_color": "#000000",
   "orientation": "portrait",
   "icons": [
     {
