@@ -363,7 +363,7 @@ export default async function handler(request, _context){
                 ? ex.descripcion_detallada.trim()
                 : (typeof ex.detailed_description === "string" && ex.detailed_description.trim())
                     ? ex.detailed_description.trim()
-                    : descripcionRaw + " Técnica: mantén la postura, rango completo y control en la fase excéntrica.";
+                    : descripcionRaw + " Técnica: mantén la postura, rango completo y control en la fase excéntrica. Respiración: inspira en la fase excéntrica y exhala en la fase concéntrica. Progresión: recomendaciones de sobrecarga progresiva (p.ej. aumentar 2-5% de carga o 1-2 repeticiones cuando completes el rango objetivo durante 1-2 sesiones).";
 
             const seriesNum = Number(ex.series);
             const descansoNum = Number(ex.descanso_segundos);
@@ -401,7 +401,7 @@ export default async function handler(request, _context){
         const makeFallbackExercise = (nombre) => ({
             nombre,
             descripcion: "Movimiento controlado, técnica correcta, rango completo. Ajustá carga según tu nivel.",
-            descripcion_detallada: "Ejecución detallada: postura neutra, respiración controlada, tempo 2-1-2. Ajustá la carga para completar las repeticiones con buena técnica.",
+            descripcion_detallada: "Ejecución detallada: postura neutra, respiración (inspira en la fase de bajada/excéntrica y exhala en la fase de empuje/concéntrica), tempo recomendado 2-1-2. Recomendación de sobrecarga progresiva: intenta aumentar ligeramente la carga (2-5%) o añadir 1-2 repeticiones cuando completes el rango objetivo durante 1-2 sesiones, priorizando siempre la técnica. Ajustá la carga para completar las repeticiones con buena técnica.",
             series: 4,
             repeticiones: "10-12",
             descanso_segundos: 90,
@@ -522,6 +522,8 @@ Reglas extra:
 - repeticiones SIEMPRE string (ej: "10-12" o "45-60 segundos").
 - descripcion SIEMPRE string con instrucciones claras y breves (resumen corto).
 - descripcion_detallada SIEMPRE string con instrucciones más completas y técnicas (detalle).
+ - descripcion_detallada SIEMPRE string con instrucciones más completas y técnicas (detalle).
+ - descripcion_detallada DEBE incluir, por cada ejercicio: técnica correcta (puntos clave de ejecución), una recomendación concreta de sobrecarga progresiva (cómo progresar semana a semana) y la técnica de respiración recomendada para ese ejercicio.
 - configuracion_semanal debe tener exactamente 7 dias (Lunes a Domingo).
 
 Regla de intensidad (OBLIGATORIA):

@@ -318,6 +318,31 @@ const escapeHtml = (value) => String(value)
     .replaceAll('"', "&quot;")
     .replaceAll("'", "&#39;");
 
+const formatReps = (value) => {
+    if (value == null) return "-";
+    const s = String(value).trim();
+    if (!s) return "-";
+
+    // Detect ranges or single values given in seconds (segundos, s, sec)
+    const secRange = s.match(/^(\d+(?:\.\d+)?)\s*-\s*(\d+(?:\.\d+)?)[\s]*?(s|seg|segs|segundos|sec|secs)\b/i);
+    if (secRange) {
+        return `${secRange[1]}-${secRange[2]}S`;
+    }
+    const secSingle = s.match(/^(\d+(?:\.\d+)?)[\s]*?(s|seg|segs|segundos|sec|secs)\b/i);
+    if (secSingle) {
+        return `${secSingle[1]}S`;
+    }
+
+    // Also normalize common phrasing like '20 - 30 segundos' with spaces
+    const secRange2 = s.match(/(\d+(?:\.\d+)?)\s*-\s*(\d+(?:\.\d+)?)/);
+    if (secRange2 && /seg|s|segundos|sec/i.test(s)) {
+        return `${secRange2[1]}-${secRange2[2]}S`;
+    }
+
+    // Fallback: return as-is
+    return s;
+};
+
 const renderListaEjerciciosSelectable = () => {
     const parts = [];
     for (const [grupo, items] of Object.entries(EJERCICIOS_INDICE)) {
@@ -1030,7 +1055,7 @@ function mapear_plan(plan_entrenamiento_json) {
         const nombre = escapeHtml(exNorm.nombre);
         const descripcion = escapeHtml(exNorm.descripcion || "");
         const series = escapeHtml(exNorm.series);
-        const reps = escapeHtml(exNorm.repeticiones);
+        const reps = escapeHtml(formatReps(exNorm.repeticiones));
         return `
             <article class="plan-card" data-idx="${idx}">
                 <h3 class="plan-nombre">${nombre}</h3>
@@ -1259,23 +1284,53 @@ function initDetallePorDiaPlan() {
         const diaInfo = dias[idx];
         const ejercicios = Array.isArray(diaInfo.ejercicios) ? diaInfo.ejercicios : [];
 
+                const buildDetailedHtml = (descripcionDet, descripcionShort) => {
+                    const text = String(descripcionDet || descripcionShort || "").trim();
+                    const sentences = text.split(/(?<=[.?!])\s+/).map(s => s.trim()).filter(Boolean);
+
+                    const findSentence = (keywords) => {
+                        const low = text.toLowerCase();
+                        for (const s of sentences) {
+                            for (const k of keywords) {
+                                if (s.toLowerCase().includes(k)) return s.replace(/[.?!]$/,'').trim();
+                            }
+                        }
+                        return null;
+                    };
+
+                    const tecnica = findSentence(["técnic","tecnica","postura","mantener la espalda","posición","mantener"]) || sentences[0] || "Ejecutar con técnica correcta: mantener postura y rango adecuado.";
+                    const sobrecarga = findSentence(["sobrecarga","progres","aument","carga","progresión","progresiva"]) || "Incrementar progresivamente la carga (p.ej. +2-5% de carga o +1-2 repeticiones cuando completes el rango objetivo durante 1-2 sesiones).";
+                    const respiracion = findSentence(["respir","inhal","exhal","inspir","exhalar"]) || "Inhalar al bajar, exhalar al subir.";
+
+                    return `
+                        <ul class="plan-detailed-list">
+                            <li><strong>Técnica:</strong> ${escapeHtml(tecnica)}</li>
+                            <li><strong>Sobrecarga:</strong> ${escapeHtml(sobrecarga)}</li>
+                            <li><strong>Respiración:</strong> ${escapeHtml(respiracion)}</li>
+                        </ul>
+                    `;
+                };
+
                 const cardHtmls = ejercicios.length
             ? ejercicios.map((ex) => {
                 const nombre = escapeHtml(ex.nombre);
                 const descripcion = escapeHtml(ex.descripcion || "");
-                const descripcionDet = escapeHtml(ex.descripcion_detallada || "");
+                const descripcionDet = String(ex.descripcion_detallada ?? "").trim();
                 const series = escapeHtml(ex.series);
-                const reps = escapeHtml(ex.repeticiones);
+                const reps = escapeHtml(formatReps(ex.repeticiones));
                 const descanso = escapeHtml(ex.descanso_segundos);
+                        const detailedHtml = buildDetailedHtml(descripcionDet, descripcion);
                         return `
                             <article class="plan-card" style="height:100%;display:flex;flex-direction:column;justify-content:space-between;">
-                                <h3 class="plan-nombre">${nombre}</h3>
-                                ${descripcion ? `<p class="plan-desc">${descripcion}</p>` : ""}
-                                ${descripcionDet ? `<p class="plan-desc-detailed">${descripcionDet}</p>` : ""}
-                                <div class="plan-meta">
-                                    <span class="plan-chip">Series: <strong>${series}</strong></span>
-                                    <span class="plan-chip">Reps: <strong>${reps}</strong></span>
-                                    <span class="plan-chip">Descanso: <strong>${descanso}</strong></span>
+                                <div>
+                                    <h3 class="plan-nombre">${nombre}</h3>
+                                    ${descripcion ? `<p class="plan-desc">${descripcion}</p>` : ""}
+                                    <div class="plan-meta" style="margin-top:6px;">
+                                        <span class="plan-chip">Series: <strong>${series}</strong></span>
+                                        <span class="plan-chip">Reps: <strong>${reps}</strong></span>
+                                        <span class="plan-chip plan-chip--vertical"><span class="plan-chip-label">Descanso</span><span class="plan-chip-value">${descanso}</span></span>
+                                    </div>
+                                    ${detailedHtml}
                                 </div>
                             </article>
                         `;

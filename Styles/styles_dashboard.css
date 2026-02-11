@@ -398,6 +398,117 @@ button:active {
 	background: color-mix(in srgb, #000 14%, transparent);
 }
 
+/* Modal (sweetalert) typography improvements for better contrast */
+.dashboard-swal {
+	color: #ffffff;
+	text-shadow: 0 1px 0 rgba(0,0,0,0.6);
+}
+
+.dashboard-swal .plan-detalle-viewport {
+	-webkit-overflow-scrolling: touch;
+}
+
+.dashboard-swal .plan-card {
+	color: #ffffff;
+	background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+	border: 1px solid rgba(255,255,255,0.06);
+	box-shadow: 0 8px 30px rgba(0,0,0,0.45);
+	padding: 18px;
+	border-radius: 14px;
+}
+
+.dashboard-swal .plan-nombre {
+	font-size: 1.05rem;
+	font-weight: 800;
+	margin: 0 0 6px;
+	color: #ffffff;
+}
+
+.dashboard-swal .plan-desc {
+	color: rgba(255,255,255,0.92);
+	font-size: 0.99rem;
+	line-height: 1.4;
+	margin: 6px 0 8px;
+}
+
+.dashboard-swal .plan-desc-detailed {
+	color: rgba(255,255,255,0.94);
+	font-size: 1rem;
+	line-height: 1.55;
+	margin-top: 8px;
+}
+
+.dashboard-swal .plan-meta .plan-chip {
+	background: rgba(255,255,255,0.04);
+	color: #ffffff;
+	border: 1px solid rgba(255,255,255,0.06);
+	padding: 6px 8px;
+	font-weight: 700;
+	font-size: 12px;
+}
+
+.dashboard-swal .plan-meta {
+	display:flex;
+	gap:8px;
+	flex-wrap:nowrap;
+	align-items:center;
+	overflow: hidden;
+	white-space: nowrap;
+}
+
+.dashboard-swal .plan-detailed-list {
+	margin: 10px 0 0;
+	padding-left: 18px;
+}
+.dashboard-swal .plan-detailed-list li {
+	margin-bottom: 6px;
+	font-size: 0.92rem;
+	color: rgba(255,255,255,0.92);
+	line-height: 1.4;
+}
+
+/* Ensure chips are small and don't overflow */
+.dashboard-swal .plan-chip {
+	display:inline-block;
+	padding:4px 8px !important;
+	font-size:11px !important;
+	border-radius:12px !important;
+}
+
+.dashboard-swal .plan-chip--vertical {
+	display: inline-flex !important;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	padding: 6px 8px !important;
+	min-width: 46px;
+}
+
+.dashboard-swal .plan-chip--vertical .plan-chip-label {
+	display:block;
+	font-size:10px;
+	color: rgba(255,255,255,0.75);
+	line-height:1;
+}
+.dashboard-swal .plan-chip--vertical .plan-chip-value {
+	display:block;
+	font-size:13px;
+	font-weight:800;
+	color: #ffffff;
+	line-height:1;
+}
+
+.dashboard-swal .plan-dia-header h2,
+.dashboard-swal .plan-dia-header .plan-dia-subtitle {
+	color: #ffffff;
+}
+
+/* Ensure modal popup text is crisp on mobile */
+.dashboard-swal .swal2-html-container {
+	-webkit-font-smoothing: antialiased;
+	-moz-osx-font-smoothing: grayscale;
+}
+
 .ayuda-chevron {
 	width: 10px;
 	height: 10px;
