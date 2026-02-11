@@ -1259,7 +1259,7 @@ function initDetallePorDiaPlan() {
         const diaInfo = dias[idx];
         const ejercicios = Array.isArray(diaInfo.ejercicios) ? diaInfo.ejercicios : [];
 
-                const cards = ejercicios.length
+                const cardHtmls = ejercicios.length
             ? ejercicios.map((ex) => {
                 const nombre = escapeHtml(ex.nombre);
                 const descripcion = escapeHtml(ex.descripcion || "");
@@ -1267,35 +1267,45 @@ function initDetallePorDiaPlan() {
                 const series = escapeHtml(ex.series);
                 const reps = escapeHtml(ex.repeticiones);
                 const descanso = escapeHtml(ex.descanso_segundos);
-                return `
-                    <article class="plan-card">
-                        <h3 class="plan-nombre">${nombre}</h3>
-                        ${descripcion ? `<p class="plan-desc">${descripcion}</p>` : ""}
-                        ${descripcionDet ? `<p class="plan-desc-detailed">${descripcionDet}</p>` : ""}
-                        <div class="plan-meta">
-                            <span class="plan-chip">Series: <strong>${series}</strong></span>
-                            <span class="plan-chip">Reps: <strong>${reps}</strong></span>
-                            <span class="plan-chip">Descanso: <strong>${descanso}</strong></span>
-                        </div>
-                    </article>
-                `;
-            }).join("")
+                        return `
+                            <article class="plan-card" style="height:100%;display:flex;flex-direction:column;justify-content:space-between;">
+                                <h3 class="plan-nombre">${nombre}</h3>
+                                ${descripcion ? `<p class="plan-desc">${descripcion}</p>` : ""}
+                                ${descripcionDet ? `<p class="plan-desc-detailed">${descripcionDet}</p>` : ""}
+                                <div class="plan-meta">
+                                    <span class="plan-chip">Series: <strong>${series}</strong></span>
+                                    <span class="plan-chip">Reps: <strong>${reps}</strong></span>
+                                    <span class="plan-chip">Descanso: <strong>${descanso}</strong></span>
+                                </div>
+                            </article>
+                        `;
+            })
+            : [];
+
+        // Build a vertical snap viewport so each exercise occupies the modal viewport
+        const viewportStyle = "overflow-y:auto;scroll-snap-type:y mandatory;-webkit-overflow-scrolling:touch;padding-right:6px;flex:1;";
+        const panelStyle = "scroll-snap-align:start;height:100%;width:100%;box-sizing:border-box;display:flex;flex-direction:column;justify-content:space-between;padding:18px;";
+
+        const snapPanels = cardHtmls.length
+            ? cardHtmls.map((htmlCard) => `<div class="plan-snap-panel" style="${panelStyle}">${htmlCard}</div>`).join("")
             : `<div class="plan-vacio">No hay ejercicios cargados para este día.</div>`;
 
+        // Build content: header (day + small subtitle) + snapping viewport that fills remaining modal space
+        const containerStyle = "display:flex;flex-direction:column;gap:12px;height:70vh;max-height:74vh;";
+        const headerHtml = `
+            <div style="text-align:center;padding:8px 12px;">
+                <h2 style="margin:0;font-size:1.6rem;line-height:1.1;font-weight:700;">${escapeHtml(String(diaInfo.dia ?? "Día"))}</h2>
+                ${diaInfo.enfoque ? `<div style=\"margin-top:6px;font-size:0.95rem;color:var(--muted,#b3bac6);\">${escapeHtml(String(diaInfo.enfoque))}</div>` : ""}
+            </div>
+        `;
+
         const html = `
-            <div class="plan-detalle-scroll">
-                <div class="plan-container">
-                    <section class="plan-dia">
-                        <div class="plan-dia-header" style="cursor: default;" aria-hidden="true">
-                            <div class="plan-dia-titulos">
-                                <h2 class="plan-dia-titulo">${escapeHtml(diaInfo.dia)}</h2>
-                                ${diaInfo.enfoque ? `<div class="plan-dia-subtitle">${escapeHtml(diaInfo.enfoque)}</div>` : ""}
-                            </div>
-                            <span class="plan-dia-chip">${escapeHtml(ejercicios.length)} ejercicios</span>
-                        </div>
-                        <div class="plan-grid">${cards}</div>
-                    </section>
+            <div style="${containerStyle}">
+                ${headerHtml}
+                <div class="plan-detalle-viewport" style="${viewportStyle};flex:1;">
+                    ${snapPanels}
                 </div>
+                <div style="text-align:center;margin-top:4px;color:var(--muted,#99a);"><small>${escapeHtml(String(ejercicios.length))} ejercicios</small></div>
             </div>
         `;
 
@@ -1305,7 +1315,6 @@ function initDetallePorDiaPlan() {
         void wakeLockManager.requestIfNeeded();
 
         await sweetalert.fire({
-            title: `Detalle: ${String(diaInfo.dia ?? "Día")}`,
             html,
             showCancelButton: false,
             confirmButtonText: "Cerrar",
