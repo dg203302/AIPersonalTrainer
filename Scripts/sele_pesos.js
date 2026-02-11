@@ -156,7 +156,7 @@ const init = () => {
         }
 
         if (await registrar_datos(id_usuario, sessionStorage.getItem("edad_temp"), sessionStorage.getItem("alt_temp"), peso_act_temp, peso_desea_temp)) {
-            window.location.href = "index.html";
+            window.location.href = "/";
         }
     });
 };
@@ -247,8 +247,6 @@ async function registrar_datos(id,edad, altura, peso_act, peso_desea){
         showError("Error al registrar los datos: " + (result?.error ?? result?.message ?? response.statusText));
         return false;
     }
-
-    showSuccess("Datos registrados con exito!");
     return true;
 }
 
@@ -259,12 +257,4 @@ async function showError(message) {
         text: message,
     });
 }
-async function showSuccess(message) {
-    await Swal.fire({
-        icon: 'success',
-        title: 'Éxito',
-        text: message,
-    });
-}
 globalThis.showError = showError;
-globalThis.showSuccess = showSuccess;
