@@ -178,3 +178,38 @@ kbd {
 		grid-template-columns: 1fr 1fr;
 	}
 }
+
+/* Índice (links tipo botón) */
+.ayuda-content nav[aria-label="Índice de ayuda"] ul {
+	list-style: none;
+	padding-left: 0;
+	margin: 8px 0 0;
+	display: grid;
+	gap: 10px;
+}
+
+.ayuda-content nav[aria-label="Índice de ayuda"] li {
+	margin: 0;
+}
+
+.ayuda-content nav[aria-label="Índice de ayuda"] a {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	min-height: 44px;
+	padding: 10px 12px;
+	border-radius: var(--radius-lg);
+	border: 1px solid var(--stroke2);
+	background: color-mix(in srgb, #fff 7%, transparent);
+	box-shadow: var(--shadow-soft);
+	font-weight: 750;
+	color: var(--text);
+}
+
+.ayuda-content nav[aria-label="Índice de ayuda"] a:hover {
+	background: color-mix(in srgb, #fff 10%, transparent);
+}
+
+.ayuda-content nav[aria-label="Índice de ayuda"] a:active {
+	transform: translateY(1px);
+}

@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="/Styles/styles_indice.css">
+    <link rel="stylesheet" href="/Styles/components.css">
     <title>Welcome</title>
 </head>
 <body>
@@ -164,8 +165,30 @@
         </section>
         
         <section id="alimentacion">
-            <h1>Proximamente!!!!</h1>
-            <p class="muted">Vamos a sumar contenido de alimentación en un formato práctico: ideas simples, hábitos sostenibles y guías fáciles de aplicar (sin extremos).</p>
+            <h1>Plan de Alimentación con IA</h1>
+            <p class="lead">Un plan de alimentación no debería ser una lista genérica ni una dieta imposible de sostener. En Personal TrAIner, la IA arma una guía semanal clara y accionable para que sepas <strong>qué comer</strong>, <strong>cuánto</strong> y <strong>cómo organizar tu día</strong> sin complicarte.</p>
+            <p class="muted">La generación se basa en tu perfil (edad, altura, peso actual y peso objetivo) para ajustar la ingesta y acompañar tu meta. El resultado se presenta por <strong>días de la semana</strong>, con una estructura simple de seguir.</p>
+
+            <div class="grid-cards" aria-label="Características del plan de alimentación">
+                <article class="card">
+                    <h2>Calorías por día</h2>
+                    <p>Vas a ver la <strong>ingesta recomendada de calorías</strong> para cada día, para mantener un rumbo claro y medible.</p>
+                </article>
+                <article class="card">
+                    <h2>Comidas sugeridas</h2>
+                    <p>El plan incluye <strong>comidas recomendadas por día</strong>, pensadas para que puedas ejecutarlo en la vida real (sin recetas raras ni vueltas).</p>
+                </article>
+                <article class="card">
+                    <h2>Detalle por día</h2>
+                    <p>Al tocar un día, se abre una vista con más información: calorías, explicación del enfoque del día y cómo repartir mejor tu alimentación.</p>
+                </article>
+                <article class="card">
+                    <h2>Macros + tips</h2>
+                    <p>Vas a ver la distribución de <strong>macronutrientes</strong> (porcentaje de carbohidratos, proteínas y grasas), recomendaciones de alimentos según la cantidad de comidas del día y <strong>tips prácticos</strong> para manejarlo.</p>
+                </article>
+            </div>
+
+            <p class="muted">Objetivo: menos improvisación y más consistencia. Un plan simple, personalizado y fácil de repetir semana a semana.</p>
         </section>
         
         <section id="disclaimer_ia">
@@ -226,5 +249,6 @@
             });
         });
     </script>
+    <script src="/Scripts/backToTop.js" defer></script>
 </body>
 </html>

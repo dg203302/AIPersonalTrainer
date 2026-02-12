@@ -3,8 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="/Styles/styles_dashboard.css">
-	<link rel="stylesheet" href="/Styles/styles_ayuda.css">
+     <link rel="stylesheet" href="/Styles/styles_dashboard.css">
+ 	<link rel="stylesheet" href="/Styles/styles_ayuda.css">
+     <link rel="stylesheet" href="/Styles/components.css">
     <meta name="theme-color" content="#0A1226">
     <title>Ayuda</title>
 </head>
@@ -26,7 +27,26 @@
     </header>
 
     <main>
-        <section class="ayuda-box" aria-labelledby="ayuda_title">
+        <section class="ayuda-box" aria-labelledby="ayuda_indice_title">
+            <div class="ayuda-header">
+                <div class="ayuda-title">
+                    <h1 id="ayuda_indice_title">Índice</h1>
+                    <p class="ayuda-subtitle">Ir a una sección</p>
+                </div>
+                <span class="ayuda-chip">Ayuda</span>
+            </div>
+
+            <div class="ayuda-content">
+                <nav aria-label="Índice de ayuda">
+                    <ul>
+                        <li><a href="#ayuda-entreno">Plan de Entreno</a></li>
+                        <li><a href="#ayuda-alimentacion">Plan de Alimentación</a></li>
+                    </ul>
+                </nav>
+            </div>
+        </section>
+
+        <section id="ayuda-entreno" class="ayuda-box" aria-labelledby="ayuda_title">
             <div class="ayuda-header">
                 <div class="ayuda-title">
                     <h1 id="ayuda_title">Guía del Plan de Ejercicio</h1>
@@ -133,6 +153,130 @@
                 </p>
             </div>
         </section>
+        
+        <section id="ayuda-alimentacion" class="ayuda-box" aria-labelledby="ayuda_aliment_title">
+            <div class="ayuda-header">
+                <div class="ayuda-title">
+                    <h1 id="ayuda_aliment_title">Guía del Plan de Alimentación</h1>
+                    <p class="ayuda-subtitle">Paso a paso y funciones</p>
+                </div>
+                <span class="ayuda-chip">Guía</span>
+            </div>
+
+            <div class="ayuda-content">
+                <p>
+                    Acá tenés una guía completa para <strong>generar</strong>, <strong>ver</strong> y <strong>gestionar</strong> tu plan semanal de alimentación.
+                    El plan se arma con IA usando tu perfil (edad, altura, peso actual y objetivo) + las opciones que elijas.
+                </p>
+
+                <div class="ayuda-grid" role="list">
+                    <div class="ayuda-card" role="listitem">
+                        <h4>Requisito</h4>
+                        <p>Tené tu perfil completo para mejores resultados.</p>
+                    </div>
+                    <div class="ayuda-card" role="listitem">
+                        <h4>Qué vas a ver</h4>
+                        <p>Vas a ver un resumen por día (calorías y comidas) y un detalle con macros, recomendaciones y tips.</p>
+                    </div>
+                </div>
+
+                <div class="ayuda-divider" aria-hidden="true"></div>
+
+                <h2>1) Generar el plan</h2>
+                <ol>
+                    <li>Entrá a <strong>Plan de Alimentación</strong> (el botón del footer).</li>
+                    <li>Presioná el botón principal de arriba.</li>
+                    <li>Se abre una ventana con opciones: completalas y tocá <strong>Generar</strong>.</li>
+                    <li>Cuando termine, el plan aparece en el recuadro <strong>Plan de Alimentación</strong>.</li>
+                </ol>
+
+                <h2>2) Opciones disponibles (qué hace cada una)</h2>
+                <ul>
+                    <li><strong>Objetivo</strong>: define el enfoque del plan.
+                        <ul>
+                            <li><em>Perder grasa</em>: prioriza control calórico y saciedad.</li>
+                            <li><em>Ganar masa muscular</em>: prioriza proteína y energía para entrenar.</li>
+                            <li><em>Mantener peso</em>: busca equilibrio y adherencia.</li>
+                        </ul>
+                    </li>
+                    <li><strong>Intensidad</strong>: ajusta la cantidad de comidas por día.
+                        <ul>
+                            <li><em>Baja</em>: 3 comidas/día.</li>
+                            <li><em>Media</em>: 4 comidas/día.</li>
+                            <li><em>Alta</em>: 5 comidas/día.</li>
+                        </ul>
+                    </li>
+                </ul>
+
+                <p class="ayuda-note">
+                    Tip: si elegís una intensidad más alta, el plan reparte mejor la ingesta en el día (más comidas). Si preferís simple, usá baja/media.
+                </p>
+
+                <div class="ayuda-divider" aria-hidden="true"></div>
+
+                <h2>3) Cómo leer el plan</h2>
+                <ul>
+                    <li><strong>Día</strong>: cada “tarjeta” corresponde a un día de la semana.</li>
+                    <li><strong>Resumen</strong>: calorías objetivo del día + cantidad de comidas.</li>
+                    <li><strong>Comidas</strong>: lista de comidas sugeridas (con descripción y, a veces, kcal aproximadas).</li>
+                    <li><strong>Detalle</strong>: al tocar el encabezado del día, se abre un modal con:</li>
+                    <li><strong>Macros</strong>: distribución porcentual (carbohidratos, proteínas y grasas).</li>
+                    <li><strong>Recomendaciones</strong>: alimentos sugeridos para ese día.</li>
+                    <li><strong>Tips</strong>: consejos prácticos para sostener el plan.</li>
+                </ul>
+
+                <div class="ayuda-divider" aria-hidden="true"></div>
+
+                <h2>4) Navegación por días (scroll por “pantallas”)</h2>
+                <ul>
+                    <li>En celular, deslizá <strong>arriba/abajo</strong> sobre el recuadro del plan para pasar de un día al siguiente.</li>
+                    <li>En PC, usá la rueda del mouse sobre el recuadro para avanzar/retroceder día por día.</li>
+                    <li>Si un día tiene muchas comidas o texto, podés <strong>scrollear dentro del día</strong> para ver todo el contenido.</li>
+                </ul>
+
+                <div class="ayuda-divider" aria-hidden="true"></div>
+
+                <h2>5) Ver detalle por día</h2>
+                <ul>
+                    <li>Tocá/clickeá el <strong>encabezado del día</strong> (por ejemplo “Miércoles”).</li>
+                    <li>Se abre un <strong>modal</strong> con el detalle: objetivo calórico, macros, comidas del día, recomendaciones y tips.</li>
+                </ul>
+
+                <div class="ayuda-divider" aria-hidden="true"></div>
+
+                <h2>6) Gestionar tu plan</h2>
+                <ul>
+                    <li><strong>Botón principal</strong>:
+                        <ul>
+                            <li>Si no tenés plan: muestra <strong>Generar plan</strong> y abre el modal de opciones.</li>
+                            <li>Si ya existe: aparece un ícono de <strong>recargar</strong> para refrescar el plan guardado.</li>
+                        </ul>
+                    </li>
+                    <li><strong>Regenerar Plan</strong>: crea un plan nuevo <em>basado en tu configuración previa</em>.
+                        <ul>
+                            <li>Te pide confirmación.</li>
+                            <li>Al aceptar, elimina el plan actual.</li>
+                            <li>Abre el modal con opciones preseleccionadas para que ajustes y generes de nuevo.</li>
+                        </ul>
+                    </li>
+                    <li><strong>Eliminar Plan</strong>: borra el plan actual para empezar desde cero.</li>
+                </ul>
+
+                <div class="ayuda-divider" aria-hidden="true"></div>
+
+                <h2>7) Solución rápida de problemas</h2>
+                <ul>
+                    <li><strong>No aparece el plan</strong>: revisá conexión, recargá la página y verificá que tu perfil esté completo.</li>
+                    <li><strong>El plan no cambia</strong>: usá <strong>Regenerar Plan</strong> y probá otra combinación de objetivo/intensidad.</li>
+                    <li><strong>Detalle vacío</strong>: si el modal abre sin información, recargá el plan y volvé a intentar.</li>
+                </ul>
+
+                <p class="ayuda-note">
+                    Atajo: desde el encabezado (arriba a la derecha) tocá <strong>Perfil</strong> para editar tus datos.
+                </p>
+            </div>
+        </section>
+
     </main>
     
     <footer>
@@ -142,5 +286,6 @@
         </nav>
     </footer>
     <script src="/Scripts/Ayuda.js"></script>
+    <script src="/Scripts/backToTop.js" defer></script>
 </body>
 </html>

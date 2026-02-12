@@ -3,14 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="/Styles/styles_dashboard.css">
+    <link rel="stylesheet" href="/Styles/styles_dashboard_plan_alimn.css">
     <meta name="theme-color" content="#0A1226">
-    <title>Dashboard</title>
+    <title>Plan de Alimentación</title>
 </head>
 <body>
     <header>
+
         <div id="textos">
-            <h1>Inicio</h1>
+            <h1>Plan de Alimentación</h1>
             <h2>Personal TrAIner</h2>
         </div>
 
@@ -29,29 +30,25 @@
             <div id="container-2c37d5b5e17e64db7572dcb96935e91c"></div>
         </div>
 
-        <section>
-            <h1>Proximamente!!</h1>
-        </section>
-<!--
-        <section id="Alimentacion">
+        <section id="Alimentacion" tabindex="-1">
             <h1 style="text-align: center;">Plan de Alimentación</h1>
             <div id="botones_accion">
-                <p id="descripcion_previa" class="descripcion_previa" style="display: none;">
-                    Acá vas a poder generar un plan de entrenamiento personalizado (rutina semanal) con ejercicios, series/repeticiones, descansos y una progresión sugerida.
-                    Para armarlo se tiene en cuenta dónde entrenás (en casa o en gimnasio), tu objetivo principal (priorizar pérdida de grasa o ganancia muscular) y tus datos básicos (edad, altura, peso actual y peso objetivo).
-                </p>
-                <div style="display: flex;flex-direction: row;gap: 10px;justify-content: space-between;width: 100%;">
-                    <button id="boton_ejercicios">...</button>
-                    <div style="display: flex;flex-direction: row;gap: 10px;">
-                        <button id="boton_regenerar" style="display: none;">Regenerar Plan</button>
-                        <button id="boton_eliminar" style="display: none;">Eliminar Plan</button>
-                    </div>
+            <p id="descripcion_previa" class="descripcion_previa lead" style="text-align: center; margin: 0.5rem 0 1.2rem; display: none;">
+                Generá un plan de alimentación semanal personalizado usando los datos de tu perfil (edad, altura, peso actual y objetivo).
+                El resultado ofrece, por día, la ingesta calórica recomendada y las comidas sugeridas; y al tocar cada día verás el detalle: desglose de calorías, distribución de macronutrientes (% carbohidratos, proteínas, grasas), recomendaciones de alimentos ajustadas al número de comidas del día, y tips prácticos para manejar la alimentación diaria.
+            </p>
+            <div style="display: flex;flex-direction: row;gap: 10px;justify-content: space-between;width: 100%;">
+                <button id="boton_alimentacion">...</button>
+                <div style="display: flex;flex-direction: row;gap: 10px;">
+                    <button id="boton_regenerar" style="display: none;">Regenerar Plan</button>
+                    <button id="boton_eliminar" style="display: none;">Eliminar Plan</button>
                 </div>
             </div>
-            <div id="Plan_alimentacion" style="display: none;">
+            </div>
+            <div id="Plan_alimentacion" tabindex="-1" style="display: none;">
             </div>
         </section>
--->
+
         <div id="anuncios">
             <script>
                 atOptions = {

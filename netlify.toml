@@ -4,6 +4,11 @@
   method = "POST"
 
 [[edge_functions]]
+  function = "generar_plan_con_IA_aliment" 
+  path = "/generar_plan_alimentacion"
+  method = "POST"
+
+[[edge_functions]]
   function = "registrar_datos_n_usu"
   path = "/registrar_usuario_nuevo"
   method = "POST"
@@ -21,4 +26,9 @@
 [[edge_functions]]
   function = "actualizar_cambios_plan"
   path = "/actualizar_cambios_plan"
+  method = "POST"
+
+[[edge_functions]]
+  function = "actualizar_cambios_plan_aliment"
+  path = "/actualizar_cambios_plan_alimentacion"
   method = "POST"
