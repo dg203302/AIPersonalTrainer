@@ -4,27 +4,28 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <script src="/Scripts/ui_transparencia_apply.js"></script>
+    <script src="/Scripts/ui_idioma.js"></script>
     <link rel="stylesheet" href="/Styles/styles_google.css">
     <meta name="theme-color" content="#0A1226">
-    <title>Login</title>
+    <title data-i18n-en="Login">Login</title>
 </head>
 <body>
     <header>
         <h1>Personal TrAIner</h1>
-        <p>Entrenamiento simple, claro y móvil</p>
+        <p data-i18n-en="Simple, clear, mobile-first training">Entrenamiento simple, claro y móvil</p>
     </header>
 
     <main>
-        <section class="card" aria-label="Inicio de sesión">
-            <h2>Iniciá sesión con Google</h2>
-            <p class="lead">Usamos Google para que puedas entrar rápido, sin contraseñas y sin fricción. Si es tu primera vez, después te pedimos unos datos básicos (edad, altura y pesos) para personalizar tu experiencia.</p>
-            <div class="bullets" aria-label="Qué vas a poder hacer">
-                <div class="bullet">Armar rutinas consistentes y repetibles</div>
-                <div class="bullet">Elegir ejercicios de forma simple</div>
-                <div class="bullet">Avanzar con progresión gradual</div>
-                <div class="bullet">Mantener el foco con una UI limpia</div>
+        <section class="card" aria-label="Inicio de sesión" data-i18n-en-aria-label="Sign in">
+            <h2 data-i18n-en="Sign in with Google">Iniciá sesión con Google</h2>
+            <p class="lead" data-i18n-en="We use Google so you can sign in fast—no passwords and no friction. If it’s your first time, we’ll ask for a few basic details (age, height, and weights) to personalize your experience.">Usamos Google para que puedas entrar rápido, sin contraseñas y sin fricción. Si es tu primera vez, después te pedimos unos datos básicos (edad, altura y pesos) para personalizar tu experiencia.</p>
+            <div class="bullets" aria-label="Qué vas a poder hacer" data-i18n-en-aria-label="What you’ll be able to do">
+                <div class="bullet" data-i18n-en="Build consistent, repeatable routines">Armar rutinas consistentes y repetibles</div>
+                <div class="bullet" data-i18n-en="Choose exercises the simple way">Elegir ejercicios de forma simple</div>
+                <div class="bullet" data-i18n-en="Progress gradually over time">Avanzar con progresión gradual</div>
+                <div class="bullet" data-i18n-en="Stay focused with a clean UI">Mantener el foco con una UI limpia</div>
             </div>
-            <button id="boton_google" class="google-btn" type="button" aria-label="Iniciar sesión con Google">
+            <button id="boton_google" class="google-btn" type="button" aria-label="Iniciar sesión con Google" data-i18n-en-aria-label="Sign in with Google">
                 <span class="google-icon" aria-hidden="true">
                     <svg viewBox="0 0 48 48" width="20" height="20" focusable="false" aria-hidden="true">
                         <path fill="#FFC107" d="M43.611 20.083H42V20H24v8h11.303C33.79 32.657 29.233 36 24 36c-6.627 0-12-5.373-12-12s5.373-12 12-12c3.059 0 5.842 1.154 7.959 3.041l5.657-5.657C34.979 6.053 29.787 4 24 4 12.955 4 4 12.955 4 24s8.955 20 20 20 20-8.955 20-20c0-1.341-.138-2.65-.389-3.917z"/>
@@ -33,17 +34,17 @@
                         <path fill="#1976D2" d="M43.611 20.083H42V20H24v8h11.303c-.724 2.048-2.156 3.777-4.02 4.99l.003-.002 6.238 5.283C36.796 39.091 44 34 44 24c0-1.341-.138-2.65-.389-3.917z"/>
                     </svg>
                 </span>
-                <span>Continuar con Google</span>
+                <span data-i18n-en="Continue with Google">Continuar con Google</span>
             </button>
-            <p class="fine">Al continuar, se inicia la autenticación con Google. No pedimos ni guardamos tu contraseña.</p>
+            <p class="fine" data-i18n-en="By continuing, Google authentication will start. We don’t ask for or store your password.">Al continuar, se inicia la autenticación con Google. No pedimos ni guardamos tu contraseña.</p>
         </section>
 
-        <section class="page-copy" aria-label="Información adicional">
-            <h3>¿Por qué pedimos datos fisiológicos?</h3>
-            <p>Con pocos datos evitamos recomendaciones genéricas y ajustamos mejor el entrenamiento: selección de ejercicios, progresión y consistencia. Es información simple, pero muy útil para personalizar.</p>
+        <section class="page-copy" aria-label="Información adicional" data-i18n-en-aria-label="Additional information">
+            <h3 data-i18n-en="Why do we ask for physical details?">¿Por qué pedimos datos fisiológicos?</h3>
+            <p data-i18n-en="With just a few details we avoid generic recommendations and better tailor training: exercise selection, progression, and consistency. It’s simple info, but very useful for personalization.">Con pocos datos evitamos recomendaciones genéricas y ajustamos mejor el entrenamiento: selección de ejercicios, progresión y consistencia. Es información simple, pero muy útil para personalizar.</p>
             <div class="note">
-                <h4>Privacidad</h4>
-                <p>La idea es ser transparentes y pedir solo lo necesario para que el plan tenga sentido.</p>
+                <h4 data-i18n-en="Privacy">Privacidad</h4>
+                <p data-i18n-en="The goal is to be transparent and ask only what’s needed for the plan to make sense.">La idea es ser transparentes y pedir solo lo necesario para que el plan tenga sentido.</p>
             </div>
         </section>
     </main>

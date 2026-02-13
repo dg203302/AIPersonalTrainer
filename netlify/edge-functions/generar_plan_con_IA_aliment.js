@@ -144,6 +144,7 @@ export default async function handler(request, _context){
     
     const {
         id_usuario,
+        idioma,
         objetivo,
         intensidad,
         Altura,
@@ -161,34 +162,178 @@ export default async function handler(request, _context){
     const intensidadNorm = normalizeIntensidad(intensidad);
     const mealsPerDay = mealsFromIntensidad(intensidadNorm);
 
-    const prompt = `Generá un plan de alimentación semanal (7 días) en formato JSON estricto.
-Requisitos:
-- Idioma: español.
-- Debe estar pensado para una persona con estos datos: edad=${Edad}, estatura_cm=${Altura}, peso_actual_kg=${Peso_actual}, peso_objetivo_kg=${Peso_objetivo}.
-- Objetivo del plan: "${objetivoNorm}".
-- Intensidad del plan: "${intensidadNorm}". Esto define la cantidad de comidas por día: ${mealsPerDay}.
-- Para cada día de la semana (Lunes a Domingo), incluir:
-  - calorias_objetivo (número entero)
-  - comidas: array de ${mealsPerDay} comidas. Cada comida con: nombre, descripcion, calorias_aprox (número entero opcional).
-  - macros_porcentaje: { carbohidratos: number, proteinas: number, grasas: number } (porcentajes que sumen 100).
-  - recomendaciones_alimentos: array de strings (recomendaciones acordes a la cantidad de comidas del día).
-  - tips: array de strings (tips prácticos del día).
-- Devolver exactamente con esta estructura raíz:
+    const idiomaNorm = String(idioma ?? "").trim().toLowerCase() === "en" ? "en" : "es";
+    const idiomaLabel = idiomaNorm === "en" ? "English" : "Español";
+    const t = (es, en) => (idiomaNorm === "en" ? en : es);
+
+    const ALL_DIAS_ES = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"];
+    const ALL_DIAS_EN = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+    const ALL_DIAS = idiomaNorm === "en" ? ALL_DIAS_EN : ALL_DIAS_ES;
+
+    const objetivoPrompt = (() => {
+        if (objetivoNorm === "perder grasa") return t("Perder grasa", "Lose fat");
+        if (objetivoNorm === "ganar masa muscular") return t("Ganar masa muscular", "Gain muscle");
+        return t("Mantener peso", "Maintain weight");
+    })();
+
+    const intensidadPrompt = (() => {
+        if (intensidadNorm === "baja") return t("baja", "low");
+        if (intensidadNorm === "alta") return t("alta", "high");
+        return t("media", "medium");
+    })();
+
+    const DAY_INDEX_BY_NAME = {
+        // Spanish (stripAccents)
+        lunes: 0,
+        martes: 1,
+        miercoles: 2,
+        jueves: 3,
+        viernes: 4,
+        sabado: 5,
+        domingo: 6,
+        // English
+        monday: 0,
+        tuesday: 1,
+        wednesday: 2,
+        thursday: 3,
+        friday: 4,
+        saturday: 5,
+        sunday: 6,
+        // Common abbreviations
+        mon: 0,
+        tue: 1,
+        tues: 1,
+        wed: 2,
+        thu: 3,
+        thur: 3,
+        thurs: 3,
+        fri: 4,
+        sat: 5,
+        sun: 6,
+    };
+
+    const getDayIndexFromName = (value) => {
+        const key = stripAccents(value)
+            .toLowerCase()
+            .replace(/[^a-z\s]/g, " ")
+            .replace(/\s+/g, " ")
+            .trim();
+        if (!key) return null;
+        return Object.prototype.hasOwnProperty.call(DAY_INDEX_BY_NAME, key) ? DAY_INDEX_BY_NAME[key] : null;
+    };
+
+    const normalizePlanDays = (parsed) => {
+        if (!parsed || typeof parsed !== "object") return parsed;
+        const root = parsed.plan_alimentacion;
+        if (!root || typeof root !== "object") return parsed;
+        const semanal = Array.isArray(root.configuracion_semanal) ? root.configuracion_semanal : null;
+        if (!semanal) return parsed;
+
+        if (semanal.length !== 7) return parsed;
+
+        const byIdx = new Map();
+        for (const d of semanal) {
+            if (!d || typeof d !== "object") continue;
+            const idx = getDayIndexFromName(d.dia);
+            if (idx == null) continue;
+            byIdx.set(idx, d);
+        }
+
+        if (byIdx.size === 7) {
+            // Reordenar + renombrar por nombre de día.
+            root.configuracion_semanal = ALL_DIAS.map((label, idx) => {
+                const d = byIdx.get(idx);
+                return { ...d, dia: label };
+            });
+        } else {
+            // Fallback: mantener el orden, pero forzar etiquetas de día en el idioma correcto.
+            root.configuracion_semanal = semanal.map((d, idx) => ({ ...d, dia: ALL_DIAS[idx] }));
+        }
+
+        // Persistir en el JSON final la configuración usada (en el idioma de salida)
+        root.usuario = (root.usuario && typeof root.usuario === "object") ? root.usuario : {};
+        root.usuario.objetivo = objetivoPrompt;
+        root.usuario.intensidad = intensidadPrompt;
+        return parsed;
+    };
+
+    const schemaDays = ALL_DIAS.map((d) =>
+        `        {"dia":"${d}","calorias_objetivo":2000,"comidas":[{"nombre":"<string>","descripcion":"<string>","calorias_aprox":500}],"macros_porcentaje":{"carbohidratos":40,"proteinas":30,"grasas":30},"recomendaciones_alimentos":["<string>"],"tips":["<string>"]}`
+    ).join(",\n");
+
+		const prompt = idiomaNorm === "en" ? `Return ONLY valid JSON (RFC 8259).
+FORBIDDEN: extra text, markdown, code blocks, comments, trailing commas.
+
+Generate a 7-day weekly meal plan in strict JSON.
+Requirements:
+- Language for ALL TEXT VALUES: English.
+- Keep ALL JSON KEYS exactly as the schema (do not translate keys).
+- Person data: edad=${Edad}, estatura_cm=${Altura}, peso_actual_kg=${Peso_actual}, peso_objetivo_kg=${Peso_objetivo}.
+- Goal: "${objetivoPrompt}".
+- Intensity: "${intensidadPrompt}". This defines meals per day: ${mealsPerDay}.
+- For each weekday (use EXACTLY these names and in this order): ${ALL_DIAS.join(", ")}
+    include:
+    - calorias_objetivo (integer)
+    - comidas: array of ${mealsPerDay} meals. Each meal: nombre, descripcion, calorias_aprox (optional integer).
+    - macros_porcentaje: { carbohidratos: number, proteinas: number, grasas: number } (sum to 100).
+    - recomendaciones_alimentos: array of strings
+    - tips: array of strings
+
+Return exactly this root structure:
 {
-  "plan_alimentacion": {
-    "usuario": {
-      "edad": number,
-      "estatura_cm": number,
-      "peso_actual_kg": number,
-      "peso_objetivo_kg": number,
-      "objetivo": string,
-      "intensidad": string
-    },
-    "configuracion_semanal": [ ...7 días... ],
-    "nota_general": string
-  }
+    "plan_alimentacion": {
+        "usuario": {
+            "edad": number,
+            "estatura_cm": number,
+            "peso_actual_kg": number,
+            "peso_objetivo_kg": number,
+            "objetivo": string,
+            "intensidad": string
+        },
+        "configuracion_semanal": [
+${schemaDays}
+        ],
+        "nota_general": string
+    }
 }
-No uses markdown ni backticks. No agregues texto fuera del JSON.`;
+Do not add any text outside the JSON.`
+:
+`Devuelve UNICAMENTE un JSON válido (RFC 8259).
+PROHIBIDO: texto extra, markdown, bloques de código, comentarios, comas finales.
+
+Generá un plan de alimentación semanal (7 días) en formato JSON estricto.
+Requisitos:
+- Idioma de los VALORES de texto: ${idiomaLabel}.
+- Mantén las CLAVES JSON exactamente como el esquema (no traduzcas claves).
+- Debe estar pensado para una persona con estos datos: edad=${Edad}, estatura_cm=${Altura}, peso_actual_kg=${Peso_actual}, peso_objetivo_kg=${Peso_objetivo}.
+- Objetivo del plan: "${objetivoPrompt}".
+- Intensidad del plan: "${intensidadPrompt}". Esto define la cantidad de comidas por día: ${mealsPerDay}.
+- Para cada día de la semana (usa EXACTAMENTE estos nombres y en este orden): ${ALL_DIAS.join(", ")}
+    (en el idioma seleccionado), incluir:
+    - calorias_objetivo (número entero)
+    - comidas: array de ${mealsPerDay} comidas. Cada comida con: nombre, descripcion, calorias_aprox (número entero opcional).
+    - macros_porcentaje: { carbohidratos: number, proteinas: number, grasas: number } (porcentajes que sumen 100).
+    - recomendaciones_alimentos: array de strings (recomendaciones acordes a la cantidad de comidas del día).
+    - tips: array de strings (tips prácticos del día).
+
+Devolver exactamente con esta estructura raíz:
+{
+    "plan_alimentacion": {
+        "usuario": {
+            "edad": number,
+            "estatura_cm": number,
+            "peso_actual_kg": number,
+            "peso_objetivo_kg": number,
+            "objetivo": string,
+            "intensidad": string
+        },
+        "configuracion_semanal": [
+${schemaDays}
+        ],
+        "nota_general": string
+    }
+}
+No agregues texto fuera del JSON.`;
 	try {
 		const ai = await getAiClient();
 		const response = await ai.models.generateContent({
@@ -198,7 +343,8 @@ No uses markdown ni backticks. No agregues texto fuera del JSON.`;
 
         const text = response?.text ?? response?.choices?.[0]?.content?.parts?.[0]?.text ?? response?.choices?.[0]?.content?.parts?.[0] ?? "";
         const extracted = extractLikelyJson(text);
-        const parsed = safeJsonParse(extracted);
+        let parsed = safeJsonParse(extracted);
+        parsed = normalizePlanDays(parsed);
         const validationError = validatePlanShape(parsed);
         if (validationError) {
             return new Response(JSON.stringify({ error: `Respuesta IA inválida: ${validationError}`, raw: String(text ?? "").slice(0, 4000) }), {

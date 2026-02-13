@@ -4,9 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <script src="/Scripts/ui_transparencia_apply.js"></script>
+    <script src="/Scripts/ui_idioma.js"></script>
     <link rel="stylesheet" href="/Styles/styles_sele_altura.css">
     <meta name="theme-color" content="#0A1226">
-    <title>Altura</title>
+    <title data-i18n-en="Height">Altura</title>
 </head>
 <body>
     <header>
@@ -14,32 +15,35 @@
     </header>
     <main>
         <form id="ingreso_altura">
-            <h1>Ingresa tu altura</h1>
-            <p class="helper">Elegí tu altura para ajustar mejor recomendaciones, rangos de repeticiones y progresión. Es un dato simple, pero ayuda a que todo sea más consistente.</p>
+            <h1 data-i18n-en="Enter your height">Ingresa tu altura</h1>
+            <p class="helper" data-i18n-en="Choose your height to better adjust recommendations, rep ranges, and progression. It’s a simple detail, but it helps keep everything consistent.">Elegí tu altura para ajustar mejor recomendaciones, rangos de repeticiones y progresión. Es un dato simple, pero ayuda a que todo sea más consistente.</p>
             <div id="selector_altura">
-                <div class="wheel-row" role="group" aria-label="Altura">
-                    <div class="wheel" data-field="altura" aria-label="Altura en centímetros" tabindex="0"></div>
+                <div class="wheel-row" role="group" aria-label="Altura" data-i18n-en-aria-label="Height">
+                    <div class="wheel" data-field="altura" aria-label="Altura en centímetros" data-i18n-en-aria-label="Height in centimeters" tabindex="0"></div>
                 </div>
                 <input type="hidden" id="altura" name="altura" required>
             </div>
-            <button type="submit">Continuar</button>
+            <button type="submit" data-i18n-en="Continue">Continuar</button>
         </form>
 
-        <section class="page-copy" aria-label="Información adicional">
-            <h2>¿Para qué sirve este dato?</h2>
-            <p>La altura ayuda a contextualizar tu perfil físico y a que las sugerencias sean más realistas. No es para “etiquetarte”, sino para ajustar detalles prácticos y evitar planes genéricos.</p>
-            <p>En los próximos pasos vas a completar el resto de datos para terminar de armar un plan claro y fácil de seguir. Lo importante: que puedas sostenerlo en el tiempo.</p>
+        <section class="page-copy" aria-label="Información adicional" data-i18n-en-aria-label="Additional information">
+            <h2 data-i18n-en="What is this used for?">¿Para qué sirve este dato?</h2>
+            <p data-i18n-en="Your height helps contextualize your physical profile so suggestions are more realistic. It’s not to ‘label’ you, but to tune practical details and avoid generic plans.">La altura ayuda a contextualizar tu perfil físico y a que las sugerencias sean más realistas. No es para “etiquetarte”, sino para ajustar detalles prácticos y evitar planes genéricos.</p>
+            <p data-i18n-en="In the next steps you’ll complete the rest of your data to finish building a clear, easy-to-follow plan. The key is that you can stick with it over time.">En los próximos pasos vas a completar el resto de datos para terminar de armar un plan claro y fácil de seguir. Lo importante: que puedas sostenerlo en el tiempo.</p>
             <div class="note">
-                <h3>Tip rápido</h3>
-                <p>Si no estás seguro de tu altura exacta, elegí un valor aproximado. Más adelante siempre se puede ajustar.</p>
+                <h3 data-i18n-en="Quick tip">Tip rápido</h3>
+                <p data-i18n-en="If you’re not sure of your exact height, choose an approximate value. You can always adjust it later.">Si no estás seguro de tu altura exacta, elegí un valor aproximado. Más adelante siempre se puede ajustar.</p>
             </div>
         </section>
     </main>
     <footer>
-        <a href="/index.html"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9ImN1cnJlbnRDb2xvciIgc3Ryb2tlLXdpZHRoPSIyIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiIGNsYXNzPSJsdWNpZGUgbHVjaWRlLWhvdXNlLWljb24gbHVjaWRlLWhvdXNlIj48cGF0aCBkPSJNMTUgMjF2LThhMSAxIDAgMCAwLTEtMWgtNGExIDEgMCAwIDAtMSAxdjgiLz48cGF0aCBkPSJNMyAxMGEyIDIgMCAwIDEgLjcwOS0xLjUyOGw3LTZhMiAyIDAgMCAxIDIuNTgyIDBsNyA2QTIgMiAwIDAgMSAyMSAxMHY5YTIgMiAwIDAgMS0yIDJINWEyIDIgMCAwIDEtMi0yeiIvPjwvc3ZnPg==" alt="home"></a>
+        <a href="/index.html"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9ImN1cnJlbnRDb2xvciIgc3Ryb2tlLXdpZHRoPSIyIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiIGNsYXNzPSJsdWNpZGUgbHVjaWRlLWhvdXNlLWljb24gbHVjaWRlLWhvdXNlIj48cGF0aCBkPSJNMTUgMjF2LThhMSAxIDAgMCAwLTEtMWgtNGExIDEgMCAwIDAtMSAxdjgiLz48cGF0aCBkPSJNMyAxMGEyIDIgMCAwIDEgLjcwOS0xLjUyOGw3LTZhMiAyIDAgMCAxIDIuNTgyIDBsNyA2QTIgMiAwIDAgMSAyMSAxMHY5YTIgMiAwIDAgMS0yIDJINWEyIDIgMCAwIDEtMi0yeiIvPjwvc3ZnPg==" alt="inicio" data-i18n-en-alt="home"></a>
     </footer>
 
     <script>
+        const isEnglish = () => (window.UIIdioma?.getIdioma?.() || "es") === "en";
+        const tLang = (es, en) => (isEnglish() ? en : es);
+
         const updateFixedChromeHeights = () => {
             const header = document.querySelector("header");
             const footer = document.querySelector("footer");
@@ -143,7 +147,7 @@
         const init = () => {
             const t = document.getElementById("datos_previos");
             const edad = sessionStorage.getItem("edad_temp");
-            t.textContent = edad ? `Tu edad: ${edad}` : "Completá tus datos";
+            if (t) t.textContent = edad ? (isEnglish() ? `Your age: ${edad}` : `Tu edad: ${edad}`) : tLang("Completá tus datos", "Complete your details");
             initFixedChromeObservers();
             initWheelAltura();
         };
@@ -158,7 +162,7 @@
             event.preventDefault();
             const alt = parseInt(document.getElementById("altura").value, 10);
             if (!Number.isFinite(alt) || alt < 100 || alt > 200) {
-                alert("Altura inválida");
+                alert(tLang("Altura inválida", "Invalid height"));
                 return;
             }
             sessionStorage.setItem("alt_temp", String(alt));

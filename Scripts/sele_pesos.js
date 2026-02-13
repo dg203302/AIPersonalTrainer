@@ -4,6 +4,9 @@ const supabaseUrl = "https://lhecmoeilmhzgxpcetto.supabase.co";
 const supabaseKey = "sb_publishable_oLC8LcDLa3jR72Hpd_jJsA_eXjMlP3-";
 const supabase = createClient(supabaseUrl, supabaseKey, {auth: {persistSession: true,autoRefreshToken: false, storage: localStorage}});
 
+const isEnglish = () => (globalThis.UIIdioma?.getIdioma?.() || "es") === "en";
+const tLang = (es, en) => (isEnglish() ? en : es);
+
 const updateFixedChromeHeights = () => {
     const header = document.querySelector("header");
     const footer = document.querySelector("footer");
@@ -120,9 +123,9 @@ const initHeaderText = () => {
     if (!t) return;
     const edad = sessionStorage.getItem("edad_temp");
     const alt = sessionStorage.getItem("alt_temp");
-    if (edad && alt) t.textContent = `Tu edad: ${edad}, Tu altura: ${alt}`;
-    else if (edad) t.textContent = `Tu edad: ${edad}`;
-    else t.textContent = "Completá tus datos";
+    if (edad && alt) t.textContent = isEnglish() ? `Your age: ${edad}, Your height: ${alt}` : `Tu edad: ${edad}, Tu altura: ${alt}`;
+    else if (edad) t.textContent = isEnglish() ? `Your age: ${edad}` : `Tu edad: ${edad}`;
+    else t.textContent = tLang("Completá tus datos", "Complete your details");
 };
 
 const init = () => {
@@ -140,18 +143,18 @@ const init = () => {
         const peso_desea_temp = parseFloat(document.getElementById("peso_desea").value);
 
         if (!Number.isFinite(peso_act_temp) || peso_act_temp < 40 || peso_act_temp > 200) {
-            showError("Peso actual inválido");
+            showError(tLang("Peso actual inválido", "Invalid current weight"));
             return;
         }
         if (!Number.isFinite(peso_desea_temp) || peso_desea_temp < 40 || peso_desea_temp > 200) {
-            showError("Peso objetivo inválido");
+            showError(tLang("Peso objetivo inválido", "Invalid goal weight"));
             return;
         }
 
         const { data: { user } } = await supabase.auth.getUser();
         const id_usuario = user?.id;
         if (!id_usuario) {
-            showError("No hay sesión iniciada");
+            showError(tLang("No hay sesión iniciada", "No active session"));
             return;
         }
 
@@ -183,14 +186,18 @@ async function registrar_datos(id,edad, altura, peso_act, peso_desea){
         .replaceAll("'", "&#39;");
 
     const showNetlifyHostingErrorAlert = async ({ endpoint, status, statusText, bodyText }) => {
-        const safeEndpoint = String(endpoint ?? "").trim() || "(desconocido)";
+        const safeEndpoint = String(endpoint ?? "").trim() || tLang("(desconocido)", "(unknown)");
         const safeStatus = Number.isFinite(Number(status)) ? Number(status) : "-";
         const safeStatusText = String(statusText ?? "").trim() || "";
         const safeBody = String(bodyText ?? "").trim();
 
+        const hostingNote = isEnglish()
+            ? "This is a hosting server error (<strong>Netlify</strong>). Please wait a few minutes and try again once the service is restored."
+            : "Este es un error del servidor de hosting (<strong>Netlify</strong>). Por favor, aguardá unos minutos e intentá nuevamente cuando se restaure el servicio.";
+
         await Swal.fire({
             icon: "error",
-            title: "Error del servidor",
+            title: tLang("Error del servidor", "Server error"),
             html: `
                 <div class="server-error">
                     <div class="server-error__hero">${escapeHtml(NETLIFY_EDGE_UNCAUGHT)}</div>
@@ -200,13 +207,13 @@ async function registrar_datos(id,edad, altura, peso_act, peso_desea){
                     </div>
                     ${safeBody ? `<pre class="server-error__body">${escapeHtml(safeBody.slice(0, 1200))}</pre>` : ""}
                     <p class="server-error__note">
-                        Este es un error del servidor de hosting (<strong>Netlify</strong>). Por favor, aguardá unos minutos e intentá nuevamente cuando se restaure el servicio.
+                        ${hostingNote}
                     </p>
                 </div>
             `,
             allowOutsideClick: false,
             allowEscapeKey: true,
-            confirmButtonText: "Entendido",
+            confirmButtonText: tLang("Entendido", "OK"),
             customClass: {
                 popup: "server-error-swal",
             },
@@ -221,7 +228,7 @@ async function registrar_datos(id,edad, altura, peso_act, peso_desea){
         });
     } catch (e) {
         console.log("[EdgeFunction:/registrar_usuario_nuevo] Error de red:", e);
-        await showError("No se pudo conectar con el servidor. Intentá nuevamente.");
+        await showError(tLang("No se pudo conectar con el servidor. Intentá nuevamente.", "Could not connect to the server. Please try again."));
         return false;
     }
 
@@ -244,7 +251,7 @@ async function registrar_datos(id,edad, altura, peso_act, peso_desea){
             });
             return false;
         }
-        showError("Error al registrar los datos: " + (result?.error ?? result?.message ?? response.statusText));
+        showError(tLang("Error al registrar los datos: ", "Error registering your data: ") + (result?.error ?? result?.message ?? response.statusText));
         return false;
     }
     return true;

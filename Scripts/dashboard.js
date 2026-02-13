@@ -199,6 +199,145 @@ if (document.readyState === "loading") {
 
 const sweetalert = window.swal;
 
+const getIdiomaPreferido = () => {
+    try {
+        const v = globalThis.UIIdioma?.getIdioma?.();
+        if (v) return String(v);
+    } catch {
+        // ignore
+    }
+    try {
+        const stored = localStorage.getItem("ui_idioma");
+        if (stored) return String(stored);
+    } catch {
+        // ignore
+    }
+    return "es";
+};
+
+const isEnglish = () => getIdiomaPreferido() === "en";
+const tLang = (es, en) => (isEnglish() ? en : es);
+
+const stripAccents = (s) =>
+    String(s ?? "")
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .trim();
+
+const normalizeExerciseKey = (name) =>
+    stripAccents(name)
+        .toLowerCase()
+        .replace(/[_.,;:!?¡¿"'`()\[\]{}]/g, " ")
+        .replace(/\s+/g, " ")
+        .trim();
+
+const titleCaseEn = (s) => {
+    const small = new Set(["and", "or", "with", "to", "of", "the", "a", "an", "in", "on", "at", "by"]);
+    const words = String(s ?? "")
+        .split(/\s+/)
+        .filter(Boolean);
+    return words
+        .map((w, i) => {
+            const low = w.toLowerCase();
+            if (i !== 0 && small.has(low)) return low;
+            return low.charAt(0).toUpperCase() + low.slice(1);
+        })
+        .join(" ");
+};
+
+const EXERCISE_NAME_MAP_ES_EN = {
+    // Pierna / lower
+    "sentadilla": "Squat",
+    "sentadilla goblet": "Goblet Squat",
+    "sentadilla frontal": "Front Squat",
+    "sentadilla hack": "Hack Squat",
+    "sentadilla bulgara": "Bulgarian Split Squat",
+    "zancadas": "Lunges",
+    "prensa de piernas": "Leg Press",
+    "extension de piernas": "Leg Extension",
+    "curl femoral": "Leg Curl",
+    "peso muerto": "Deadlift",
+    "peso muerto rumano": "Romanian Deadlift",
+
+    // Empuje / push
+    "press de banca": "Bench Press",
+    "press banca": "Bench Press",
+    "press inclinado": "Incline Press",
+    "press militar": "Overhead Press",
+    "fondos": "Dips",
+
+    // Tirón / pull
+    "dominadas": "Pull-Ups",
+    "jalon al pecho": "Lat Pulldown",
+    "remo": "Row",
+    "remo con barra": "Barbell Row",
+    "remo con mancuernas": "Dumbbell Row",
+
+    // Brazos
+    "curl de biceps": "Biceps Curl",
+    "curl biceps": "Biceps Curl",
+    "extension de triceps": "Triceps Extension",
+
+    // Core
+    "plancha": "Plank",
+    "abdominales": "Abs",
+};
+
+const translateExerciseNameToEnglish = (nameEs) => {
+    const original = String(nameEs ?? "").trim();
+    if (!original) return original;
+
+    const key = normalizeExerciseKey(original);
+    if (EXERCISE_NAME_MAP_ES_EN[key]) return EXERCISE_NAME_MAP_ES_EN[key];
+
+    // Best-effort replacements for common patterns.
+    let s = stripAccents(original).toLowerCase();
+    s = s.replace(/\s+/g, " ").trim();
+
+    const replacements = [
+        [/peso muerto rumano/g, "Romanian deadlift"],
+        [/peso muerto/g, "deadlift"],
+        [/sentadilla bulgara/g, "Bulgarian split squat"],
+        [/sentadilla frontal/g, "front squat"],
+        [/sentadilla goblet/g, "goblet squat"],
+        [/sentadilla hack/g, "hack squat"],
+        [/sentadilla/g, "squat"],
+        [/prensa de piernas/g, "leg press"],
+        [/extension(?:es)? de piernas/g, "leg extension"],
+        [/curl femoral/g, "leg curl"],
+        [/press de banca/g, "bench press"],
+        [/press banca/g, "bench press"],
+        [/press militar/g, "overhead press"],
+        [/press inclinado/g, "incline press"],
+        [/fondos/g, "dips"],
+        [/dominadas?/g, "pull-ups"],
+        [/jalon(?:es)?(?: al pecho)?/g, "pulldown"],
+        [/remo/g, "row"],
+        [/elevaciones laterales/g, "lateral raises"],
+        [/curl de biceps/g, "biceps curl"],
+        [/curl biceps/g, "biceps curl"],
+        [/extensiones? de triceps/g, "triceps extensions"],
+        [/plancha/g, "plank"],
+
+        // Modifiers / equipment
+        [/con mancuernas/g, "with dumbbells"],
+        [/con barra/g, "with barbell"],
+        [/en maquina/g, "machine"],
+        [/en polea/g, "cable"],
+        [/inclinado/g, "incline"],
+        [/declinado/g, "decline"],
+        [/plano/g, "flat"],
+    ];
+
+    for (const [re, rep] of replacements) {
+        s = s.replace(re, rep);
+    }
+
+    s = s.replace(/\s+/g, " ").trim();
+    if (!s) return original;
+    return titleCaseEn(s);
+};
+
 const NETLIFY_EDGE_UNCAUGHT = "uncaught exception during edge function invocation";
 
 const isNetlifyEdgeUncaughtInvocation = (text) =>
@@ -207,14 +346,18 @@ const isNetlifyEdgeUncaughtInvocation = (text) =>
         .includes(NETLIFY_EDGE_UNCAUGHT);
 
 const showNetlifyHostingErrorAlert = async ({ endpoint, status, statusText, bodyText }) => {
-    const safeEndpoint = String(endpoint ?? "").trim() || "(desconocido)";
+    const safeEndpoint = String(endpoint ?? "").trim() || tLang("(desconocido)", "(unknown)");
     const safeStatus = Number.isFinite(Number(status)) ? Number(status) : "-";
     const safeStatusText = String(statusText ?? "").trim() || "";
     const safeBody = String(bodyText ?? "").trim();
 
+    const hostingNote = isEnglish()
+        ? "This is a hosting server error (<strong>Netlify</strong>). Please wait a few minutes and try again."
+        : "Este es un error del servidor de hosting (<strong>Netlify</strong>). Por favor, aguardá unos minutos e intentá nuevamente cuando se restaure el servicio.";
+
     await sweetalert.fire({
         icon: "error",
-        title: "Error del servidor",
+        title: tLang("Error del servidor", "Server error"),
         html: `
             <div class="server-error">
                 <div class="server-error__hero">${escapeHtml(NETLIFY_EDGE_UNCAUGHT)}</div>
@@ -224,13 +367,13 @@ const showNetlifyHostingErrorAlert = async ({ endpoint, status, statusText, body
                 </div>
                 ${safeBody ? `<pre class="server-error__body">${escapeHtml(safeBody.slice(0, 1200))}</pre>` : ""}
                 <p class="server-error__note">
-                    Este es un error del servidor de hosting (<strong>Netlify</strong>). Por favor, aguardá unos minutos e intentá nuevamente cuando se restaure el servicio.
+                    ${hostingNote}
                 </p>
             </div>
         `,
         allowOutsideClick: false,
         allowEscapeKey: true,
-        confirmButtonText: "Entendido",
+        confirmButtonText: tLang("Entendido", "OK"),
         customClass: {
             popup: "dashboard-swal server-error-swal",
             confirmButton: "dashboard-swal-confirm",
@@ -344,8 +487,21 @@ const formatReps = (value) => {
 };
 
 const renderListaEjerciciosSelectable = () => {
+    const grupoLabelMapEn = {
+        "Pecho": "Chest",
+        "Espalda": "Back",
+        "Piernas": "Legs",
+        "Hombros": "Shoulders",
+        "Brazos": "Arms",
+        "Tríceps": "Triceps",
+        "Antebrazos": "Forearms",
+        "Abdomen / core": "Abs / core",
+        "Cardio / acondicionamiento": "Cardio / conditioning",
+    };
+
     const parts = [];
     for (const [grupo, items] of Object.entries(EJERCICIOS_INDICE)) {
+        const grupoLabel = isEnglish() ? (grupoLabelMapEn[grupo] || grupo) : grupo;
         const checks = items
             .map((e) => {
                 const safe = escapeHtml(e);
@@ -360,7 +516,7 @@ const renderListaEjerciciosSelectable = () => {
 
         parts.push(`
             <details class="swal-details" data-grupo="${escapeHtml(grupo)}">
-                <summary>${escapeHtml(grupo)} <span class="swal-chip">${items.length}</span></summary>
+                <summary>${escapeHtml(grupoLabel)} <span class="swal-chip">${items.length}</span></summary>
                 <div class="swal-checklist">
                     ${checks}
                 </div>
@@ -402,24 +558,24 @@ const renderDiasSelector = () => {
         (d) => `<button type="button" class="swal-dia-btn" data-dia="${escapeHtml(d.code)}" aria-pressed="false">${escapeHtml(d.label)}</button>`
     ).join("");
     return `
-        <div class="swal-dias" role="group" aria-label="Días de entrenamiento">
+        <div class="swal-dias" role="group" aria-label="${escapeHtml(tLang("Días de entrenamiento", "Training days"))}">
             ${buttons}
         </div>
-        <p class="swal-helper">Tocá para seleccionar los días en los que vas a entrenar.</p>
+        <p class="swal-helper">${escapeHtml(tLang("Tocá para seleccionar los días en los que vas a entrenar.", "Tap to select the days you plan to train."))}</p>
     `;
 };
 
 const renderSelectorIntensidad = () => {
     return `
-        <section class="swal-section" aria-label="Intensidad de entrenamiento">
-            <h3>Intensidad</h3>
+        <section class="swal-section" aria-label="${escapeHtml(tLang("Intensidad de entrenamiento", "Training intensity"))}">
+            <h3>${escapeHtml(tLang("Intensidad", "Intensity"))}</h3>
             <div class="swal-grid">
                 <div class="swal-field">
-                    <p class="swal-label">Elige la intensidad</p>
-                    <label class="swal-radio"><input type="radio" name="intensidad" value="baja"><span>Intensidad baja</span></label>
-                    <label class="swal-radio"><input type="radio" name="intensidad" value="media"><span>Intensidad media</span></label>
-                    <label class="swal-radio"><input type="radio" name="intensidad" value="alta"><span>Intensidad alta</span></label>
-                    <p class="swal-helper">La intensidad afecta la cantidad de ejercicios por día (baja: 4, media: 6, alta: 8).</p>
+                    <p class="swal-label">${escapeHtml(tLang("Elegí la intensidad", "Choose the intensity"))}</p>
+                    <label class="swal-radio"><input type="radio" name="intensidad" value="baja"><span>${escapeHtml(tLang("Intensidad baja", "Low intensity"))}</span></label>
+                    <label class="swal-radio"><input type="radio" name="intensidad" value="media"><span>${escapeHtml(tLang("Intensidad media", "Medium intensity"))}</span></label>
+                    <label class="swal-radio"><input type="radio" name="intensidad" value="alta"><span>${escapeHtml(tLang("Intensidad alta", "High intensity"))}</span></label>
+                    <p class="swal-helper">${escapeHtml(tLang("La intensidad afecta la cantidad de ejercicios por día (baja: 4, media: 6, alta: 8).", "Intensity affects how many exercises you get per day (low: 4, medium: 6, high: 8)."))}</p>
                 </div>
             </div>
         </section>
@@ -571,42 +727,48 @@ const openGenerarPlanModal = async (planPrevioRaw = null) => {
     const lastIntensidad = prefillPlan?.intensidad || baseIntensidad;
 
     const result = await sweetalert.fire({
-        title: "Generar Plan de Entrenamiento con IA",
+        title: tLang("Generar Plan de Entrenamiento con IA", "Generate Training Plan with AI"),
         html: `
             <div class="swal-gen">
                 <p class="swal-helper">
-                    Elegí tu contexto y prioridad. Esto nos ayuda a seleccionar ejercicios y armar una progresión coherente.
+                    ${escapeHtml(tLang(
+                        "Elegí tu contexto y prioridad. Esto nos ayuda a seleccionar ejercicios y armar una progresión coherente.",
+                        "Choose your context and priority. This helps us select exercises and build a coherent progression."
+                    ))}
                 </p>
 
-                <section class="swal-section" aria-label="Opciones de plan">
-                    <h3>Opciones</h3>
+                <section class="swal-section" aria-label="${escapeHtml(tLang("Opciones de plan", "Plan options"))}">
+                    <h3>${escapeHtml(tLang("Opciones", "Options"))}</h3>
                     <div class="swal-grid">
                         <div class="swal-field">
-                            <p class="swal-label">¿Dónde entrenás?</p>
-                            <label class="swal-radio"><input type="radio" name="lugar" value="casa"><span>Entreno en casa</span></label>
-                            <label class="swal-radio"><input type="radio" name="lugar" value="gimnasio"><span>Entreno en gimnasio</span></label>
+                            <p class="swal-label">${escapeHtml(tLang("¿Dónde entrenás?", "Where do you train?"))}</p>
+                            <label class="swal-radio"><input type="radio" name="lugar" value="casa"><span>${escapeHtml(tLang("Entreno en casa", "I train at home"))}</span></label>
+                            <label class="swal-radio"><input type="radio" name="lugar" value="gimnasio"><span>${escapeHtml(tLang("Entreno en gimnasio", "I train at the gym"))}</span></label>
                         </div>
                         <div class="swal-field">
-                            <p class="swal-label">¿Qué priorizás?</p>
-                            <label class="swal-radio"><input type="radio" name="objetivo" value="grasa"><span>Priorizar pérdida de grasa</span></label>
-                            <label class="swal-radio"><input type="radio" name="objetivo" value="musculo"><span>Priorizar ganancia muscular</span></label>
+                            <p class="swal-label">${escapeHtml(tLang("¿Qué priorizás?", "What do you prioritize?"))}</p>
+                            <label class="swal-radio"><input type="radio" name="objetivo" value="grasa"><span>${escapeHtml(tLang("Priorizar pérdida de grasa", "Prioritize fat loss"))}</span></label>
+                            <label class="swal-radio"><input type="radio" name="objetivo" value="musculo"><span>${escapeHtml(tLang("Priorizar ganancia muscular", "Prioritize muscle gain"))}</span></label>
                         </div>
                     </div>
                 </section>
                 
                 ${renderSelectorIntensidad()}
 
-                <section class="swal-section" aria-label="Días de entrenamiento">
-                    <h3>Días de la semana</h3>
+                <section class="swal-section" aria-label="${escapeHtml(tLang("Días de entrenamiento", "Training days"))}">
+                    <h3>${escapeHtml(tLang("Días de la semana", "Days of the week"))}</h3>
                     ${renderDiasSelector()}
                 </section>
 
-                <section class="swal-section" aria-label="Ejercicios disponibles">
-                    <h3>Ejercicios disponibles (índice)</h3>
-                    <p class="swal-helper">Opcional: si querés, marcá ejercicios preferidos. Si no seleccionás nada, la IA elige automáticamente.</p>
+                <section class="swal-section" aria-label="${escapeHtml(tLang("Ejercicios disponibles", "Available exercises"))}">
+                    <h3>${escapeHtml(tLang("Ejercicios disponibles (índice)", "Available exercises (index)"))}</h3>
+                    <p class="swal-helper">${escapeHtml(tLang(
+                        "Opcional: si querés, marcá ejercicios preferidos. Si no seleccionás nada, la IA elige automáticamente.",
+                        "Optional: pick preferred exercises. If you don't select any, the AI will choose automatically."
+                    ))}</p>
                     <label class="swal-toggle">
                         <input type="checkbox" id="swal_ej_toggle">
-                        <span>Quiero elegir ejercicios</span>
+                        <span>${escapeHtml(tLang("Quiero elegir ejercicios", "I want to choose exercises"))}</span>
                     </label>
                     <div class="swal-ejercicios">
                         ${renderListaEjerciciosSelectable()}
@@ -615,8 +777,8 @@ const openGenerarPlanModal = async (planPrevioRaw = null) => {
             </div>
         `,
         showCancelButton: true,
-        confirmButtonText: "Generar",
-        cancelButtonText: "Cancelar",
+        confirmButtonText: tLang("Generar", "Generate"),
+        cancelButtonText: tLang("Cancelar", "Cancel"),
         customClass: {
             popup: "dashboard-swal",
             confirmButton: "dashboard-swal-confirm",
@@ -692,14 +854,20 @@ const openGenerarPlanModal = async (planPrevioRaw = null) => {
 
             if (!lugar || !objetivo) {
                 if (typeof sweetalert.showValidationMessage === "function") {
-                    sweetalert.showValidationMessage("Elegí dónde entrenás y qué priorizás");
+                    sweetalert.showValidationMessage(tLang(
+                        "Elegí dónde entrenás y qué priorizás",
+                        "Choose where you train and what you prioritize"
+                    ));
                 }
                 return false;
             }
 
             if (!dias.length) {
                 if (typeof sweetalert.showValidationMessage === "function") {
-                    sweetalert.showValidationMessage("Seleccioná al menos un día de la semana");
+                    sweetalert.showValidationMessage(tLang(
+                        "Seleccioná al menos un día de la semana",
+                        "Select at least one day of the week"
+                    ));
                 }
                 return false;
             }
@@ -716,7 +884,7 @@ const openGenerarPlanModal = async (planPrevioRaw = null) => {
 };
 window.onload = async () => {
     sweetalert.fire({
-        title: `Bienvenido de nuevo, ${username}!`,
+        title: isEnglish() ? `Welcome back, ${username}!` : `Bienvenido de nuevo, ${username}!`,
         icon: 'success',
         toast: true,
         position: 'top-end',
@@ -750,6 +918,10 @@ function verificacion_plan_entrenamiento() {
     if (plan_entrenamiento != "Ninguno" && plan_entrenamiento != null) {
         desc.style.display = "none";
         boton_ejercicios?.classList.remove("btn-primary");
+        if (boton_ejercicios) {
+            boton_ejercicios.removeAttribute("data-i18n-en");
+            delete boton_ejercicios.dataset.i18nEs;
+        }
         if (boton_regenerar) {
             boton_regenerar.style.display = "inline-block";
             boton_regenerar.onclick = () => Regen_plan();
@@ -758,15 +930,22 @@ function verificacion_plan_entrenamiento() {
         const contenedor_ejercicios = document.getElementById("Plan_ejercicio");
         contenedor_ejercicios.style.display = "block";
         contenedor_ejercicios.innerHTML = mapear_plan(plan_entrenamiento)
+        try { globalThis.UIIdioma?.translatePage?.(contenedor_ejercicios); } catch { }
         initPlanDiaPager();
         boton_ejercicios.innerHTML = '<img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9ImN1cnJlbnRDb2xvciIgc3Ryb2tlLXdpZHRoPSIyIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiIGNsYXNzPSJsdWNpZGUgbHVjaWRlLXJlZnJlc2gtY2N3LWljb24gbHVjaWRlLXJlZnJlc2gtY2N3Ij48cGF0aCBkPSJNMjEgMTJhOSA5IDAgMCAwLTktOSA5Ljc1IDkuNzUgMCAwIDAtNi43NCAyLjc0TDMgOCIvPjxwYXRoIGQ9Ik0zIDN2NWg1Ii8+PHBhdGggZD0iTTMgMTJhOSA5IDAgMCAwIDkgOSA5Ljc1IDkuNzUgMCAwIDAgNi43NC0yLjc0TDIxIDE2Ii8+PHBhdGggZD0iTTE2IDE2aDV2NSIvPjwvc3ZnPg==">';
         boton_ejercicios.style.width = "50px";
         boton_ejercicios.style.height = "50px";
+        boton_ejercicios.setAttribute("aria-label", "Refrescar plan de entrenamiento");
+        boton_ejercicios.setAttribute("data-i18n-en-aria-label", "Refresh training plan");
+        try { globalThis.UIIdioma?.translatePage?.(boton_ejercicios); } catch { }
         boton_ejercicios.onclick = async () => {
             await recuperar_planes();
             sweetalert.fire({
-                title: "Plan de entrenamiento actualizado",
-                text: "Tu plan de entrenamiento ha sido refrescado correctamente.",
+                title: tLang("Plan de entrenamiento actualizado", "Training plan updated"),
+                text: tLang(
+                    "Tu plan de entrenamiento ha sido refrescado correctamente.",
+                    "Your training plan was refreshed successfully."
+                ),
                 icon: 'success',
                 toast: true,
                 position: 'top-end',
@@ -779,8 +958,13 @@ function verificacion_plan_entrenamiento() {
         if (desc) desc.style.display = "block";
         boton_eliminar_plan_eje.style.display = "none";
         boton_ejercicios?.classList.add("btn-primary");
-        boton_ejercicios.innerHTML = "Generar plan";
-        boton_ejercicios.setAttribute("aria-label", "Generar plan de entrenamiento");
+        if (boton_ejercicios) {
+            boton_ejercicios.textContent = "Generar plan";
+            boton_ejercicios.setAttribute("data-i18n-en", "Generate plan");
+            boton_ejercicios.setAttribute("aria-label", "Generar plan de entrenamiento");
+            boton_ejercicios.setAttribute("data-i18n-en-aria-label", "Generate training plan");
+            try { globalThis.UIIdioma?.translatePage?.(boton_ejercicios); } catch { }
+        }
         boton_ejercicios.style.width = "auto";
         boton_ejercicios.style.height = "auto";
         boton_ejercicios.onclick = async () => {
@@ -800,8 +984,10 @@ async function crearPlanEntreno(lugar, objetivo, diasSeleccionados, ejerciciosSe
     try { localStorage.setItem("plan_intensidad", intensidad); } catch (e) { }
 
     sweetalert.fire({
-        title: "Generando Plan",
-        text: `Lugar: ${lugar ?? "-"} | Objetivo: ${objetivo ?? "-"} | Intensidad: ${intensidad ?? "media"} | Días: ${(diasCodes || []).join(", ") || "-"}. Por favor, esperá...`,
+        title: tLang("Generando Plan", "Generating plan"),
+        text: isEnglish()
+            ? `Place: ${lugar ?? "-"} | Goal: ${objetivo ?? "-"} | Intensity: ${intensidad ?? "medium"} | Days: ${(diasCodes || []).join(", ") || "-"}. Please wait...`
+            : `Lugar: ${lugar ?? "-"} | Objetivo: ${objetivo ?? "-"} | Intensidad: ${intensidad ?? "media"} | Días: ${(diasCodes || []).join(", ") || "-"}. Por favor, esperá...`,
         icon: "info",
         allowOutsideClick: false,
         allowEscapeKey: false,
@@ -818,6 +1004,7 @@ async function crearPlanEntreno(lugar, objetivo, diasSeleccionados, ejerciciosSe
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 id_usuario: localStorage.getItem("id_usuario"),
+                idioma: getIdiomaPreferido(),
                 lugar: lugar,
                 objetivo: objetivo,
                 intensidad: intensidad,
@@ -834,8 +1021,11 @@ async function crearPlanEntreno(lugar, objetivo, diasSeleccionados, ejerciciosSe
     } catch (err) {
         console.log("[EdgeFunction:/generar_plan_entreno] Error de red:", err);
         sweetalert.fire({
-            title: "Error",
-            text: "No se pudo contactar al servidor para generar el plan. Revisá tu conexión e intentá de nuevo.",
+            title: tLang("Error", "Error"),
+            text: tLang(
+                "No se pudo contactar al servidor para generar el plan. Revisá tu conexión e intentá de nuevo.",
+                "Could not reach the server to generate the plan. Check your connection and try again."
+            ),
             icon: "error",
             toast: true,
             position: "top-end",
@@ -865,8 +1055,11 @@ async function crearPlanEntreno(lugar, objetivo, diasSeleccionados, ejerciciosSe
         }
 
         sweetalert.fire({
-            title: "Error",
-            text: "Error al generar el plan de entrenamiento. Por favor, intentá nuevamente más tarde.",
+            title: tLang("Error", "Error"),
+            text: tLang(
+                "Error al generar el plan de entrenamiento. Por favor, intentá nuevamente más tarde.",
+                "Failed to generate the training plan. Please try again later."
+            ),
             icon: "error",
             toast: true,
             position: "top-end",
@@ -883,16 +1076,16 @@ async function crearPlanEntreno(lugar, objetivo, diasSeleccionados, ejerciciosSe
             await recuperar_planes();
             verificacion_plan_entrenamiento();
             sweetalert.fire({
-                title: "¡Plan Generado!",
-                text: "Tu rutina se ha creado correctamente.",
+                title: tLang("¡Plan Generado!", "Plan generated!"),
+                text: tLang("Tu rutina se ha creado correctamente.", "Your routine was created successfully."),
                 icon: "success",
                 timer: 4000,
                 showConfirmButton: false
             });
         } catch (error) {
             sweetalert.fire({
-                title: "Error",
-                text: "Error al guardar la configuración: " + error.message,
+                title: tLang("Error", "Error"),
+                text: tLang("Error al guardar la configuración: ", "Failed to save configuration: ") + error.message,
                 icon: "error",
                 toast: true,
                 position: "top-end",
@@ -915,8 +1108,8 @@ async function recuperar_planes() {
             .from("Planes").select("Plan_entreno, Plan_alimenta").eq("ID_user", user.id).single();
         if (error2) {
             swal.fire({
-                title: "Error",
-                text: "Error al obtener los datos del usuario: " + error2.message,
+                title: tLang("Error", "Error"),
+                text: tLang("Error al obtener los datos del usuario: ", "Failed to fetch user data: ") + error2.message,
                 toast: true,
                 position: 'top-end',
                 icon: 'error',
@@ -934,12 +1127,12 @@ async function recuperar_planes() {
 function mapear_plan(plan_entrenamiento_json) {
     const raw = plan_entrenamiento_json;
     if (raw == null) {
-        return "<div class=\"plan-vacio\">No hay plan cargado.</div>";
+        return "<div class=\"plan-vacio\" data-i18n-en=\"No plan loaded.\">No hay plan cargado.</div>";
     }
 
     const asString = typeof raw === "string" ? raw.trim() : JSON.stringify(raw);
     if (!asString || asString === "Ninguno") {
-        return "<div class=\"plan-vacio\">No hay plan cargado.</div>";
+        return "<div class=\"plan-vacio\" data-i18n-en=\"No plan loaded.\">No hay plan cargado.</div>";
     }
 
     const extractLikelyJson = (text) => {
@@ -977,8 +1170,12 @@ function mapear_plan(plan_entrenamiento_json) {
         const series = ex.series ?? ex.series_por_ejercicio ?? ex.sets ?? ex.set ?? ex.seriesTotales;
         const repeticiones = ex.repeticiones ?? ex.reps ?? ex.repetitions ?? ex.rep ?? ex.repeticion;
         if (!nombre && !series && !repeticiones) return null;
+
+        const nombreEs = String(nombre ?? tLang("Ejercicio", "Exercise")).trim();
+        const nombreEn = translateExerciseNameToEnglish(nombreEs);
         return {
-            nombre: nombre ?? "Ejercicio",
+            nombre: nombreEs,
+            nombre_en: nombreEn,
             descripcion: descripcion ?? "",
             descripcion_detallada: descripcion_detallada ?? "",
             series: series ?? "-",
@@ -1020,7 +1217,7 @@ function mapear_plan(plan_entrenamiento_json) {
     if (parsed == null) {
         return `
             <div class="plan-container">
-                <div class="plan-aviso">No pude interpretar el plan como JSON. Mostrando texto.</div>
+                <div class="plan-aviso" data-i18n-en="Couldn't parse the plan as JSON. Showing text.">No pude interpretar el plan como JSON. Mostrando texto.</div>
                 <pre class="plan-raw">${escapeHtml(asString)}</pre>
             </div>
         `;
@@ -1052,17 +1249,18 @@ function mapear_plan(plan_entrenamiento_json) {
     const hasWeekdayObject = weekdayKeys.length > 0;
 
     const renderExerciseCard = (exNorm, idx) => {
-        const nombre = escapeHtml(exNorm.nombre);
+        const nombreEs = escapeHtml(exNorm.nombre);
+        const nombreEn = escapeHtml(exNorm.nombre_en ?? exNorm.nombre);
         const descripcion = escapeHtml(exNorm.descripcion || "");
         const series = escapeHtml(exNorm.series);
         const reps = escapeHtml(formatReps(exNorm.repeticiones));
         return `
             <article class="plan-card" data-idx="${idx}">
-                <h3 class="plan-nombre">${nombre}</h3>
+                <h3 class="plan-nombre" data-i18n-en="${nombreEn}">${nombreEs}</h3>
                 ${descripcion ? `<p class="plan-desc">${descripcion}</p>` : ""}
                 <div class="plan-meta">
-                    <span class="plan-chip">Series: <strong>${series}</strong></span>
-                    <span class="plan-chip">Reps: <strong>${reps}</strong></span>
+                    <span class="plan-chip"><span data-i18n-en="Sets:">Series:</span> <strong>${series}</strong></span>
+                    <span class="plan-chip"><span data-i18n-en="Reps:">Reps:</span> <strong>${reps}</strong></span>
                 </div>
             </article>
         `;
@@ -1078,16 +1276,16 @@ function mapear_plan(plan_entrenamiento_json) {
 
         const cards = normalized.length
             ? normalized.map(renderExerciseCard).join("")
-            : `<div class="plan-vacio">No hay ejercicios para este día.</div>`;
+            : `<div class="plan-vacio" data-i18n-en="No exercises for this day.">No hay ejercicios para este día.</div>`;
 
         return `
             <section class="plan-dia">
-                <div class="plan-dia-header" role="button" tabindex="0" data-day-idx="${escapeHtml(dayIdx)}" aria-label="Ver detalle de ${escapeHtml(diaLabel)}">
+                <div class="plan-dia-header" role="button" tabindex="0" data-day-idx="${escapeHtml(dayIdx)}" aria-label="Ver detalle de ${escapeHtml(diaLabel)}" data-i18n-en-aria-label="View details for ${escapeHtml(diaLabel)}">
                     <div class="plan-dia-titulos">
                         <h2 class="plan-dia-titulo">${escapeHtml(diaLabel)}</h2>
                         ${enfoque ? `<div class="plan-dia-subtitle">${escapeHtml(enfoque)}</div>` : ""}
                     </div>
-                    <span class="plan-dia-chip">${normalized.length} ejercicios</span>
+                    <span class="plan-dia-chip"><span>${normalized.length}</span> <span data-i18n-en="exercises">ejercicios</span></span>
                 </div>
                 <div class="plan-grid">${cards}</div>
             </section>
@@ -1099,7 +1297,7 @@ function mapear_plan(plan_entrenamiento_json) {
     if (hasDiasArray) {
         const days = (Array.isArray(maybeDiasArray) ? maybeDiasArray : [])
             .map((d, originalIndex) => {
-                const dia = d?.dia ?? d?.nombre ?? d?.day ?? `Día ${originalIndex + 1}`;
+                const dia = d?.dia ?? d?.nombre ?? d?.day ?? tLang(`Día ${originalIndex + 1}`, `Day ${originalIndex + 1}`);
                 const enfoque = d?.enfoque ?? d?.focus ?? d?.objetivo ?? d?.titulo ?? d?.title;
                 const ejercicios = d?.ejercicios ?? d?.entrenamiento ?? d?.exercises ?? d?.rutina ?? d?.items ?? [];
                 const normalized = (Array.isArray(ejercicios) ? ejercicios : [])
@@ -1110,7 +1308,7 @@ function mapear_plan(plan_entrenamiento_json) {
             .filter((d) => d.normalized.length > 0);
 
         if (!days.length) {
-            html = `<div class="plan-vacio">No hay días con ejercicios asignados.</div>`;
+            html = `<div class="plan-vacio" data-i18n-en="No days have exercises assigned.">No hay días con ejercicios asignados.</div>`;
         } else {
             html = days
                 .map((d, i) => renderDaySection(d.dia, d.ejercicios, d.enfoque, i))
@@ -1135,7 +1333,7 @@ function mapear_plan(plan_entrenamiento_json) {
             .filter((d) => d.normalized.length > 0);
 
         if (!days.length) {
-            html = `<div class="plan-vacio">No hay días con ejercicios asignados.</div>`;
+            html = `<div class="plan-vacio" data-i18n-en="No days have exercises assigned.">No hay días con ejercicios asignados.</div>`;
         } else {
             html = days.map((d, i) => renderDaySection(d.key, d.ejercicios, null, i)).filter(Boolean).join("");
         }
@@ -1146,7 +1344,7 @@ function mapear_plan(plan_entrenamiento_json) {
             .filter(Boolean);
         const cards = normalized.length
             ? normalized.map(renderExerciseCard).join("")
-            : `<div class="plan-vacio">No pude encontrar ejercicios en el JSON.</div>`;
+            : `<div class="plan-vacio" data-i18n-en="Couldn't find exercises in the JSON.">No pude encontrar ejercicios en el JSON.</div>`;
         html = `<div class="plan-grid">${cards}</div>`;
     }
 
@@ -1220,8 +1418,12 @@ function parsePlanDiasDetallados(planRaw) {
         const repeticiones = ex.repeticiones ?? ex.reps ?? ex.repetitions ?? ex.rep ?? ex.repeticion;
         const descanso_segundos = ex.descanso_segundos ?? ex.descanso ?? ex.rest ?? ex.rest_seconds ?? ex.restSeconds;
         if (!nombre && !series && !repeticiones && !descripcion) return null;
+
+        const nombreEs = String(nombre ?? tLang("Ejercicio", "Exercise")).trim();
+        const nombreEn = translateExerciseNameToEnglish(nombreEs);
         return {
-            nombre: String(nombre ?? "Ejercicio"),
+            nombre: nombreEs,
+            nombre_en: nombreEn,
             descripcion: String(descripcion ?? ""),
             descripcion_detallada: String(descripcion_detallada ?? ""),
             series: series ?? "-",
@@ -1240,7 +1442,7 @@ function parsePlanDiasDetallados(planRaw) {
 
     if (Array.isArray(maybeDiasArray)) {
         const days = maybeDiasArray.map((d, i) => {
-            const dia = d?.dia ?? d?.nombre ?? d?.day ?? `Día ${i + 1}`;
+            const dia = d?.dia ?? d?.nombre ?? d?.day ?? tLang(`Día ${i + 1}`, `Day ${i + 1}`);
             const enfoque = d?.enfoque ?? d?.focus ?? d?.objetivo ?? d?.titulo ?? d?.title ?? "";
             const ejercicios = Array.isArray(d?.ejercicios)
                 ? d.ejercicios.map(normalizeExDet).filter(Boolean)
@@ -1337,22 +1539,36 @@ function initDetallePorDiaPlan() {
                         return null;
                     };
 
-                    const tecnica = findSentence(["técnic","tecnica","postura","mantener la espalda","posición","mantener"]) || sentences[0] || "Ejecutar con técnica correcta: mantener postura y rango adecuado.";
-                    const sobrecarga = findSentence(["sobrecarga","progres","aument","carga","progresión","progresiva"]) || "Incrementar progresivamente la carga (p.ej. +2-5% de carga o +1-2 repeticiones cuando completes el rango objetivo durante 1-2 sesiones).";
-                    const respiracion = findSentence(["respir","inhal","exhal","inspir","exhalar"]) || "Inhalar al bajar, exhalar al subir.";
+                    const tecnica =
+                        findSentence(["técnic", "tecnica", "postura", "mantener la espalda", "posición", "mantener", "technique", "form", "posture", "position"]) ||
+                        sentences[0] ||
+                        tLang(
+                            "Ejecutar con técnica correcta: mantener postura y rango adecuado.",
+                            "Use proper technique: maintain posture and a controlled range of motion."
+                        );
+                    const sobrecarga =
+                        findSentence(["sobrecarga", "progres", "aument", "carga", "progresión", "progresiva", "overload", "progress", "increase", "load", "progressive"]) ||
+                        tLang(
+                            "Incrementar progresivamente la carga (p.ej. +2-5% de carga o +1-2 repeticiones cuando completes el rango objetivo durante 1-2 sesiones).",
+                            "Progressively increase the load (e.g., +2-5% weight or +1-2 reps once you hit the target range for 1-2 sessions)."
+                        );
+                    const respiracion =
+                        findSentence(["respir", "inhal", "exhal", "inspir", "exhalar", "breath", "breathe", "inhale", "exhale"]) ||
+                        tLang("Inhalar al bajar, exhalar al subir.", "Inhale on the way down, exhale on the way up.");
 
                     return `
                         <ul class="plan-detailed-list">
-                            <li><strong>Técnica:</strong> ${escapeHtml(tecnica)}</li>
-                            <li><strong>Sobrecarga:</strong> ${escapeHtml(sobrecarga)}</li>
-                            <li><strong>Respiración:</strong> ${escapeHtml(respiracion)}</li>
+                            <li><strong>${escapeHtml(tLang("Técnica", "Technique"))}:</strong> ${escapeHtml(tecnica)}</li>
+                            <li><strong>${escapeHtml(tLang("Sobrecarga", "Progression"))}:</strong> ${escapeHtml(sobrecarga)}</li>
+                            <li><strong>${escapeHtml(tLang("Respiración", "Breathing"))}:</strong> ${escapeHtml(respiracion)}</li>
                         </ul>
                     `;
                 };
 
                 const cardHtmls = ejercicios.length
             ? ejercicios.map((ex) => {
-                const nombre = escapeHtml(ex.nombre);
+                const nombreEs = escapeHtml(ex.nombre);
+                const nombreEn = escapeHtml(ex.nombre_en ?? ex.nombre);
                 const descripcion = escapeHtml(ex.descripcion || "");
                 const descripcionDet = String(ex.descripcion_detallada ?? "").trim();
                 const series = escapeHtml(ex.series);
@@ -1362,12 +1578,12 @@ function initDetallePorDiaPlan() {
                         return `
                             <article class="plan-card" style="height:100%;display:flex;flex-direction:column;justify-content:space-between;">
                                 <div>
-                                    <h3 class="plan-nombre">${nombre}</h3>
+                                    <h3 class="plan-nombre" data-i18n-en="${nombreEn}">${nombreEs}</h3>
                                     ${descripcion ? `<p class="plan-desc">${descripcion}</p>` : ""}
                                     <div class="plan-meta" style="margin-top:6px;">
-                                        <span class="plan-chip">Series: <strong>${series}</strong></span>
-                                        <span class="plan-chip">Reps: <strong>${reps}</strong></span>
-                                        <span class="plan-chip plan-chip--vertical"><span class="plan-chip-label">Descanso</span><span class="plan-chip-value">${descanso}</span></span>
+                                        <span class="plan-chip">${escapeHtml(tLang("Series", "Sets"))}: <strong>${series}</strong></span>
+                                        <span class="plan-chip">${escapeHtml(tLang("Reps", "Reps"))}: <strong>${reps}</strong></span>
+                                        <span class="plan-chip plan-chip--vertical"><span class="plan-chip-label">${escapeHtml(tLang("Descanso", "Rest"))}</span><span class="plan-chip-value">${descanso}</span></span>
                                     </div>
                                     ${detailedHtml}
                                 </div>
@@ -1382,13 +1598,13 @@ function initDetallePorDiaPlan() {
 
         const snapPanels = cardHtmls.length
             ? cardHtmls.map((htmlCard) => `<div class="plan-snap-panel" style="${panelStyle}">${htmlCard}</div>`).join("")
-            : `<div class="plan-vacio">No hay ejercicios cargados para este día.</div>`;
+            : `<div class="plan-vacio">${escapeHtml(tLang("No hay ejercicios cargados para este día.", "No exercises loaded for this day."))}</div>`;
 
         // Build content: header (day + small subtitle) + snapping viewport that fills remaining modal space
         const containerStyle = "display:flex;flex-direction:column;gap:12px;height:70vh;max-height:74vh;";
         const headerHtml = `
             <div style="text-align:center;padding:8px 12px;">
-                <h2 style="margin:0;font-size:1.6rem;line-height:1.1;font-weight:700;">${escapeHtml(String(diaInfo.dia ?? "Día"))}</h2>
+                <h2 style="margin:0;font-size:1.6rem;line-height:1.1;font-weight:700;">${escapeHtml(String(diaInfo.dia ?? tLang("Día", "Day")))}</h2>
                 ${diaInfo.enfoque ? `<div style=\"margin-top:6px;font-size:0.95rem;color:var(--muted,#b3bac6);\">${escapeHtml(String(diaInfo.enfoque))}</div>` : ""}
             </div>
         `;
@@ -1399,7 +1615,7 @@ function initDetallePorDiaPlan() {
                 <div class="plan-detalle-viewport" style="${viewportStyle};flex:1;">
                     ${snapPanels}
                 </div>
-                <div style="text-align:center;margin-top:4px;color:var(--muted,#99a);"><small>${escapeHtml(String(ejercicios.length))} ejercicios</small></div>
+                <div style="text-align:center;margin-top:4px;color:var(--muted,#99a);"><small>${escapeHtml(String(ejercicios.length))} ${escapeHtml(tLang("ejercicios", "exercises"))}</small></div>
             </div>
         `;
 
@@ -1412,7 +1628,7 @@ function initDetallePorDiaPlan() {
         await sweetalert.fire({
             html,
             showCancelButton: false,
-            confirmButtonText: "Cerrar",
+            confirmButtonText: tLang("Cerrar", "Close"),
             customClass: {
                 popup: "dashboard-swal",
                 confirmButton: "dashboard-swal-confirm",
@@ -1420,6 +1636,11 @@ function initDetallePorDiaPlan() {
             didOpen: (popup) => {
                 // Ajuste inmediato + 2 frames para asegurar layout estable
                 const root = popup instanceof HTMLElement ? popup : document.body;
+                try {
+                    globalThis.UIIdioma?.translatePage?.(root);
+                } catch {
+                    // ignore
+                }
                 const run = () => fitDetalleTipografia(root);
                 run();
                 requestAnimationFrame(run);
@@ -1590,12 +1811,15 @@ function initPlanDiaPager() {
 }
 document.getElementById("boton_eliminar")?.addEventListener("click", async () => {
     const confirmResult = await sweetalert.fire({
-        title: "¿Estás seguro?",
-        text: "Esta acción eliminará tu plan de entrenamiento actual.",
+        title: tLang("¿Estás seguro?", "Are you sure?"),
+        text: tLang(
+            "Esta acción eliminará tu plan de entrenamiento actual.",
+            "This action will delete your current training plan."
+        ),
         icon: "warning",
         showCancelButton: true,
-        confirmButtonText: "Sí, eliminar",
-        cancelButtonText: "Cancelar",
+        confirmButtonText: tLang("Sí, eliminar", "Yes, delete"),
+        cancelButtonText: tLang("Cancelar", "Cancel"),
     });
 
     if (!confirmResult.isConfirmed) return;
@@ -1608,8 +1832,8 @@ document.getElementById("boton_eliminar")?.addEventListener("click", async () =>
     verificacion_plan_entrenamiento();
 
     sweetalert.fire({
-        title: "Plan eliminado",
-        text: "Tu plan de entrenamiento ha sido eliminado.",
+        title: tLang("Plan eliminado", "Plan deleted"),
+        text: tLang("Tu plan de entrenamiento ha sido eliminado.", "Your training plan has been deleted."),
         icon: "success",
         toast: true,
         position: "top-end",
@@ -1722,19 +1946,24 @@ async function Regen_plan() {
     const ejerciciosPorDiaDetectados = ejerciciosPorDiaMap[intensidadDetectada] ?? 6;
 
     const result = await swal.fire({
-        title: "Regenerando plan de entrenamiento",
-        text: `Se eliminará el plan actual y se generará uno nuevo basado en la configuración previa. Intensidad detectada: ${intensidadDetectada} (${ejerciciosPorDiaDetectados} ejercicios por día).`,
+        title: tLang("Regenerando plan de entrenamiento", "Regenerating training plan"),
+        text: isEnglish()
+            ? `Your current plan will be deleted and a new one will be generated based on the previous configuration. Detected intensity: ${intensidadDetectada} (${ejerciciosPorDiaDetectados} exercises per day).`
+            : `Se eliminará el plan actual y se generará uno nuevo basado en la configuración previa. Intensidad detectada: ${intensidadDetectada} (${ejerciciosPorDiaDetectados} ejercicios por día).`,
         icon: "info",
 
         showCancelButton: true,
-        confirmButtonText: "Sí, regenerar",
-        cancelButtonText: "Cancelar",
+        confirmButtonText: tLang("Sí, regenerar", "Yes, regenerate"),
+        cancelButtonText: tLang("Cancelar", "Cancel"),
     });
 
     if (!result.isConfirmed) {
         swal.fire({
-            title: "Regeneración cancelada",
-            text: "El plan de entrenamiento actual se mantiene sin cambios.",
+            title: tLang("Regeneración cancelada", "Regeneration cancelled"),
+            text: tLang(
+                "El plan de entrenamiento actual se mantiene sin cambios.",
+                "Your current training plan remains unchanged."
+            ),
             icon: "info",
             toast: true,
             position: "top-end",
@@ -1746,8 +1975,11 @@ async function Regen_plan() {
 
     if (plan_entreno_actual == null || plan_entreno_actual === "Ninguno") {
         sweetalert.fire({
-            title: "No hay plan para regenerar",
-            text: "Primero debés generar un plan de entrenamiento.",
+            title: tLang("No hay plan para regenerar", "No plan to regenerate"),
+            text: tLang(
+                "Primero debés generar un plan de entrenamiento.",
+                "You need to generate a training plan first."
+            ),
             icon: "error",
             toast: true,
             position: "top-end",

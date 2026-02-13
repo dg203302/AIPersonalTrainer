@@ -269,6 +269,27 @@ const initTransparenciaToggle = () => {
 	});
 };
 
+const initIdiomaToggle = () => {
+	const ui = window.UIIdioma;
+	if (!ui || typeof ui.getIdioma !== "function" || typeof ui.setIdioma !== "function" || typeof ui.translatePage !== "function") {
+		return;
+	}
+
+	const toggle = document.getElementById("toggle_idioma");
+	const current = ui.getIdioma();
+
+	if (toggle instanceof HTMLInputElement) {
+		toggle.checked = current === "en";
+		toggle.addEventListener("change", () => {
+			ui.setIdioma(toggle.checked ? "en" : "es");
+			ui.translatePage(document);
+		});
+	}
+
+	// Asegura que la página quede en el idioma persistido.
+	ui.translatePage(document);
+};
+
 if (document.readyState === "loading") {
 	document.addEventListener("DOMContentLoaded", initFixedChromeObservers, { once: true });
 } else {
@@ -283,6 +304,7 @@ window.onload = async () => {
 	document.getElementById("peso_usuario").textContent = peso_usuario;
 	document.getElementById("peso_objetivo_usuario").textContent = peso_objetivo_usuario;
 
+	initIdiomaToggle();
 	initTransparenciaToggle();
 }
 

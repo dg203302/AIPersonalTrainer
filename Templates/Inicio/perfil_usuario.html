@@ -4,9 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <script src="/Scripts/ui_transparencia_apply.js"></script>
+    <script src="/Scripts/ui_idioma.js"></script>
     <link rel="stylesheet" href="/Styles/styles_perfil.css">
     <meta name="theme-color" content="#0A1226">
-    <title>Perfil</title>
+    <title data-i18n-en="Profile">Perfil</title>
 </head>
 <body>
     <header>
@@ -14,7 +15,7 @@
             <img src="https://www.gravatar.com/avatar/00000000000000000000000000000000?d=mp&f=y" alt="avatar" id="icono_usuario">
             <h1 id="username">...</h1>
         </div>
-        <button id="logout_button" type="button" aria-label="Desloguear">
+        <button id="logout_button" type="button" aria-label="Desloguear" data-i18n-en-aria-label="Log out">
             <svg class="logout-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
                 <path d="m16 17 5-5-5-5" />
                 <path d="M21 12H9" />
@@ -25,63 +26,66 @@
 
     <main>
         <section id="datos_usuario">
-            <h2>Tus Datos</h2>
+            <h2 data-i18n-en="Your data">Tus Datos</h2>
             <div>
-                <p>Altura: <span id="altura_usuario">...</span> cm</p>
-                <button id="editar_altura">Cambiar</button>
+                <p><span data-i18n-en="Height:">Altura:</span> <span id="altura_usuario">...</span> <span data-i18n-en="cm">cm</span></p>
+                <button id="editar_altura" data-i18n-en="Change">Cambiar</button>
             </div>
             <div>
-                <p>Edad: <span id="edad_usuario">...</span> años</p>
-                <button id="editar_edad">Cambiar</button>
+                <p><span data-i18n-en="Age:">Edad:</span> <span id="edad_usuario">...</span> <span data-i18n-en="years">años</span></p>
+                <button id="editar_edad" data-i18n-en="Change">Cambiar</button>
             </div>
             <div>
-                <p>Peso Actual: <span id="peso_usuario">...</span> kg</p>
-                <button id="editar_peso">Cambiar</button>
+                <p><span data-i18n-en="Current weight:">Peso Actual:</span> <span id="peso_usuario">...</span> <span data-i18n-en="kg">kg</span></p>
+                <button id="editar_peso" data-i18n-en="Change">Cambiar</button>
             </div>
             <div>
-                <p>Peso Objetivo: <span id="peso_objetivo_usuario">...</span> kg</p>
-                <button id="editar_peso_objetivo">Cambiar</button>
+                <p><span data-i18n-en="Target weight:">Peso Objetivo:</span> <span id="peso_objetivo_usuario">...</span> <span data-i18n-en="kg">kg</span></p>
+                <button id="editar_peso_objetivo" data-i18n-en="Change">Cambiar</button>
             </div>
         </section>
         
         <section id="configuracion">
-            <h2>Configuración</h2>
+            <h2 data-i18n-en="Settings">Configuración</h2>
 
             <div class="config-item">
                 <div class="config-text">
-                    <h4 class="config-title">Idioma de la app</h4>
-                    <p class="config-desc">Cambiá el idioma de la interfaz.</p>
+                    <h4 class="config-title" data-i18n-en="App language">Idioma de la app</h4>
+                    <p class="config-desc" data-i18n-en="Switch the interface language.">Cambiá el idioma de la interfaz.</p>
                 </div>
                 <label class="switch" for="toggle_idioma">
-                    <input id="toggle_idioma" type="checkbox" role="switch" aria-label="Cambiar idioma" />
+                    <input id="toggle_idioma" type="checkbox" role="switch" aria-label="Cambiar idioma" data-i18n-en-aria-label="Change language" />
                     <span class="switch-ui switch-ui--lang" aria-hidden="true"><span class="switch-thumb"></span></span>
                 </label>
             </div>
 
             <div class="config-item">
                 <div class="config-text">
-                    <h4 class="config-title">Transparencia</h4>
-                    <p class="config-desc">Activá un estilo translúcido en tarjetas y paneles.</p>
+                    <h4 class="config-title" data-i18n-en="Transparency">Transparencia</h4>
+                    <p class="config-desc" data-i18n-en="Enable a translucent style on cards and panels.">Activá un estilo translúcido en tarjetas y paneles.</p>
                 </div>
                 <label class="switch" for="toggle_transparencia">
-                    <input id="toggle_transparencia" type="checkbox" role="switch" aria-label="Activar transparencia" />
+                    <input id="toggle_transparencia" type="checkbox" role="switch" aria-label="Activar transparencia" data-i18n-en-aria-label="Enable transparency" />
                     <span class="switch-ui" aria-hidden="true"><span class="switch-thumb"></span></span>
                 </label>
             </div>
         </section>
 
         <section>
-            <h2>Eliminar Cuenta</h2>
+            <h2 data-i18n-en="Delete account">Eliminar Cuenta</h2>
             <p class="advertencia_eliminacion">
-                Al eliminar tu cuenta, se borrarán permanentemente todos tus datos personales, 
-                historial de entrenamientos y progreso. Esta acción no se puede deshacer.
+                <span data-i18n-en="If you delete your account, all your personal data, training history, and progress will be permanently removed.">
+                    Al eliminar tu cuenta, se borrarán permanentemente todos tus datos personales,
+                    historial de entrenamientos y progreso.
+                </span>
+                <span data-i18n-en="This action can’t be undone.">Esta acción no se puede deshacer.</span>
             </p>
-            <button id="eliminar_cuenta">Eliminar Cuenta</button>
+            <button id="eliminar_cuenta" data-i18n-en="Delete account">Eliminar Cuenta</button>
         </section>
         
         <details id="creditos" class="creditos-box">
             <summary>
-                <span>Créditos</span>
+                <span data-i18n-en="Credits">Créditos</span>
                 <span class="creditos-summary-right" aria-hidden="true">
                     <span class="creditos-chip">Info</span>
                     <span class="creditos-chevron"></span>
@@ -89,24 +93,30 @@
             </summary>
             <div class="creditos-content">
                 <p>
-                    <strong>Personal TrAIner</strong> es una app pensada para ayudarte a organizar tu entrenamiento:
-                    genera planes semanales y te permite ver el detalle de cada día y ejercicio de forma simple.
+                    <strong>Personal TrAIner</strong>
+                    <span data-i18n-en="is an app designed to help you organize your training: it generates weekly plans and lets you view day-by-day details in a simple way.">
+                        es una app pensada para ayudarte a organizar tu entrenamiento:
+                        genera planes semanales y te permite ver el detalle de cada día y ejercicio de forma simple.
+                    </span>
                 </p>
                 <p>
-                    Desarrollado por <a href="https://diegogarcia-dev.com.ar" target="_blank" rel="noopener noreferrer">Dg-dev</a>.
-                    2026 &copy;
+                    <span data-i18n-en="Built by">
+                        Desarrollado por
+                    </span>
+                    <a href="https://diegogarcia-dev.com.ar" target="_blank" rel="noopener noreferrer">Dg-dev</a>.
+                    <span>2026 &copy;</span>
                 </p>
                 <p class="creditos-note">
-                    Tip: si algo no se ve bien, relanza la app y revisá tu conexión.
+                    <span data-i18n-en="Tip: if something doesn’t look right, restart the app and check your connection.">Tip: si algo no se ve bien, relanza la app y revisá tu conexión.</span>
                 </p>
             </div>
         </details>
     </main>
     <footer>
-        <nav class="footer-nav" aria-label="Navegación inferior">
-            <a class="footer-btn is-active footer-btn--small" href="/Templates/Inicio/Dashboard.html">Plan de Entreno</a>
-            <a class="footer-btn is-active footer-btn--small" href="/Templates/Inicio/Plan_alimentacion.html">Plan de Alimentación</a>
-            <a class="footer-btn is-active footer-btn--small" href="/Templates/Inicio/Ayuda.html">Ayuda</a>
+        <nav class="footer-nav" aria-label="Navegación inferior" data-i18n-en-aria-label="Bottom navigation">
+            <a class="footer-btn is-active footer-btn--small" href="/Templates/Inicio/Dashboard.html" data-i18n-en="Training plan">Plan de Entreno</a>
+            <a class="footer-btn is-active footer-btn--small" href="/Templates/Inicio/Plan_alimentacion.html" data-i18n-en="Meal plan">Plan de Alimentación</a>
+            <a class="footer-btn is-active footer-btn--small" href="/Templates/Inicio/Ayuda.html" data-i18n-en="Help">Ayuda</a>
         </nav>
     </footer>
 

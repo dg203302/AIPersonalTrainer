@@ -11,6 +11,9 @@ const sweetalert = window.swal;
 const username = localStorage.getItem("username_usuario");
 const avatar = localStorage.getItem("avatar_usuario");
 
+const isEnglish = () => (globalThis.UIIdioma?.getIdioma?.() || "es") === "en";
+const tLang = (es, en) => (isEnglish() ? en : es);
+
 const NETLIFY_EDGE_UNCAUGHT = "uncaught exception during edge function invocation";
 
 const isPlanAlimentacionVacio = (value) => {
@@ -34,14 +37,18 @@ const isNetlifyEdgeUncaughtInvocation = (text) =>
         .includes(NETLIFY_EDGE_UNCAUGHT);
 
 const showNetlifyHostingErrorAlert = async ({ endpoint, status, statusText, bodyText }) => {
-    const safeEndpoint = String(endpoint ?? "").trim() || "(desconocido)";
+    const safeEndpoint = String(endpoint ?? "").trim() || tLang("(desconocido)", "(unknown)");
     const safeStatus = Number.isFinite(Number(status)) ? Number(status) : "-";
     const safeStatusText = String(statusText ?? "").trim() || "";
     const safeBody = String(bodyText ?? "").trim();
 
+    const hostingNote = isEnglish()
+        ? "This is a hosting server error (<strong>Netlify</strong>). Please wait a few minutes and try again."
+        : "Este es un error del servidor de hosting (<strong>Netlify</strong>). Por favor, aguardá unos minutos e intentá nuevamente.";
+
     await sweetalert.fire({
         icon: "error",
-        title: "Error del servidor",
+        title: tLang("Error del servidor", "Server error"),
         html: `
             <div class="server-error">
                 <div class="server-error__hero">${escapeHtml(NETLIFY_EDGE_UNCAUGHT)}</div>
@@ -51,13 +58,13 @@ const showNetlifyHostingErrorAlert = async ({ endpoint, status, statusText, body
                 </div>
                 ${safeBody ? `<pre class="server-error__body">${escapeHtml(safeBody.slice(0, 1200))}</pre>` : ""}
                 <p class="server-error__note">
-                    Este es un error del servidor de hosting (<strong>Netlify</strong>). Por favor, aguardá unos minutos e intentá nuevamente.
+                    ${hostingNote}
                 </p>
             </div>
         `,
         allowOutsideClick: false,
         allowEscapeKey: true,
-        confirmButtonText: "Entendido",
+        confirmButtonText: tLang("Entendido", "OK"),
         customClass: {
             popup: "dashboard-swal server-error-swal",
             confirmButton: "dashboard-swal-confirm",
@@ -177,7 +184,7 @@ const DIAS_ORDEN = [
     "sunday",
 ];
 
-const normalizeDayLabel = (value, fallback = "Día") => {
+const normalizeDayLabel = (value, fallback = tLang("Día", "Day")) => {
     const s = String(value ?? "").trim();
     if (!s) return fallback;
     // Capitalizar primera letra
@@ -205,6 +212,7 @@ const normalizeMacros = (macros) => {
 const normalizeMeals = (comidas) => {
     if (!Array.isArray(comidas)) return [];
     const out = [];
+    const defaultMealName = tLang("Comida", "Meal");
     for (const c of comidas) {
         if (!c || typeof c !== "object") continue;
         const nombre = c.nombre ?? c.name ?? c.titulo ?? c.title;
@@ -212,7 +220,7 @@ const normalizeMeals = (comidas) => {
         const calorias_aprox = c.calorias_aprox ?? c.calorias ?? c.kcal;
         if (!nombre && !descripcion) continue;
         out.push({
-            nombre: String(nombre ?? "Comida").trim() || "Comida",
+            nombre: String(nombre ?? defaultMealName).trim() || defaultMealName,
             descripcion: String(descripcion ?? "").trim() || "-",
             calorias_aprox: Number.isFinite(Number(calorias_aprox)) ? Number(calorias_aprox) : null,
         });
@@ -244,7 +252,7 @@ const parsePlanDiasDetalladosAliment = (planRaw) => {
             .map((d) => {
                 if (!d || typeof d !== "object") return null;
                 return {
-                    dia: normalizeDayLabel(d.dia ?? d.day ?? d.nombre_dia ?? d.nombreDia, "Día"),
+                    dia: normalizeDayLabel(d.dia ?? d.day ?? d.nombre_dia ?? d.nombreDia, tLang("Día", "Day")),
                     calorias_objetivo: Number.isFinite(Number(d.calorias_objetivo ?? d.caloriasObjetivo ?? d.calorias ?? d.kcal))
                         ? Number(d.calorias_objetivo ?? d.caloriasObjetivo ?? d.calorias ?? d.kcal)
                         : null,
@@ -304,18 +312,21 @@ const renderMealCard = (meal) => {
 const renderDaySection = (dia, dayIdx) => {
     const kcal = dia.calorias_objetivo != null ? `${Math.round(dia.calorias_objetivo)} kcal` : "-";
     const comidasCount = dia.comidas?.length ?? 0;
-    const subtitle = `${kcal} · ${comidasCount} comida${comidasCount === 1 ? "" : "s"}`;
+    const subtitleEs = `${kcal} · ${comidasCount} comida${comidasCount === 1 ? "" : "s"}`;
+    const subtitleEn = `${kcal} · ${comidasCount} meal${comidasCount === 1 ? "" : "s"}`;
 
-    const mealsHtml = (dia.comidas || []).map(renderMealCard).join("\n") || `<div class="plan-aviso">No hay comidas definidas.</div>`;
+    const mealsHtml =
+        (dia.comidas || []).map(renderMealCard).join("\n") ||
+        `<div class="plan-aviso" data-i18n-en="No meals defined.">No hay comidas definidas.</div>`;
 
     return `
         <section class="plan-dia" data-day-index="${dayIdx}">
-            <header class="plan-dia-header" role="button" tabindex="0" aria-label="Ver detalle del día ${escapeHtml(dia.dia)}">
+            <header class="plan-dia-header" role="button" tabindex="0" aria-label="Ver detalle del día ${escapeHtml(dia.dia)}" data-i18n-en-aria-label="View details for ${escapeHtml(dia.dia)}">
                 <div class="plan-dia-titulos">
                     <h2 class="plan-dia-titulo">${escapeHtml(dia.dia)}</h2>
-                    <div class="plan-dia-subtitle">${escapeHtml(subtitle)}</div>
+                    <div class="plan-dia-subtitle" data-i18n-en="${escapeHtml(subtitleEn)}">${escapeHtml(subtitleEs)}</div>
                 </div>
-                <span class="plan-dia-chip">Detalle</span>
+                <span class="plan-dia-chip" data-i18n-en="Details">Detalle</span>
             </header>
             <div class="plan-grid">${mealsHtml}</div>
         </section>
@@ -323,14 +334,14 @@ const renderDaySection = (dia, dayIdx) => {
 };
 
 const mapear_plan_alimentacion = (planRaw) => {
-    if (planRaw == null) return `<div class="plan-vacio">No hay plan cargado.</div>`;
+    if (planRaw == null) return `<div class="plan-vacio" data-i18n-en="No plan loaded.">No hay plan cargado.</div>`;
     const asString = typeof planRaw === "string" ? planRaw.trim() : JSON.stringify(planRaw);
-    if (isPlanAlimentacionVacio(asString)) return `<div class="plan-vacio">No hay plan cargado.</div>`;
+    if (isPlanAlimentacionVacio(asString)) return `<div class="plan-vacio" data-i18n-en="No plan loaded.">No hay plan cargado.</div>`;
 
     const dias = parsePlanDiasDetalladosAliment(planRaw);
     if (!dias || dias.length === 0) {
         return `
-            <div class="plan-aviso">No se pudo interpretar el plan como JSON estructurado. Mostrando contenido crudo:</div>
+            <div class="plan-aviso" data-i18n-en="Could not parse the plan as structured JSON. Showing raw content:">No se pudo interpretar el plan como JSON estructurado. Mostrando contenido crudo:</div>
             <pre class="plan-raw">${escapeHtml(String(planRaw).slice(0, 9000))}</pre>
         `;
     }
@@ -359,9 +370,9 @@ const initDetallePorDiaPlanAliment = () => {
         const macrosHtml = macros
             ? `
                 <div class="plan-meta" style="margin-top:10px;">
-                    <span class="plan-chip plan-chip--vertical"><span class="plan-chip-label">Carbs</span><span class="plan-chip-value">${escapeHtml(String(macros.carbohidratos ?? "-"))}%</span></span>
-                    <span class="plan-chip plan-chip--vertical"><span class="plan-chip-label">Prot</span><span class="plan-chip-value">${escapeHtml(String(macros.proteinas ?? "-"))}%</span></span>
-                    <span class="plan-chip plan-chip--vertical"><span class="plan-chip-label">Grasas</span><span class="plan-chip-value">${escapeHtml(String(macros.grasas ?? "-"))}%</span></span>
+                    <span class="plan-chip plan-chip--vertical"><span class="plan-chip-label">${tLang("Carbohidratos", "Carbs")}</span><span class="plan-chip-value">${escapeHtml(String(macros.carbohidratos ?? "-"))}%</span></span>
+                    <span class="plan-chip plan-chip--vertical"><span class="plan-chip-label">${tLang("Proteínas", "Protein")}</span><span class="plan-chip-value">${escapeHtml(String(macros.proteinas ?? "-"))}%</span></span>
+                    <span class="plan-chip plan-chip--vertical"><span class="plan-chip-label">${tLang("Grasas", "Fats")}</span><span class="plan-chip-value">${escapeHtml(String(macros.grasas ?? "-"))}%</span></span>
                 </div>
             `
             : "";
@@ -380,9 +391,12 @@ const initDetallePorDiaPlanAliment = () => {
                   .join("")}</ul>`
             : "";
 
+        const recHeading = tLang("Recomendaciones", "Recommendations");
+        const tipsHeading = tLang("Tips", "Tips");
+
         const comidas = Array.isArray(dia.comidas) ? dia.comidas : [];
         const comidasHtml = comidas.length
-            ? `<h4 style="margin:14px 0 8px;">Comidas del día</h4>
+            ? `<h4 style="margin:14px 0 8px;">${tLang("Comidas del día", "Meals of the day")}</h4>
                <div class="plan-grid">${comidas
                    .map((c) => {
                        const kcalComida = c.calorias_aprox != null ? `${Math.round(c.calorias_aprox)} kcal` : "";
@@ -395,25 +409,28 @@ const initDetallePorDiaPlanAliment = () => {
                        `;
                    })
                    .join("")}</div>`
-            : `<h4 style="margin:14px 0 8px;">Comidas del día</h4><div class="plan-aviso">No hay comidas definidas.</div>`;
+            : `<h4 style="margin:14px 0 8px;">${tLang("Comidas del día", "Meals of the day")}</h4><div class="plan-aviso">${tLang(
+                "No hay comidas definidas.",
+                "No meals defined."
+            )}</div>`;
 
         const kcal = dia.calorias_objetivo != null ? `${Math.round(dia.calorias_objetivo)} kcal` : "-";
 
         await sweetalert.fire({
-            title: `Detalle: ${escapeHtml(dia.dia)}`,
+            title: `${tLang("Detalle", "Details")}: ${escapeHtml(dia.dia)}`,
             html: `
                 <div class="plan-detalle-scroll">
                     <div class="plan-card">
-                        <h3 class="plan-nombre">Ingesta del día</h3>
-                        <p class="plan-desc">Objetivo calórico: <strong>${escapeHtml(kcal)}</strong></p>
+                        <h3 class="plan-nombre">${tLang("Ingesta del día", "Daily intake")}</h3>
+                        <p class="plan-desc">${tLang("Objetivo calórico", "Calorie target")}: <strong>${escapeHtml(kcal)}</strong></p>
                         ${macrosHtml}
                         ${comidasHtml}
-                        ${recHtml}
-                        ${tipsHtml}
+                        ${recHtml ? recHtml.replace("Recomendaciones", recHeading) : ""}
+                        ${tipsHtml ? tipsHtml.replace("Tips", tipsHeading) : ""}
                     </div>
                 </div>
             `,
-            confirmButtonText: "Cerrar",
+            confirmButtonText: tLang("Cerrar", "Close"),
             customClass: {
                 popup: "dashboard-swal",
                 confirmButton: "dashboard-swal-confirm",
@@ -583,38 +600,44 @@ const openGenerarPlanAlimentModal = async (planPrevioRaw = null) => {
     const baseIntensidad = localStorage.getItem("dieta_intensidad") || "media";
 
     const result = await sweetalert.fire({
-        title: "Generar Plan de Alimentación con IA",
+        title: tLang("Generar Plan de Alimentación con IA", "Generate Meal Plan with AI"),
         html: `
             <div class="swal-gen">
-                <p class="swal-helper">Elegí tu objetivo y la intensidad del plan. Esto define el enfoque y la cantidad de comidas por día.</p>
+                <p class="swal-helper">${tLang(
+                    "Elegí tu objetivo y la intensidad del plan. Esto define el enfoque y la cantidad de comidas por día.",
+                    "Choose your goal and the plan intensity. This defines the approach and the number of meals per day."
+                )}</p>
 
-                <section class="swal-section" aria-label="Opciones de plan de alimentación">
-                    <h3>Objetivo</h3>
+                <section class="swal-section" aria-label="${tLang("Opciones de plan de alimentación", "Meal plan options")}">
+                    <h3>${tLang("Objetivo", "Goal")}</h3>
                     <div class="swal-grid">
                         <div class="swal-field">
-                            <label class="swal-radio"><input type="radio" name="objetivo" value="grasa"><span>Perder grasa</span></label>
-                            <label class="swal-radio"><input type="radio" name="objetivo" value="musculo"><span>Ganar masa muscular</span></label>
-                            <label class="swal-radio"><input type="radio" name="objetivo" value="mantener"><span>Mantener peso</span></label>
+                            <label class="swal-radio"><input type="radio" name="objetivo" value="grasa"><span>${tLang("Perder grasa", "Lose fat")}</span></label>
+                            <label class="swal-radio"><input type="radio" name="objetivo" value="musculo"><span>${tLang("Ganar masa muscular", "Gain muscle")}</span></label>
+                            <label class="swal-radio"><input type="radio" name="objetivo" value="mantener"><span>${tLang("Mantener peso", "Maintain weight")}</span></label>
                         </div>
                     </div>
                 </section>
 
-                <section class="swal-section" aria-label="Intensidad de plan de alimentación">
-                    <h3>Intensidad</h3>
+                <section class="swal-section" aria-label="${tLang("Intensidad de plan de alimentación", "Meal plan intensity")}">
+                    <h3>${tLang("Intensidad", "Intensity")}</h3>
                     <div class="swal-grid">
                         <div class="swal-field">
-                            <label class="swal-radio"><input type="radio" name="intensidad" value="baja"><span>Intensidad baja</span></label>
-                            <label class="swal-radio"><input type="radio" name="intensidad" value="media"><span>Intensidad media</span></label>
-                            <label class="swal-radio"><input type="radio" name="intensidad" value="alta"><span>Intensidad alta</span></label>
-                            <p class="swal-helper">La intensidad ajusta la cantidad de comidas por día (baja: 3, media: 4, alta: 5).</p>
+                            <label class="swal-radio"><input type="radio" name="intensidad" value="baja"><span>${tLang("Intensidad baja", "Low intensity")}</span></label>
+                            <label class="swal-radio"><input type="radio" name="intensidad" value="media"><span>${tLang("Intensidad media", "Medium intensity")}</span></label>
+                            <label class="swal-radio"><input type="radio" name="intensidad" value="alta"><span>${tLang("Intensidad alta", "High intensity")}</span></label>
+                            <p class="swal-helper">${tLang(
+                                "La intensidad ajusta la cantidad de comidas por día (baja: 3, media: 4, alta: 5).",
+                                "Intensity adjusts the number of meals per day (low: 3, medium: 4, high: 5)."
+                            )}</p>
                         </div>
                     </div>
                 </section>
             </div>
         `,
         showCancelButton: true,
-        confirmButtonText: "Generar",
-        cancelButtonText: "Cancelar",
+        confirmButtonText: tLang("Generar", "Generate"),
+        cancelButtonText: tLang("Cancelar", "Cancel"),
         customClass: {
             popup: "dashboard-swal",
             confirmButton: "dashboard-swal-confirm",
@@ -632,11 +655,11 @@ const openGenerarPlanAlimentModal = async (planPrevioRaw = null) => {
             const objetivo = popup?.querySelector('input[name="objetivo"]:checked')?.value;
             const intensidad = popup?.querySelector('input[name="intensidad"]:checked')?.value;
             if (!objetivo) {
-                sweetalert.showValidationMessage("Seleccioná un objetivo");
+                sweetalert.showValidationMessage(tLang("Seleccioná un objetivo", "Select a goal"));
                 return;
             }
             if (!intensidad) {
-                sweetalert.showValidationMessage("Seleccioná una intensidad");
+                sweetalert.showValidationMessage(tLang("Seleccioná una intensidad", "Select an intensity"));
                 return;
             }
             return { objetivo, intensidad };
@@ -713,7 +736,7 @@ async function recuperar_planes() {
     if (err2) {
         await sweetalert.fire({
             title: "Error",
-            text: "Error al obtener tu plan: " + err2.message,
+            text: (isEnglish() ? "Error fetching your plan: " : "Error al obtener tu plan: ") + err2.message,
             toast: true,
             position: "top-end",
             icon: "error",
@@ -740,6 +763,10 @@ function verificacion_plan_alimentacion() {
     if (hasPlan) {
         if (desc) desc.style.display = "none";
         boton?.classList.remove("btn-primary");
+        if (boton) {
+            boton.removeAttribute("data-i18n-en");
+            delete boton.dataset.i18nEs;
+        }
         if (botonRegenerar) botonRegenerar.style.display = "inline-block";
         if (botonEliminar) botonEliminar.style.display = "inline-block";
 
@@ -747,11 +774,14 @@ function verificacion_plan_alimentacion() {
             boton.innerHTML = '<img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9ImN1cnJlbnRDb2xvciIgc3Ryb2tlLXdpZHRoPSIyIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiIGNsYXNzPSJsdWNpZGUgbHVjaWRlLXJlZnJlc2gtY2N3LWljb24gbHVjaWRlLXJlZnJlc2gtY2N3Ij48cGF0aCBkPSJNMjEgMTJhOSA5IDAgMCAwLTktOSA5Ljc1IDkuNzUgMCAwIDAtNi43NCAyLjc0TDMgOCIvPjxwYXRoIGQ9Ik0zIDN2NWg1Ii8+PHBhdGggZD0iTTMgMTJhOSA5IDAgMCAwIDkgOSA5Ljc1IDkuNzUgMCAwIDAgNi43NC0yLjc0TDIxIDE2Ii8+PHBhdGggZD0iTTE2IDE2aDV2NSIvPjwvc3ZnPg==">';
             boton.style.width = "50px";
             boton.style.height = "50px";
+            boton.setAttribute("aria-label", "Refrescar plan de alimentación");
+            boton.setAttribute("data-i18n-en-aria-label", "Refresh meal plan");
+            try { globalThis.UIIdioma?.translatePage?.(boton); } catch { }
             boton.onclick = async () => {
                 await recuperar_planes();
                 sweetalert.fire({
-                    title: "Plan de alimentación actualizado",
-                    text: "Tu plan de alimentación ha sido refrescado correctamente.",
+                    title: tLang("Plan de alimentación actualizado", "Meal plan updated"),
+                    text: tLang("Tu plan de alimentación ha sido refrescado correctamente.", "Your meal plan has been refreshed successfully."),
                     icon: 'success',
                     toast: true,
                     position: 'top-end',
@@ -767,8 +797,11 @@ function verificacion_plan_alimentacion() {
 
         if (boton) {
             boton?.classList.add("btn-primary");
-            boton.innerHTML = "Generar plan";
+            boton.textContent = "Generar plan";
+            boton.setAttribute("data-i18n-en", "Generate plan");
             boton.setAttribute("aria-label", "Generar plan de alimentación");
+            boton.setAttribute("data-i18n-en-aria-label", "Generate meal plan");
+            try { globalThis.UIIdioma?.translatePage?.(boton); } catch { }
             boton.style.width = "auto";
             boton.style.height = "auto";
             boton.onclick = async () => {
@@ -780,6 +813,7 @@ function verificacion_plan_alimentacion() {
     if (cont) {
         if (hasPlan) {
             cont.innerHTML = mapear_plan_alimentacion(planRaw);
+            try { globalThis.UIIdioma?.translatePage?.(cont); } catch { }
             cont.style.display = "block";
             initDetallePorDiaPlanAliment();
             initPlanDiaPagerAliment();
@@ -794,8 +828,8 @@ async function crearPlanAlimentacion(objetivo, intensidad) {
     const { data, error } = await supabase.auth.getUser();
     if (error || !data?.user) {
         await sweetalert.fire({
-            title: "Sesión requerida",
-            text: "Tenés que iniciar sesión para generar tu plan.",
+            title: tLang("Sesión requerida", "Session required"),
+            text: tLang("Tenés que iniciar sesión para generar tu plan.", "You must be logged in to generate your plan."),
             icon: "info",
         });
         return;
@@ -805,16 +839,21 @@ async function crearPlanAlimentacion(objetivo, intensidad) {
     const perfil = obtenerPerfilBasico();
     if (!perfil.Altura || !perfil.Peso_actual || !perfil.Peso_objetivo || !perfil.Edad) {
         await sweetalert.fire({
-            title: "Perfil incompleto",
-            text: "Completá tu perfil (edad, altura, peso actual y objetivo) para generar el plan.",
+            title: tLang("Perfil incompleto", "Incomplete profile"),
+            text: tLang(
+                "Completá tu perfil (edad, altura, peso actual y objetivo) para generar el plan.",
+                "Complete your profile (age, height, current weight, and goal) to generate the plan."
+            ),
             icon: "warning",
         });
         return;
     }
 
     sweetalert.fire({
-        title: "Generando Plan",
-        text: `Objetivo: ${objetivo} | Intensidad: ${intensidad}. Por favor, esperá...`,
+        title: tLang("Generando Plan", "Generating plan"),
+        text: isEnglish()
+            ? `Goal: ${objetivo} | Intensity: ${intensidad}. Please wait...`
+            : `Objetivo: ${objetivo} | Intensidad: ${intensidad}. Por favor, esperá...`,
         icon: "info",
         allowOutsideClick: false,
         allowEscapeKey: false,
@@ -830,6 +869,7 @@ async function crearPlanAlimentacion(objetivo, intensidad) {
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
                 id_usuario: user.id,
+                    idioma: isEnglish() ? "en" : "es",
                 objetivo,
                 intensidad,
                 ...perfil,
@@ -839,7 +879,7 @@ async function crearPlanAlimentacion(objetivo, intensidad) {
     } catch (err) {
         await sweetalert.fire({
             title: "Error",
-            text: "No se pudo contactar al servidor: " + (err?.message || String(err)),
+            text: (isEnglish() ? "Could not contact the server: " : "No se pudo contactar al servidor: ") + (err?.message || String(err)),
             icon: "error",
         });
         return;
@@ -866,7 +906,7 @@ async function crearPlanAlimentacion(objetivo, intensidad) {
 
         await sweetalert.fire({
             title: "Error",
-            text: "No se pudo generar el plan: " + String(msg).slice(0, 240),
+            text: (isEnglish() ? "Could not generate the plan: " : "No se pudo generar el plan: ") + String(msg).slice(0, 240),
             icon: "error",
         });
         return;
@@ -883,7 +923,7 @@ async function crearPlanAlimentacion(objetivo, intensidad) {
     if (!plan) {
         await sweetalert.fire({
             title: "Error",
-            text: "El servidor respondió sin plan.",
+            text: tLang("El servidor respondió sin plan.", "The server responded without a plan."),
             icon: "error",
         });
         return;
@@ -894,8 +934,8 @@ async function crearPlanAlimentacion(objetivo, intensidad) {
     verificacion_plan_alimentacion();
 
     await sweetalert.fire({
-        title: "¡Plan Generado!",
-        text: "Tu plan de alimentación se creó correctamente.",
+        title: tLang("¡Plan Generado!", "Plan generated!"),
+        text: tLang("Tu plan de alimentación se creó correctamente.", "Your meal plan was created successfully."),
         icon: "success",
         timer: 3500,
         showConfirmButton: false,
@@ -904,7 +944,7 @@ async function crearPlanAlimentacion(objetivo, intensidad) {
 
 async function actualizar_cambios_plan_alimentacion(planValue) {
     const { data, error } = await supabase.auth.getUser();
-    if (error || !data?.user) throw new Error("Sesión inválida");
+    if (error || !data?.user) throw new Error(tLang("Sesión inválida", "Invalid session"));
     const user = data.user;
 
     const payload = JSON.stringify({ id_usuario: user.id, plan_alimenta: planValue });
@@ -915,7 +955,11 @@ async function actualizar_cambios_plan_alimentacion(planValue) {
         try {
             res = await fetch(url, { method: "POST", body: payload });
         } catch (e) {
-            throw new Error(`Error de red al actualizar el plan: ${e?.message || String(e)}`);
+            throw new Error(
+                isEnglish()
+                    ? `Network error while updating the plan: ${e?.message || String(e)}`
+                    : `Error de red al actualizar el plan: ${e?.message || String(e)}`
+            );
         }
         const txt = await res.text();
         return { res, txt };
@@ -940,7 +984,7 @@ async function actualizar_cambios_plan_alimentacion(planValue) {
                 statusText: res.statusText,
                 bodyText: txt,
             });
-            throw new Error("Error del servidor de hosting");
+            throw new Error(tLang("Error del servidor de hosting", "Hosting server error"));
         }
 
         let msg = txt;
@@ -957,12 +1001,12 @@ async function actualizar_cambios_plan_alimentacion(planValue) {
 const bindUiHandlers = () => {
     document.getElementById("boton_eliminar")?.addEventListener("click", async () => {
         const confirmResult = await sweetalert.fire({
-            title: "¿Estás seguro?",
-            text: "Esta acción eliminará tu plan de alimentación actual.",
+            title: tLang("¿Estás seguro?", "Are you sure?"),
+            text: tLang("Esta acción eliminará tu plan de alimentación actual.", "This action will delete your current meal plan."),
             icon: "warning",
             showCancelButton: true,
-            confirmButtonText: "Sí, eliminar",
-            cancelButtonText: "Cancelar",
+            confirmButtonText: tLang("Sí, eliminar", "Yes, delete"),
+            cancelButtonText: tLang("Cancelar", "Cancel"),
             customClass: {
                 popup: "dashboard-swal",
                 confirmButton: "dashboard-swal-confirm",
@@ -976,8 +1020,8 @@ const bindUiHandlers = () => {
             await actualizar_cambios_plan_alimentacion("Ninguno");
             verificacion_plan_alimentacion();
             await sweetalert.fire({
-                title: "Plan eliminado",
-                text: "Tu plan de alimentación ha sido eliminado.",
+                title: tLang("Plan eliminado", "Plan deleted"),
+                text: tLang("Tu plan de alimentación ha sido eliminado.", "Your meal plan has been deleted."),
                 icon: "success",
                 toast: true,
                 position: "top-end",
@@ -987,7 +1031,7 @@ const bindUiHandlers = () => {
         } catch (e) {
             await sweetalert.fire({
                 title: "Error",
-                text: "No se pudo eliminar: " + (e?.message || String(e)),
+                text: (isEnglish() ? "Could not delete: " : "No se pudo eliminar: ") + (e?.message || String(e)),
                 icon: "error",
             });
         }
@@ -995,12 +1039,15 @@ const bindUiHandlers = () => {
 
     document.getElementById("boton_regenerar")?.addEventListener("click", async () => {
         const result = await sweetalert.fire({
-            title: "Regenerar plan de alimentación",
-            text: "Se eliminará el plan actual y se generará uno nuevo basado en tu configuración previa.",
+            title: tLang("Regenerar plan de alimentación", "Regenerate meal plan"),
+            text: tLang(
+                "Se eliminará el plan actual y se generará uno nuevo basado en tu configuración previa.",
+                "The current plan will be deleted and a new one will be generated based on your previous settings."
+            ),
             icon: "info",
             showCancelButton: true,
-            confirmButtonText: "Sí, regenerar",
-            cancelButtonText: "Cancelar",
+            confirmButtonText: tLang("Sí, regenerar", "Yes, regenerate"),
+            cancelButtonText: tLang("Cancelar", "Cancel"),
             customClass: {
                 popup: "dashboard-swal",
                 confirmButton: "dashboard-swal-confirm",
@@ -1017,7 +1064,7 @@ const bindUiHandlers = () => {
         } catch (e) {
             await sweetalert.fire({
                 title: "Error",
-                text: "No se pudo regenerar: " + (e?.message || String(e)),
+                text: (isEnglish() ? "Could not regenerate: " : "No se pudo regenerar: ") + (e?.message || String(e)),
                 icon: "error",
             });
         }
@@ -1034,7 +1081,7 @@ if (document.readyState === "loading") {
 window.onload = async () => {
     if (username) {
         sweetalert.fire({
-            title: `Bienvenido de nuevo, ${username}!`,
+            title: isEnglish() ? `Welcome back, ${username}!` : `Bienvenido de nuevo, ${username}!`,
             icon: "success",
             toast: true,
             position: "top-end",

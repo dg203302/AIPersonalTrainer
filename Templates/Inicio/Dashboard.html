@@ -4,22 +4,23 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <script src="/Scripts/ui_transparencia_apply.js"></script>
+    <script src="/Scripts/ui_idioma.js"></script>
     <link rel="stylesheet" href="/Styles/styles_dashboard.css">
     <meta name="theme-color" content="#0A1226">
-    <title>Plan de Entreno</title>
+    <title data-i18n-en="Training plan">Plan de Entreno</title>
 </head>
 <body>
     <header>
         <div id="textos">
-            <h1>Plan de Entreno</h1>
+            <h1 data-i18n-en="Training plan">Plan de Entreno</h1>
             <h2>Personal TrAIner</h2>
         </div>
 
-        <a id="usuario" class="header-user-link" href="/Templates/Inicio/perfil_usuario.html" aria-label="Ir a Perfil">
+        <a id="usuario" class="header-user-link" href="/Templates/Inicio/perfil_usuario.html" aria-label="Ir a Perfil" data-i18n-en-aria-label="Go to profile">
             <img src="https://www.gravatar.com/avatar/00000000000000000000000000000000?d=mp&f=y" alt="avatar" id="icono_usuario">
             <div class="header-user-text">
                 <h2 id="username">...</h2>
-                <span class="header-user-sub">Perfil</span>
+                <span class="header-user-sub" data-i18n-en="Profile">Perfil</span>
             </div>
         </a>
 
@@ -29,17 +30,17 @@
             <div id="container-2c37d5b5e17e64db7572dcb96935e91c"></div>
         </div>
         <section id="Ejercicios" tabindex="-1">
-            <h1 style="text-align: center;">Plan de Entreno</h1>
+            <h1 style="text-align: center;" data-i18n-en="Training plan">Plan de Entreno</h1>
             <div id="botones_accion">
-                <p id="descripcion_previa" class="descripcion_previa" style="display: none;">
+                <p id="descripcion_previa" class="descripcion_previa" style="display: none;" data-i18n-en="Here you can generate a personalized workout plan (weekly routine) with exercises, sets/reps, rest times, and suggested progression. To build it, we consider where you train (home or gym), your main goal (fat loss or muscle gain), and your basic data (age, height, current weight, and target weight).">
                     Acá vas a poder generar un plan de entrenamiento personalizado (rutina semanal) con ejercicios, series/repeticiones, descansos y una progresión sugerida.
                     Para armarlo se tiene en cuenta dónde entrenás (en casa o en gimnasio), tu objetivo principal (priorizar pérdida de grasa o ganancia muscular) y tus datos básicos (edad, altura, peso actual y peso objetivo).
                 </p>
                 <div style="display: flex;flex-direction: row;gap: 10px;justify-content: space-between;width: 100%;">
                     <button id="boton_ejercicios">...</button>
                     <div style="display: flex;flex-direction: row;gap: 10px;">
-                        <button id="boton_regenerar" style="display: none;"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9ImN1cnJlbnRDb2xvciIgc3Ryb2tlLXdpZHRoPSIyIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiIGNsYXNzPSJsdWNpZGUgbHVjaWRlLXJlZG8tZG90LWljb24gbHVjaWRlLXJlZG8tZG90Ij48Y2lyY2xlIGN4PSIxMiIgY3k9IjE3IiByPSIxIi8+PHBhdGggZD0iTTIxIDd2NmgtNiIvPjxwYXRoIGQ9Ik0zIDE3YTkgOSAwIDAgMSA5LTkgOSA5IDAgMCAxIDYgMi4zbDMgMi43Ii8+PC9zdmc+" alt="rehacer"></button>
-                        <button id="boton_eliminar" style="display: none;"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9ImN1cnJlbnRDb2xvciIgc3Ryb2tlLXdpZHRoPSIyIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiIGNsYXNzPSJsdWNpZGUgbHVjaWRlLXRyYXNoLWljb24gbHVjaWRlLXRyYXNoIj48cGF0aCBkPSJNMTkgNnYxNGEyIDIgMCAwIDEtMiAySDdhMiAyIDAgMCAxLTItMlY2Ii8+PHBhdGggZD0iTTMgNmgxOCIvPjxwYXRoIGQ9Ik04IDZWNGEyIDIgMCAwIDEgMi0yaDRhMiAyIDAgMCAxIDIgMnYyIi8+PC9zdmc+" alt="eliminar"></button>
+                        <button id="boton_regenerar" style="display: none;"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9ImN1cnJlbnRDb2xvciIgc3Ryb2tlLXdpZHRoPSIyIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiIGNsYXNzPSJsdWNpZGUgbHVjaWRlLXJlZG8tZG90LWljb24gbHVjaWRlLXJlZG8tZG90Ij48Y2lyY2xlIGN4PSIxMiIgY3k9IjE3IiByPSIxIi8+PHBhdGggZD0iTTIxIDd2NmgtNiIvPjxwYXRoIGQ9Ik0zIDE3YTkgOSAwIDAgMSA5LTkgOSA5IDAgMCAxIDYgMi4zbDMgMi43Ii8+PC9zdmc+" alt="rehacer" data-i18n-en-alt="redo"></button>
+                        <button id="boton_eliminar" style="display: none;"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9ImN1cnJlbnRDb2xvciIgc3Ryb2tlLXdpZHRoPSIyIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiIGNsYXNzPSJsdWNpZGUgbHVjaWRlLXRyYXNoLWljb24gbHVjaWRlLXRyYXNoIj48cGF0aCBkPSJNMTkgNnYxNGEyIDIgMCAwIDEtMiAySDdhMiAyIDAgMCAxLTItMlY2Ii8+PHBhdGggZD0iTTMgNmgxOCIvPjxwYXRoIGQ9Ik04IDZWNGEyIDIgMCAwIDEgMi0yaDRhMiAyIDAgMCAxIDIgMnYyIi8+PC9zdmc+" alt="eliminar" data-i18n-en-alt="delete"></button>
                     </div>
                 </div>
                 </div>
@@ -60,9 +61,9 @@
             </div>
     </main>
     <footer>
-        <nav class="footer-nav" aria-label="Navegación inferior">
-            <a class="footer-btn is-active footer-btn--small" href="/Templates/Inicio/Plan_alimentacion.html">Plan de Alimentación</a>
-            <a class="footer-btn is-active footer-btn--small" href="/Templates/Inicio/Ayuda.html">Ayuda</a>
+        <nav class="footer-nav" aria-label="Navegación inferior" data-i18n-en-aria-label="Bottom navigation">
+            <a class="footer-btn is-active footer-btn--small" href="/Templates/Inicio/Plan_alimentacion.html" data-i18n-en="Meal plan">Plan de Alimentación</a>
+            <a class="footer-btn is-active footer-btn--small" href="/Templates/Inicio/Ayuda.html" data-i18n-en="Help">Ayuda</a>
         </nav>
     </footer>
     

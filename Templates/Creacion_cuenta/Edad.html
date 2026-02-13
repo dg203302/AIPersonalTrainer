@@ -4,25 +4,26 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <script src="/Scripts/ui_transparencia_apply.js"></script>
+    <script src="/Scripts/ui_idioma.js"></script>
     <link rel="stylesheet" href="/Styles/styles_sele_edad.css">
     <meta name="theme-color" content="#0A1226">
-    <title>Edad</title>
+    <title data-i18n-en="Age">Edad</title>
 </head>
 <body>
     <header>
-        <h1>Comencemos</h1>
+        <h1 data-i18n-en="Let’s get started">Comencemos</h1>
     </header>
     <main>
         <form id="form_ingreso_edad">
             <div id="selector_edad">
-                <label>Fecha de nacimiento</label>
+                <label data-i18n-en="Date of birth">Fecha de nacimiento</label>
 
-				<p class="helper">Usamos tu fecha de nacimiento para ajustar mejor las recomendaciones: intensidad, volumen y ritmo de progreso. La idea es que el plan sea exigente, pero realista y seguro.</p>
+                <p class="helper" data-i18n-en="We use your date of birth to better tailor recommendations: intensity, volume, and progression pace. The goal is a plan that’s challenging, but realistic and safe.">Usamos tu fecha de nacimiento para ajustar mejor las recomendaciones: intensidad, volumen y ritmo de progreso. La idea es que el plan sea exigente, pero realista y seguro.</p>
 
-                <div class="wheel-row" role="group" aria-label="Fecha de nacimiento">
-                    <div class="wheel" data-field="dia" aria-label="Día" tabindex="0"></div>
-                    <div class="wheel" data-field="mes" aria-label="Mes" tabindex="0"></div>
-                    <div class="wheel" data-field="ano" aria-label="Año" tabindex="0"></div>
+                <div class="wheel-row" role="group" aria-label="Fecha de nacimiento" data-i18n-en-aria-label="Date of birth">
+                    <div class="wheel" data-field="dia" aria-label="Día" data-i18n-en-aria-label="Day" tabindex="0"></div>
+                    <div class="wheel" data-field="mes" aria-label="Mes" data-i18n-en-aria-label="Month" tabindex="0"></div>
+                    <div class="wheel" data-field="ano" aria-label="Año" data-i18n-en-aria-label="Year" tabindex="0"></div>
                 </div>
 
                 <!-- Hidden inputs used by submit handler -->
@@ -31,16 +32,16 @@
                 <input type="hidden" id="ano" name="ano" required>
             </div>
 
-            <button type="submit">Siguiente</button>
+            <button type="submit" data-i18n-en="Next">Siguiente</button>
         </form>
 
-        <section class="page-copy" aria-label="Información adicional">
-            <h2>¿Por qué te lo pedimos?</h2>
-            <p>Un plan de entrenamiento se vuelve mucho más útil cuando tiene contexto. No es lo mismo empezar de cero que retomar después de un tiempo, y no es lo mismo entrenar “para moverse mejor” que entrenar “para progresar fuerte”. Esta app intenta encontrar un equilibrio: simple de usar, pero con estructura.</p>
-            <p>Además, buscamos que las elecciones de ejercicios tengan sentido: movimientos principales para construir base, complementarios para sumar trabajo y accesorios para reforzar puntos débiles. Sin rutinas eternas, sin vueltas.</p>
+        <section class="page-copy" aria-label="Información adicional" data-i18n-en-aria-label="Additional information">
+            <h2 data-i18n-en="Why do we ask for it?">¿Por qué te lo pedimos?</h2>
+            <p data-i18n-en="A training plan becomes much more useful when it has context. Starting from scratch isn’t the same as coming back after a break, and training “to move better” isn’t the same as training “to get stronger”. This app aims for balance: simple to use, but structured.">Un plan de entrenamiento se vuelve mucho más útil cuando tiene contexto. No es lo mismo empezar de cero que retomar después de un tiempo, y no es lo mismo entrenar “para moverse mejor” que entrenar “para progresar fuerte”. Esta app intenta encontrar un equilibrio: simple de usar, pero con estructura.</p>
+            <p data-i18n-en="We also want exercise choices to make sense: main movements to build a base, complementary work to add volume, and accessories to reinforce weak points. No endless routines, no unnecessary complexity.">Además, buscamos que las elecciones de ejercicios tengan sentido: movimientos principales para construir base, complementarios para sumar trabajo y accesorios para reforzar puntos débiles. Sin rutinas eternas, sin vueltas.</p>
             <div class="note">
-                <h3>Privacidad</h3>
-                <p>Tu información se usa solo para el funcionamiento de la experiencia. La prioridad es mantener todo transparente y evitar datos innecesarios.</p>
+                <h3 data-i18n-en="Privacy">Privacidad</h3>
+                <p data-i18n-en="Your information is used only to run the experience. The priority is to keep everything transparent and avoid unnecessary data.">Tu información se usa solo para el funcionamiento de la experiencia. La prioridad es mantener todo transparente y evitar datos innecesarios.</p>
             </div>
         </section>
     </main>

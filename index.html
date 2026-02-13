@@ -4,17 +4,18 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <script src="/Scripts/ui_transparencia_apply.js"></script>
+    <script src="/Scripts/ui_idioma.js"></script>
     <link rel="stylesheet" href="/Styles/styles_verifi_usu_n.css">
     <meta name="theme-color" content="#0A1226">
     <link rel="manifest" href="/manifest.json" />
-    <title>Verificando usuario</title>
+    <title data-i18n-en="Verifying user">Verificando usuario</title>
 </head>
 <body>
     <main>
         <div class="loader" role="status" aria-live="polite">
             <div class="loader-text">
                 <h1 class="loader-title">Personal TrAIner</h1>
-                <p class="loader-subtitle">Cargando…</p>
+                <p class="loader-subtitle" data-i18n-en="Loading…">Cargando…</p>
             </div>
 
             
@@ -46,7 +47,7 @@
                 <path class="core-glass" d="M44 46c9-9 23-8 32 1c2 2 3 4 4 6c-10-6-26-6-40 1c1-3 2-6 4-8z" fill="url(#crystal)" opacity=".55" />
             </svg>
 
-            <span class="sr-only">Cargando, por favor esperá…</span>
+            <span class="sr-only" data-i18n-en="Loading, please wait…">Cargando, por favor esperá…</span>
         </div>
     </main>
     <script src="/Scripts/verifi_usu_n.js" type="module"></script>

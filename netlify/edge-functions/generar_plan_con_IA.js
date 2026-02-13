@@ -220,6 +220,7 @@ export default async function handler(request, _context){
     
     const {
         id_usuario,
+        idioma,
         lugar,
         objetivo,
         intensidad,
@@ -254,6 +255,10 @@ export default async function handler(request, _context){
 
     const intensidadNorm = normalizeIntensidad(intensidad);
 
+    const idiomaNorm = String(idioma ?? "").trim().toLowerCase() === "en" ? "en" : "es";
+    const idiomaLabel = idiomaNorm === "en" ? "English" : "Español";
+    const t = (es, en) => (idiomaNorm === "en" ? en : es);
+
     const clamp = (n, min, max) => Math.max(min, Math.min(max, n));
     const ejerciciosPorDiaFromPayload = Number(ejercicios_por_dia);
     const ejerciciosPorDiaFromInt = ({ baja: 4, media: 6, alta: 8 })[intensidadNorm] ?? 6;
@@ -261,52 +266,77 @@ export default async function handler(request, _context){
         ? clamp(Math.round(ejerciciosPorDiaFromPayload), 1, 12)
         : ejerciciosPorDiaFromInt;
 
-    const ALL_DIAS = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"];
-    const DIA_BY_CODE = {
-        L: "Lunes",
-        M: "Martes",
-        X: "Miércoles",
-        J: "Jueves",
-        V: "Viernes",
-        S: "Sábado",
-        D: "Domingo",
+    const ALL_DIAS_ES = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"];
+    const ALL_DIAS_EN = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+    const ALL_DIAS = idiomaNorm === "en" ? ALL_DIAS_EN : ALL_DIAS_ES;
+
+    const DAY_INDEX_BY_CODE = { L: 0, M: 1, X: 2, J: 3, V: 4, S: 5, D: 6 };
+    const DAY_INDEX_BY_NAME = {
+        // Spanish (sin tildes por stripAccents)
+        lunes: 0,
+        martes: 1,
+        miercoles: 2,
+        jueves: 3,
+        viernes: 4,
+        sabado: 5,
+        domingo: 6,
+        // English
+        monday: 0,
+        tuesday: 1,
+        wednesday: 2,
+        thursday: 3,
+        friday: 4,
+        saturday: 5,
+        sunday: 6,
+        // Common abbreviations
+        mon: 0,
+        tue: 1,
+        tues: 1,
+        wed: 2,
+        thu: 3,
+        thur: 3,
+        thurs: 3,
+        fri: 4,
+        sat: 5,
+        sun: 6,
     };
 
-    const DIA_BY_NAME = {
-        lunes: "Lunes",
-        martes: "Martes",
-        miercoles: "Miércoles",
-        jueves: "Jueves",
-        viernes: "Viernes",
-        sabado: "Sábado",
-        domingo: "Domingo",
+    const getDayIndexFromName = (value) => {
+        const key = stripAccents(value)
+            .toLowerCase()
+            .replace(/[^a-z\s]/g, " ")
+            .replace(/\s+/g, " ")
+            .trim();
+        if (!key) return null;
+        return Object.prototype.hasOwnProperty.call(DAY_INDEX_BY_NAME, key) ? DAY_INDEX_BY_NAME[key] : null;
     };
 
     const normalizeSelectedDays = () => {
-        const selected = new Set();
+        const selectedIdx = new Set();
 
         if (Array.isArray(dias)) {
             for (const item of dias) {
                 const code = String(item ?? "").toUpperCase();
-                const label = DIA_BY_CODE[code];
-                if (label) selected.add(label);
+                const idx = Object.prototype.hasOwnProperty.call(DAY_INDEX_BY_CODE, code) ? DAY_INDEX_BY_CODE[code] : null;
+                if (idx != null) selectedIdx.add(idx);
             }
         }
 
         if (Array.isArray(dias_semana)) {
             for (const item of dias_semana) {
-                const key = stripAccents(item).toLowerCase();
-                const label = DIA_BY_NAME[key];
-                if (label) selected.add(label);
+                const idx = getDayIndexFromName(item);
+                if (idx != null) selectedIdx.add(idx);
             }
         }
 
         // fallback: si no vino nada, asumir toda la semana
-        if (selected.size === 0) {
-            for (const d of ALL_DIAS) selected.add(d);
+        if (selectedIdx.size === 0) {
+            for (let i = 0; i < 7; i++) selectedIdx.add(i);
         }
 
-        return Array.from(selected);
+        return Array.from(selectedIdx)
+            .sort((a, b) => a - b)
+            .map((idx) => ALL_DIAS[idx]);
     };
 
     const diasSeleccionados = normalizeSelectedDays();
@@ -316,7 +346,11 @@ export default async function handler(request, _context){
     const ejerciciosSeleccionadosJson = JSON.stringify(ejerciciosSeleccionados);
     const soloEjerciciosSeleccionados = ejerciciosSeleccionados.length > 0;
 
-    const canonicalDayKey = (dayLabel) => stripAccents(dayLabel).toLowerCase();
+    const canonicalDayKey = (dayLabel) => {
+        const idx = getDayIndexFromName(dayLabel);
+        if (idx != null) return ALL_DIAS_EN[idx].toLowerCase();
+        return stripAccents(dayLabel).toLowerCase();
+    };
 
     const normalizePlanWithSelectedDays = (planObj) => {
         if (!planObj || typeof planObj !== "object") return planObj;
@@ -357,13 +391,19 @@ export default async function handler(request, _context){
                 ? ex.descripcion.trim()
                 : (typeof ex.description === "string" && ex.description.trim())
                     ? ex.description.trim()
-                    : "Realizá el movimiento controlado, con técnica correcta y rango completo.";
+                    : t(
+                        "Realizá el movimiento controlado, con técnica correcta y rango completo.",
+                        "Perform the movement in a controlled manner, with proper form and full range of motion."
+                    );
 
             const descripcionDetalladaRaw = (typeof ex.descripcion_detallada === "string" && ex.descripcion_detallada.trim())
                 ? ex.descripcion_detallada.trim()
                 : (typeof ex.detailed_description === "string" && ex.detailed_description.trim())
                     ? ex.detailed_description.trim()
-                    : descripcionRaw + " Técnica: mantén la postura, rango completo y control en la fase excéntrica. Respiración: inspira en la fase excéntrica y exhala en la fase concéntrica. Progresión: recomendaciones de sobrecarga progresiva (p.ej. aumentar 2-5% de carga o 1-2 repeticiones cuando completes el rango objetivo durante 1-2 sesiones).";
+                    : descripcionRaw + t(
+                        " Técnica: mantén la postura, rango completo y control en la fase excéntrica. Respiración: inspira en la fase excéntrica y exhala en la fase concéntrica. Progresión: recomendaciones de sobrecarga progresiva (p.ej. aumentar 2-5% de carga o 1-2 repeticiones cuando completes el rango objetivo durante 1-2 sesiones).",
+                        " Technique: maintain posture, full range of motion, and control the eccentric phase. Breathing: inhale on the eccentric, exhale on the concentric. Progression: use progressive overload (e.g., +2–5% weight or +1–2 reps once you hit the target range for 1–2 sessions)."
+                    );
 
             const seriesNum = Number(ex.series);
             const descansoNum = Number(ex.descanso_segundos);
@@ -400,8 +440,14 @@ export default async function handler(request, _context){
 
         const makeFallbackExercise = (nombre) => ({
             nombre,
-            descripcion: "Movimiento controlado, técnica correcta, rango completo. Ajustá carga según tu nivel.",
-            descripcion_detallada: "Ejecución detallada: postura neutra, respiración (inspira en la fase de bajada/excéntrica y exhala en la fase de empuje/concéntrica), tempo recomendado 2-1-2. Recomendación de sobrecarga progresiva: intenta aumentar ligeramente la carga (2-5%) o añadir 1-2 repeticiones cuando completes el rango objetivo durante 1-2 sesiones, priorizando siempre la técnica. Ajustá la carga para completar las repeticiones con buena técnica.",
+            descripcion: t(
+                "Movimiento controlado, técnica correcta, rango completo. Ajustá carga según tu nivel.",
+                "Controlled movement, proper form, full range of motion. Adjust load to your level."
+            ),
+            descripcion_detallada: t(
+                "Ejecución detallada: postura neutra, respiración (inspira en la fase de bajada/excéntrica y exhala en la fase de empuje/concéntrica), tempo recomendado 2-1-2. Recomendación de sobrecarga progresiva: intenta aumentar ligeramente la carga (2-5%) o añadir 1-2 repeticiones cuando completes el rango objetivo durante 1-2 sesiones, priorizando siempre la técnica. Ajustá la carga para completar las repeticiones con buena técnica.",
+                "Detailed execution: neutral posture, breathing (inhale on the lowering/eccentric, exhale on the lifting/concentric), suggested tempo 2-1-2. Progressive overload: try to increase load slightly (2–5%) or add 1–2 reps once you hit the target range for 1–2 sessions—always prioritizing form. Adjust load so you can complete reps with good technique."
+            ),
             series: 4,
             repeticiones: "10-12",
             descanso_segundos: 90,
@@ -420,12 +466,12 @@ export default async function handler(request, _context){
             if (!isSelected) {
                 return {
                     dia: diaCanonical,
-                    enfoque: "Descanso",
+                    enfoque: t("Descanso", "Rest"),
                     ejercicios: [],
                 };
             }
 
-            const enfoque = (typeof base.enfoque === "string" && base.enfoque.trim()) ? base.enfoque.trim() : "Entrenamiento";
+            const enfoque = (typeof base.enfoque === "string" && base.enfoque.trim()) ? base.enfoque.trim() : t("Entrenamiento", "Training");
             const ejerciciosRaw = Array.isArray(base.ejercicios) ? base.ejercicios : [];
             let ejerciciosNorm = ejerciciosRaw.map(normalizeExercise).filter(Boolean);
 
@@ -483,11 +529,25 @@ export default async function handler(request, _context){
         return planObj;
     };
 
+    const entornoValue = String(lugar ?? "").toLowerCase() === "gimnasio" ? t("Gimnasio", "Gym") : t("Casa", "Home");
+    const objetivoValue = String(objetivo ?? "").toLowerCase() === "grasa" ? t("grasa", "fat") : t("musculo", "muscle");
+    const progresionMetodoValue = t("Sobrecarga progresiva", "Progressive overload");
+    const schemaDays = ALL_DIAS.map((d) =>
+        `            {"dia":"${d}","enfoque":"<string>","ejercicios":[{"nombre":"<string>","descripcion":"<string>","descripcion_detallada":"<string>","series":4,"repeticiones":"10-12","descanso_segundos":90}]}`
+    ).join(",\n");
+
     const prompt = `Devuelve UNICAMENTE un JSON valido (RFC 8259).
 PROHIBIDO: texto extra, markdown, bloques \
 \
 \
 json, comentarios, comas finales.
+
+Idioma de salida:
+- Preferencia: ${idiomaLabel}.
+- Mantén las CLAVES JSON exactamente como el esquema (no traduzcas claves).
+- Traduce SOLO los VALORES de texto según el idioma (dia, enfoque, descripcion, descripcion_detallada, progresion_sugerida.*).
+- IMPORTANTE: NO traduzcas los nombres de ejercicios (ejercicios[].nombre). Deben quedar exactamente en español/canónicos de la lista provista.
+- Para idioma inglés: usa nombres de días en inglés (Monday..Sunday). Para español: Lunes..Domingo.
 
 Usa SIEMPRE este formato EXACTO (mismas claves y tipos):
 {
@@ -496,22 +556,16 @@ Usa SIEMPRE este formato EXACTO (mismas claves y tipos):
             "edad": ${Number(Edad) || 0},
             "estatura_cm": ${Number(Altura) || 0},
             "peso_objetivo_kg": ${Number(Peso_objetivo) || 0},
-            "entorno": "${String(lugar ?? "").toLowerCase() === "gimnasio" ? "Gimnasio" : "Casa"}",
-            "objetivo": "${String(objetivo ?? "").toLowerCase() === "grasa" ? "grasa" : "musculo"}",
+            "entorno": "${entornoValue}",
+            "objetivo": "${objetivoValue}",
             "intensidad": "${intensidadNorm}",
             "ejercicios_por_dia": ${ejerciciosPorDiaObjetivo}
         },
         "configuracion_semanal": [
-            {"dia":"Lunes","enfoque":"<string>","ejercicios":[{"nombre":"<string>","descripcion":"<string>","descripcion_detallada":"<string>","series":4,"repeticiones":"10-12","descanso_segundos":90}]},
-            {"dia":"Martes","enfoque":"<string>","ejercicios":[{"nombre":"<string>","descripcion":"<string>","descripcion_detallada":"<string>","series":4,"repeticiones":"10-12","descanso_segundos":90}]},
-            {"dia":"Miércoles","enfoque":"<string>","ejercicios":[{"nombre":"<string>","descripcion":"<string>","descripcion_detallada":"<string>","series":4,"repeticiones":"10-12","descanso_segundos":90}]},
-            {"dia":"Jueves","enfoque":"<string>","ejercicios":[{"nombre":"<string>","descripcion":"<string>","descripcion_detallada":"<string>","series":4,"repeticiones":"10-12","descanso_segundos":90}]},
-            {"dia":"Viernes","enfoque":"<string>","ejercicios":[{"nombre":"<string>","descripcion":"<string>","descripcion_detallada":"<string>","series":4,"repeticiones":"10-12","descanso_segundos":90}]},
-            {"dia":"Sábado","enfoque":"<string>","ejercicios":[{"nombre":"<string>","descripcion":"<string>","descripcion_detallada":"<string>","series":4,"repeticiones":"10-12","descanso_segundos":90}]},
-            {"dia":"Domingo","enfoque":"<string>","ejercicios":[{"nombre":"<string>","descripcion":"<string>","descripcion_detallada":"<string>","series":4,"repeticiones":"10-12","descanso_segundos":90}]}
+${schemaDays}
         ],
         "progresion_sugerida": {
-            "metodo": "Sobrecarga progresiva",
+            "metodo": "${progresionMetodoValue}",
             "descripcion": "<string>"
         }
     }
@@ -524,7 +578,7 @@ Reglas extra:
 - descripcion_detallada SIEMPRE string con instrucciones más completas y técnicas (detalle).
  - descripcion_detallada SIEMPRE string con instrucciones más completas y técnicas (detalle).
  - descripcion_detallada DEBE incluir, por cada ejercicio: técnica correcta (puntos clave de ejecución), una recomendación concreta de sobrecarga progresiva (cómo progresar semana a semana) y la técnica de respiración recomendada para ese ejercicio.
-- configuracion_semanal debe tener exactamente 7 dias (Lunes a Domingo).
+- configuracion_semanal debe tener exactamente 7 dias (Monday..Sunday / Lunes..Domingo según idioma).
 
 Regla de intensidad (OBLIGATORIA):
 - intensidad seleccionada: ${intensidadNorm}
@@ -532,7 +586,7 @@ Regla de intensidad (OBLIGATORIA):
 - Para dias NO seleccionados: ejercicios []
 
 Regla de dias seleccionados:
-- Si el dia NO esta en la lista de dias seleccionados, entonces ese dia debe ser descanso: enfoque "Descanso" o "Descanso Total" y ejercicios [].
+- Si el dia NO esta en la lista de dias seleccionados, entonces ese dia debe ser descanso: enfoque "${t("Descanso", "Rest")}" o "${t("Descanso Total", "Full Rest")}" y ejercicios [].
 - Si el dia SI esta en la lista de dias seleccionados, entonces debe tener ejercicios (no vacio) y enfoque coherente.
 
 Dias seleccionados para entrenar (SOLO estos dias deben tener ejercicios; los otros dias deben ser descanso con ejercicios []):
