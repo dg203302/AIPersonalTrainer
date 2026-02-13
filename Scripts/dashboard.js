@@ -1273,6 +1273,45 @@ function initDetallePorDiaPlan() {
     if (contenedor.dataset.detalleDiaInit === "1") return;
     contenedor.dataset.detalleDiaInit = "1";
 
+    const fitDetalleTipografia = (rootEl) => {
+        if (!rootEl || !(rootEl instanceof HTMLElement)) return;
+
+        const panels = Array.from(rootEl.querySelectorAll(".plan-snap-panel"));
+        for (const panel of panels) {
+            if (!(panel instanceof HTMLElement)) continue;
+
+            const card = panel.querySelector(".plan-card");
+            if (!(card instanceof HTMLElement)) continue;
+
+            const detailed = card.querySelector(".plan-detailed-list");
+            if (!(detailed instanceof HTMLElement)) continue;
+
+            // Reset (por si abrimos varias veces o recalculamos)
+            detailed.style.fontSize = "";
+
+            // Si no hay overflow, no tocar
+            const overflowNow = panel.scrollHeight - panel.clientHeight;
+            if (overflowNow <= 1) continue;
+
+            const computed = window.getComputedStyle(detailed);
+            const basePx = Number.parseFloat(computed.fontSize) || 0;
+            if (!basePx) continue;
+
+            const minPx = 11;
+            const maxSteps = 14;
+            let currentPx = basePx;
+            let steps = 0;
+
+            while (steps < maxSteps && currentPx > minPx) {
+                const overflow = panel.scrollHeight - panel.clientHeight;
+                if (overflow <= 1) break;
+                currentPx -= 1;
+                detailed.style.fontSize = `${currentPx}px`;
+                steps += 1;
+            }
+        }
+    };
+
     const openDetalle = async (headerEl) => {
         const idx = Number(headerEl?.getAttribute?.("data-day-idx"));
         if (!Number.isFinite(idx)) return;
@@ -1369,6 +1408,7 @@ function initDetallePorDiaPlan() {
         wakeLockManager.setReason("detalle", true, { tryRequest: true });
         void wakeLockManager.requestIfNeeded();
 
+        let onResize = null;
         await sweetalert.fire({
             html,
             showCancelButton: false,
@@ -1377,8 +1417,24 @@ function initDetallePorDiaPlan() {
                 popup: "dashboard-swal",
                 confirmButton: "dashboard-swal-confirm",
             },
+            didOpen: (popup) => {
+                // Ajuste inmediato + 2 frames para asegurar layout estable
+                const root = popup instanceof HTMLElement ? popup : document.body;
+                const run = () => fitDetalleTipografia(root);
+                run();
+                requestAnimationFrame(run);
+                requestAnimationFrame(run);
+
+                onResize = () => run();
+                window.addEventListener("resize", onResize, { passive: true });
+            },
             willClose: () => {
                 wakeLockManager.setReason("detalle", false);
+
+                if (typeof onResize === "function") {
+                    window.removeEventListener("resize", onResize);
+                    onResize = null;
+                }
             },
         });
     };

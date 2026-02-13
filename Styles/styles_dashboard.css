@@ -325,6 +325,23 @@ button:active {
 	background: color-mix(in srgb, #FF4D4D 28%, transparent);
 }
 
+/* Botón regenerar (naranja) */
+#boton_regenerar {
+	border-color: color-mix(in srgb, #FF9A3D 60%, transparent);
+	background: color-mix(in srgb, #FF9A3D 20%, transparent);
+	color: color-mix(in srgb, var(--text) 96%, white 4%);
+	font-weight: 750;
+}
+
+#boton_regenerar:hover {
+	background: color-mix(in srgb, #FF9A3D 26%, transparent);
+	border-color: color-mix(in srgb, #FF9A3D 72%, transparent);
+}
+
+#boton_regenerar:active {
+	background: color-mix(in srgb, #FF9A3D 30%, transparent);
+}
+
 #Plan_ejercicio,
 #Plan_alimentacion {
 	margin-top: 10px;
@@ -414,6 +431,8 @@ button:active {
 	box-shadow: 0 8px 30px rgba(0,0,0,0.45);
 	padding: 18px;
 	border-radius: 14px;
+	box-sizing: border-box;
+	min-height: 0;
 }
 
 .dashboard-swal .plan-nombre {
@@ -458,10 +477,14 @@ button:active {
 .dashboard-swal .plan-detailed-list {
 	margin: 10px 0 0;
 	padding-left: 18px;
+	font-size: 0.92rem;
+	max-width: 100%;
+	overflow-wrap: anywhere;
+	word-break: break-word;
 }
 .dashboard-swal .plan-detailed-list li {
 	margin-bottom: 6px;
-	font-size: 0.92rem;
+	font-size: inherit;
 	color: rgba(255,255,255,0.92);
 	line-height: 1.4;
 }
