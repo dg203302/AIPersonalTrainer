@@ -230,6 +230,45 @@ const initFixedChromeObservers = () => {
 	}
 };
 
+const TRANSPARENCIA_STORAGE_KEY = "ui_transparencia";
+
+const isTransparenciaEnabled = () => {
+	// Por defecto: activado. Guardamos "0" solo si el usuario lo desactiva.
+	try {
+		return localStorage.getItem(TRANSPARENCIA_STORAGE_KEY) !== "0";
+	} catch {
+		return true;
+	}
+};
+
+const setTransparenciaEnabled = (enabled) => {
+	try {
+		if (enabled) localStorage.removeItem(TRANSPARENCIA_STORAGE_KEY);
+		else localStorage.setItem(TRANSPARENCIA_STORAGE_KEY, "0");
+	} catch {
+		// ignore
+	}
+	// La clase vive en <html> para afectar toda la página.
+	document.documentElement.classList.toggle("no-transparency", !enabled);
+};
+
+const initTransparenciaToggle = () => {
+	const toggle = document.getElementById("toggle_transparencia");
+	if (!(toggle instanceof HTMLInputElement)) {
+		// Aun sin toggle, aplicamos el estado persistido.
+		setTransparenciaEnabled(isTransparenciaEnabled());
+		return;
+	}
+
+	const enabled = isTransparenciaEnabled();
+	toggle.checked = enabled;
+	setTransparenciaEnabled(enabled);
+
+	toggle.addEventListener("change", () => {
+		setTransparenciaEnabled(toggle.checked);
+	});
+};
+
 if (document.readyState === "loading") {
 	document.addEventListener("DOMContentLoaded", initFixedChromeObservers, { once: true });
 } else {
@@ -243,6 +282,8 @@ window.onload = async () => {
 	document.getElementById("edad_usuario").textContent = edad_usuario;
 	document.getElementById("peso_usuario").textContent = peso_usuario;
 	document.getElementById("peso_objetivo_usuario").textContent = peso_objetivo_usuario;
+
+	initTransparenciaToggle();
 }
 
 document.getElementById("editar_altura").addEventListener("click", async () => {

@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="/Scripts/ui_transparencia_apply.js"></script>
     <link rel="stylesheet" href="/Styles/styles_indice.css">
     <link rel="stylesheet" href="/Styles/components.css">
     <title>Welcome</title>
@@ -269,6 +270,32 @@
 
         window.addEventListener("load", () => {
             updateFixedChromeHeights();
+
+            // Transparencia (UI): por defecto activado; persistimos "0" si se desactiva.
+            const TRANSPARENCIA_STORAGE_KEY = "ui_transparencia";
+            const isTransparenciaEnabled = () => {
+                try {
+                    return localStorage.getItem(TRANSPARENCIA_STORAGE_KEY) !== "0";
+                } catch {
+                    return true;
+                }
+            };
+            const setTransparenciaEnabled = (enabled) => {
+                try {
+                    if (enabled) localStorage.removeItem(TRANSPARENCIA_STORAGE_KEY);
+                    else localStorage.setItem(TRANSPARENCIA_STORAGE_KEY, "0");
+                } catch {}
+                document.documentElement.classList.toggle("no-transparency", !enabled);
+            };
+
+            const toggle = document.getElementById("toggle_transparencia");
+            const enabled = isTransparenciaEnabled();
+            if (toggle instanceof HTMLInputElement) {
+                toggle.checked = enabled;
+                toggle.addEventListener("change", () => setTransparenciaEnabled(toggle.checked));
+            }
+            setTransparenciaEnabled(enabled);
+
             supabase.auth.getSession().then(({data: {session}}) => {
                 if (session) {
                     window.location.href = "/";

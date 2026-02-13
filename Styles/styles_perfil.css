@@ -65,6 +65,37 @@ body {
 	overflow-x: hidden;
 }
 
+/* Desactivar transparencias (controlado por el toggle) */
+html.no-transparency header,
+html.no-transparency footer,
+html.no-transparency section,
+html.no-transparency .creditos-box,
+html.no-transparency .footer-btn,
+html.no-transparency #logout_button,
+html.no-transparency button {
+	backdrop-filter: none !important;
+	-webkit-backdrop-filter: none !important;
+}
+
+html.no-transparency header {
+	background: var(--bg1) !important;
+}
+
+html.no-transparency footer {
+	background: var(--bg1) !important;
+}
+
+html.no-transparency section,
+html.no-transparency .creditos-box {
+	background: var(--bg1) !important;
+}
+
+html.no-transparency .footer-btn,
+html.no-transparency #logout_button,
+html.no-transparency button {
+	background: color-mix(in srgb, #fff 10%, var(--bg1)) !important;
+}
+
 a {
 	color: inherit;
 	text-decoration: none;

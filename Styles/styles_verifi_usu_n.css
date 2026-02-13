@@ -48,6 +48,13 @@ body{
 	overflow: hidden;
 }
 
+/* Desactivar transparencias (controlado por ui_transparencia) */
+html.no-transparency .loader{
+	backdrop-filter: none !important;
+	-webkit-backdrop-filter: none !important;
+	background: var(--bg1) !important;
+}
+
 main{
 	min-height: 100svh;
 	padding: 18px var(--pad);
