@@ -18,6 +18,7 @@
             <a href="/Templates/Creacion_cuenta/login_google.html">Empecemos!</a>
             <section id="secciones">
                 <ul>
+                    <li><a href="#configuración">Configuración</a></li>
                     <li><a href="#ejercicios">Ejercicios</a></li>
                     <li><a href="#detalles">Detalles</a></li>
                     <li><a href="#alimentacion">Plan de alimentación</a></li>
@@ -27,6 +28,32 @@
         </div>
     </header>
     <main>
+        <section id="configuración">
+            <h2>Configuración</h2>
+
+            <div class="config-item">
+                <div class="config-text">
+                    <h4 class="config-title">Idioma de la app</h4>
+                    <p class="config-desc">Cambiá el idioma de la interfaz.</p>
+                </div>
+                <label class="switch" for="toggle_idioma">
+                    <input id="toggle_idioma" type="checkbox" role="switch" aria-label="Cambiar idioma" />
+                    <span class="switch-ui switch-ui--lang" aria-hidden="true"><span class="switch-thumb"></span></span>
+                </label>
+            </div>
+
+            <div class="config-item">
+                <div class="config-text">
+                    <h4 class="config-title">Transparencia</h4>
+                    <p class="config-desc">Activá un estilo translúcido en tarjetas y paneles.</p>
+                </div>
+                <label class="switch" for="toggle_transparencia">
+                    <input id="toggle_transparencia" type="checkbox" role="switch" aria-label="Activar transparencia" />
+                    <span class="switch-ui" aria-hidden="true"><span class="switch-thumb"></span></span>
+                </label>
+            </div>
+        </section>
+
         <section id="ejercicios">
             <h1>Genera tu propio plan de entreno!!</h1>
             <p class="lead">AI Personal Trainer está pensado para darte un plan claro y repetible: qué entrenar, cómo organizarlo y cómo avanzar semana a semana. Menos improvisación, más estructura.</p>

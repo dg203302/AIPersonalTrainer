@@ -135,9 +135,9 @@ header #username {
 
 #logout_button {
 	appearance: none;
-	border: 1px solid color-mix(in srgb, #fff 22%, transparent);
-	background: color-mix(in srgb, #fff 8%, transparent);
-	color: var(--text);
+	border: 1px solid color-mix(in srgb, #FF9A3D 60%, transparent);
+	background: color-mix(in srgb, #FF9A3D 20%, transparent);
+	color: color-mix(in srgb, var(--text) 96%, white 4%);
 	border-radius: 999px;
 	min-height: 44px;
 	padding: 10px 12px;
@@ -151,11 +151,13 @@ header #username {
 }
 
 #logout_button:hover {
-	background: color-mix(in srgb, #fff 10%, transparent);
+	background: color-mix(in srgb, #FF9A3D 26%, transparent);
+	border-color: color-mix(in srgb, #FF9A3D 72%, transparent);
 }
 
 #logout_button:active {
 	transform: translateY(1px);
+	background: color-mix(in srgb, #FF9A3D 30%, transparent);
 }
 
 #logout_button:focus-visible {
@@ -192,6 +194,156 @@ section {
 	backdrop-filter: blur(12px) saturate(140%);
 	-webkit-backdrop-filter: blur(12px) saturate(140%);
 	padding: 16px;
+}
+
+/* Configuración (toggles) */
+#configuracion {
+	display: grid;
+	gap: 10px;
+}
+
+.config-item {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 12px;
+	padding: 12px 0;
+	border-top: 1px solid color-mix(in srgb, #fff 10%, transparent);
+}
+
+.config-item:first-of-type {
+	border-top: 0;
+	padding-top: 0;
+}
+
+.config-text {
+	min-width: 0;
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+}
+
+.config-title {
+	margin: 0;
+	font-size: 14px;
+	font-weight: 750;
+	letter-spacing: .15px;
+}
+
+.config-desc {
+	margin: 0;
+	font-size: 12.5px;
+	line-height: 1.35;
+	color: var(--muted);
+}
+
+/* Switch (sin lógica JS: estado nativo del checkbox) */
+.switch {
+	flex: 0 0 auto;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	min-height: 44px;
+	user-select: none;
+	cursor: pointer;
+}
+
+.switch input {
+	position: absolute;
+	opacity: 0;
+	width: 1px;
+	height: 1px;
+	overflow: hidden;
+	clip: rect(0 0 0 0);
+	clip-path: inset(50%);
+	white-space: nowrap;
+}
+
+.switch-ui {
+	width: 54px;
+	height: 32px;
+	border-radius: 999px;
+	border: 1px solid color-mix(in srgb, #fff 22%, transparent);
+	background: color-mix(in srgb, #000 14%, transparent);
+	box-shadow: var(--shadow-soft);
+	position: relative;
+	transition: background .15s ease, border-color .15s ease;
+}
+
+/* Etiquetas ES/EN (solo visual, sin lógica) */
+.switch-ui--lang::before,
+.switch-ui--lang::after {
+	position: absolute;
+	top: 50%;
+	transform: translateY(-50%);
+	font-size: 11px;
+	font-weight: 800;
+	letter-spacing: .2px;
+	line-height: 1;
+	pointer-events: none;
+	user-select: none;
+	color: color-mix(in srgb, var(--text) 60%, transparent);
+	opacity: .8;
+	z-index: 0;
+}
+
+.switch-ui--lang::before {
+	content: "ES";
+	left: 8px;
+}
+
+.switch-ui--lang::after {
+	content: "EN";
+	right: 8px;
+}
+
+.switch-thumb {
+	position: absolute;
+	top: 50%;
+	left: 4px;
+	width: 24px;
+	height: 24px;
+	border-radius: 999px;
+	transform: translate(0, -50%);
+	background: color-mix(in srgb, #fff 16%, transparent);
+	border: 1px solid color-mix(in srgb, #fff 24%, transparent);
+	transition: transform .15s ease, background .15s ease;
+	z-index: 1;
+}
+
+/* Estado: apagado -> ES resaltado */
+.switch input:not(:checked) + .switch-ui--lang::before {
+	color: color-mix(in srgb, var(--text) 92%, transparent);
+	opacity: .95;
+}
+
+/* Estado: encendido -> EN resaltado */
+.switch input:checked + .switch-ui--lang::after {
+	color: color-mix(in srgb, var(--text) 92%, transparent);
+	opacity: .95;
+}
+
+.switch input:checked + .switch-ui {
+	border-color: color-mix(in srgb, #fff 28%, transparent);
+	background: color-mix(in srgb, #fff 10%, transparent);
+}
+
+.switch input:checked + .switch-ui .switch-thumb {
+	transform: translate(22px, -50%);
+	background: color-mix(in srgb, #fff 28%, transparent);
+}
+
+.switch:hover .switch-ui {
+	border-color: color-mix(in srgb, #fff 28%, transparent);
+}
+
+.switch:active .switch-ui {
+	transform: translateY(1px);
+}
+
+.switch input:focus-visible + .switch-ui {
+	outline: 3px solid color-mix(in srgb, var(--accent) 70%, transparent);
+	outline-offset: 3px;
 }
 
 /* Créditos desplegables */

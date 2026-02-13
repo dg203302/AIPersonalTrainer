@@ -19,7 +19,6 @@
                 <path d="M21 12H9" />
                 <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
             </svg>
-            <span class="logout-text">Desloguear</span>
         </button>
     </header>
 
@@ -43,6 +42,33 @@
                 <button id="editar_peso_objetivo">Cambiar</button>
             </div>
         </section>
+        
+        <section id="configuracion">
+            <h2>Configuración</h2>
+
+            <div class="config-item">
+                <div class="config-text">
+                    <h4 class="config-title">Idioma de la app</h4>
+                    <p class="config-desc">Cambiá el idioma de la interfaz.</p>
+                </div>
+                <label class="switch" for="toggle_idioma">
+                    <input id="toggle_idioma" type="checkbox" role="switch" aria-label="Cambiar idioma" />
+                    <span class="switch-ui switch-ui--lang" aria-hidden="true"><span class="switch-thumb"></span></span>
+                </label>
+            </div>
+
+            <div class="config-item">
+                <div class="config-text">
+                    <h4 class="config-title">Transparencia</h4>
+                    <p class="config-desc">Activá un estilo translúcido en tarjetas y paneles.</p>
+                </div>
+                <label class="switch" for="toggle_transparencia">
+                    <input id="toggle_transparencia" type="checkbox" role="switch" aria-label="Activar transparencia" />
+                    <span class="switch-ui" aria-hidden="true"><span class="switch-thumb"></span></span>
+                </label>
+            </div>
+        </section>
+
         <section>
             <h2>Eliminar Cuenta</h2>
             <p class="advertencia_eliminacion">
