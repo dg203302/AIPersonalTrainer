@@ -218,6 +218,44 @@ const getIdiomaPreferido = () => {
 const isEnglish = () => getIdiomaPreferido() === "en";
 const tLang = (es, en) => (isEnglish() ? en : es);
 
+const formatPlanLugar = (code) => {
+    const v = String(code ?? "").toLowerCase();
+    if (isEnglish()) {
+        if (v === "casa") return "Home";
+        if (v === "gimnasio") return "Gym";
+        return code ?? "-";
+    }
+    if (v === "casa") return "Casa";
+    if (v === "gimnasio") return "Gimnasio";
+    return code ?? "-";
+};
+
+const formatPlanObjetivo = (code) => {
+    const v = String(code ?? "").toLowerCase();
+    if (isEnglish()) {
+        if (v === "grasa") return "Fat loss";
+        if (v === "musculo") return "Muscle gain";
+        return code ?? "-";
+    }
+    if (v === "grasa") return "Pérdida de grasa";
+    if (v === "musculo") return "Ganancia muscular";
+    return code ?? "-";
+};
+
+const formatPlanIntensidad = (code) => {
+    const v = String(code ?? "").toLowerCase();
+    if (isEnglish()) {
+        if (v === "baja") return "Low";
+        if (v === "media") return "Medium";
+        if (v === "alta") return "High";
+        return code ?? "-";
+    }
+    if (v === "baja") return "Baja";
+    if (v === "media") return "Media";
+    if (v === "alta") return "Alta";
+    return code ?? "-";
+};
+
 const stripAccents = (s) =>
     String(s ?? "")
         .normalize("NFD")
@@ -258,6 +296,66 @@ const EXERCISE_NAME_MAP_ES_EN = {
     "curl femoral": "Leg Curl",
     "peso muerto": "Deadlift",
     "peso muerto rumano": "Romanian Deadlift",
+
+    // Índice (frases completas) / index (full phrases)
+    // Pecho
+    "press de banca plano con barra": "Barbell Bench Press",
+    "press de banca inclinado con mancuernas": "Incline Dumbbell Bench Press",
+    "flexiones de brazos peso corporal": "Push-Ups (Bodyweight)",
+    "aperturas con mancuernas": "Dumbbell Flyes",
+    "fondos en paralelas": "Parallel Bar Dips",
+    "fondos en paralelas pecho bajo triceps": "Parallel Bar Dips",
+    "cruce de poleas": "Cable Crossover",
+
+    // Espalda
+    "dominadas peso corporal": "Pull-Ups (Bodyweight)",
+    "jalon al pecho en polea": "Lat Pulldown",
+    "remo con barra": "Barbell Row",
+    "remo unilateral con mancuerna": "One-Arm Dumbbell Row",
+    "remo sentado en polea": "Seated Cable Row",
+    "hiperextensiones lumbares": "Back Extensions",
+
+    // Piernas
+    "sentadilla libre": "Back Squat",
+    "zancadas estocadas": "Lunges",
+    "hip thrust empuje de cadera": "Hip Thrust",
+    "extension de cuadriceps en maquina": "Leg Extension Machine",
+    "curl femoral tumbado o sentado": "Leg Curl (Lying or Seated)",
+    "elevacion de talones": "Calf Raises",
+
+    // Hombros
+    "press militar con barra o mancuernas": "Overhead Press (Barbell or Dumbbells)",
+    "elevaciones laterales con mancuernas": "Dumbbell Lateral Raises",
+    "pajaros vuelos posteriores": "Rear Delt Flyes",
+    "elevaciones frontales": "Front Raises",
+    "face pull salud del hombro": "Face Pull",
+
+    // Brazos / tríceps
+    "curl de biceps con barra": "Barbell Biceps Curl",
+    "curl martillo con mancuernas": "Dumbbell Hammer Curl",
+    "curl predicador": "Preacher Curl",
+    "press frances": "French Press (Skull Crushers)",
+    "extension de triceps en polea alta": "Triceps Pushdown (High Cable)",
+    "extension de triceps con mancuerna sobre la cabeza": "Overhead Dumbbell Triceps Extension",
+    "patada de triceps con mancuerna": "Dumbbell Triceps Kickback",
+    "fondos entre bancos": "Bench Dips",
+
+    // Antebrazos
+    "curl de muneca con barra": "Barbell Wrist Curl",
+    "curl de muneca con mancuerna": "Dumbbell Wrist Curl",
+    "curl invertido con barra": "Barbell Reverse Curl",
+    "farmers walk caminata del granjero": "Farmer's Walk",
+
+    // Abdomen / core
+    "plancha abdominal": "Plank",
+    "crunch abdominal clasico": "Crunch",
+    "elevacion de piernas colgado o en suelo": "Leg Raises (Hanging or Floor)",
+    "giros rusos": "Russian Twists",
+    "rueda abdominal": "Ab Wheel Rollout",
+
+    // Cardio
+    "saltos de tijera": "Jumping Jacks",
+    "salto a la cuerda": "Jump Rope",
 
     // Empuje / push
     "press de banca": "Bench Press",
@@ -504,11 +602,15 @@ const renderListaEjerciciosSelectable = () => {
         const grupoLabel = isEnglish() ? (grupoLabelMapEn[grupo] || grupo) : grupo;
         const checks = items
             .map((e) => {
-                const safe = escapeHtml(e);
+                const original = String(e ?? "");
+                const label = isEnglish() ? translateExerciseNameToEnglish(original) : original;
+                // Mantener el value en español para compatibilidad con selecciones guardadas.
+                const safeValue = escapeHtml(original);
+                const safeLabel = escapeHtml(label);
                 return `
                     <label class="swal-check">
-                        <input type="checkbox" name="ejercicios" value="${safe}">
-                        <span>${safe}</span>
+                        <input type="checkbox" name="ejercicios" value="${safeValue}">
+                        <span>${safeLabel}</span>
                     </label>
                 `;
             })
@@ -986,8 +1088,8 @@ async function crearPlanEntreno(lugar, objetivo, diasSeleccionados, ejerciciosSe
     sweetalert.fire({
         title: tLang("Generando Plan", "Generating plan"),
         text: isEnglish()
-            ? `Place: ${lugar ?? "-"} | Goal: ${objetivo ?? "-"} | Intensity: ${intensidad ?? "medium"} | Days: ${(diasCodes || []).join(", ") || "-"}. Please wait...`
-            : `Lugar: ${lugar ?? "-"} | Objetivo: ${objetivo ?? "-"} | Intensidad: ${intensidad ?? "media"} | Días: ${(diasCodes || []).join(", ") || "-"}. Por favor, esperá...`,
+            ? `Place: ${formatPlanLugar(lugar)} | Goal: ${formatPlanObjetivo(objetivo)} | Intensity: ${formatPlanIntensidad(intensidad)} | Days: ${(diasCodes || []).join(", ") || "-"}. Please wait...`
+            : `Lugar: ${formatPlanLugar(lugar)} | Objetivo: ${formatPlanObjetivo(objetivo)} | Intensidad: ${formatPlanIntensidad(intensidad)} | Días: ${(diasCodes || []).join(", ") || "-"}. Por favor, esperá...`,
         icon: "info",
         allowOutsideClick: false,
         allowEscapeKey: false,
