@@ -9,6 +9,11 @@
   method = "POST"
 
 [[edge_functions]]
+  function = "obtener_gemini_api_key"
+  path = "/obtener_gemini_api_key"
+  method = "POST"
+
+[[edge_functions]]
   function = "registrar_datos_n_usu"
   path = "/registrar_usuario_nuevo"
   method = "POST"

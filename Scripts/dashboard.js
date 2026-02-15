@@ -1,4 +1,6 @@
 import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.94.1/+esm";
+import { generatePlanEntreno } from "./generacion_planes/gen_plan_entreno.js";
+
 const supabaseUrl = "https://lhecmoeilmhzgxpcetto.supabase.co";
 const supabaseKey = "sb_publishable_oLC8LcDLa3jR72Hpd_jJsA_eXjMlP3-";
 const supabase = createClient(supabaseUrl, supabaseKey, { auth: { persistSession: true, autoRefreshToken: false, storage: localStorage } });
@@ -1101,32 +1103,37 @@ async function crearPlanEntreno(lugar, objetivo, diasSeleccionados, ejerciciosSe
 
     let response;
     try {
+        const { plan_entreno } = await generatePlanEntreno({
+            id_usuario: localStorage.getItem("id_usuario"),
+            idioma: getIdiomaPreferido(),
+            lugar,
+            objetivo,
+            intensidad,
+            ejercicios_por_dia: ejerciciosPorDia,
+            dias: diasCodes,
+            dias_semana: diasSem,
+            ejercicios_seleccionados: Array.isArray(ejerciciosSeleccionados) ? ejerciciosSeleccionados : null,
+            Altura: localStorage.getItem("altura_usuario"),
+            Peso_actual: localStorage.getItem("peso_actual_usuario"),
+            Peso_objetivo: localStorage.getItem("peso_objetivo_usuario"),
+            Edad: localStorage.getItem("edad_usuario"),
+        });
+
         response = await fetch('/generar_plan_entreno', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 id_usuario: localStorage.getItem("id_usuario"),
-                idioma: getIdiomaPreferido(),
-                lugar: lugar,
-                objetivo: objetivo,
-                intensidad: intensidad,
-                ejercicios_por_dia: ejerciciosPorDia,
-                dias: diasCodes,
-                dias_semana: diasSem,
-                ejercicios_seleccionados: Array.isArray(ejerciciosSeleccionados) ? ejerciciosSeleccionados : null,
-                Altura: localStorage.getItem("altura_usuario"),
-                Peso_actual: localStorage.getItem("peso_actual_usuario"),
-                Peso_objetivo: localStorage.getItem("peso_objetivo_usuario"),
-                Edad: localStorage.getItem("edad_usuario"),
+                plan_entreno,
             }),
         });
     } catch (err) {
-        console.log("[EdgeFunction:/generar_plan_entreno] Error de red:", err);
+        console.log("[/generar_plan_entreno] Error:", err);
         sweetalert.fire({
             title: tLang("Error", "Error"),
             text: tLang(
-                "No se pudo contactar al servidor para generar el plan. Revisá tu conexión e intentá de nuevo.",
-                "Could not reach the server to generate the plan. Check your connection and try again."
+                "No se pudo generar/guardar el plan. Revisá tu conexión y/o la API key de Gemini e intentá de nuevo.",
+                "Could not generate/save the plan. Check your connection and/or Gemini API key and try again."
             ),
             icon: "error",
             toast: true,

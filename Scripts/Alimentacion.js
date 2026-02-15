@@ -1,4 +1,5 @@
 import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.94.1/+esm";
+import { generatePlanAlimenta } from "./generacion_planes/gen_plan_alimenta.js";
 
 const supabaseUrl = "https://lhecmoeilmhzgxpcetto.supabase.co";
 const supabaseKey = "sb_publishable_oLC8LcDLa3jR72Hpd_jJsA_eXjMlP3-";
@@ -861,6 +862,27 @@ async function crearPlanAlimentacion(objetivo, intensidad) {
         didOpen: () => sweetalert.showLoading(),
     });
 
+    let planAlimentaObj;
+    try {
+        planAlimentaObj = await generatePlanAlimenta({
+            idioma: isEnglish() ? "en" : "es",
+            objetivo,
+            intensidad,
+            ...perfil,
+        });
+    } catch (err) {
+        await sweetalert.fire({
+            title: "Error",
+            text:
+                (isEnglish() ? "Could not generate the plan with AI: " : "No se pudo generar el plan con IA: ") +
+                (err?.message || String(err)),
+            icon: "error",
+        });
+        return;
+    }
+
+    const planAlimentaToStore = JSON.stringify(planAlimentaObj);
+
     let response;
     let bodyText = "";
     try {
@@ -869,10 +891,8 @@ async function crearPlanAlimentacion(objetivo, intensidad) {
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
                 id_usuario: user.id,
-                    idioma: isEnglish() ? "en" : "es",
-                objetivo,
-                intensidad,
-                ...perfil,
+                idioma: isEnglish() ? "en" : "es",
+                plan_alimenta: planAlimentaToStore,
             }),
         });
         bodyText = await response.text();

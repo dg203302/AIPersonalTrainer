@@ -1,28 +1,8 @@
-import { GoogleGenAI } from "https://esm.sh/@google/genai@1.38.0";
 import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.94.1/+esm";
 
 const supabaseUrl = "https://lhecmoeilmhzgxpcetto.supabase.co";
 const supabaseKey = "sb_secret_8pOt21ZHhoru6-VbtV6sEQ_TYL8DivC";
 const supabase = createClient(supabaseUrl, supabaseKey);
-
-let aiClientPromise;
-const getAiClient = () => {
-    if (!aiClientPromise) {
-        aiClientPromise = (async () => {
-            const { data, error } = await supabase
-                .from("claves_sensibles")
-                .select("gemini")
-                .eq("id", 1)
-                .single();
-
-            if (error) throw new Error(`No se pudo obtener la apiKey de Gemini: ${error.message}`);
-            const apiKey = data?.gemini;
-            if (!apiKey || typeof apiKey !== "string") throw new Error("apiKey de Gemini inválida");
-            return new GoogleGenAI({ apiKey });
-        })();
-    }
-    return aiClientPromise;
-};
 
 const corsHeaders = {
     "Access-Control-Allow-Origin": "*",
@@ -59,26 +39,6 @@ const safeJsonParse = (value) => {
     } catch {
         return null;
     }
-};
-
-const normalizeObjetivo = (value) => {
-    const v = stripAccents(value).toLowerCase();
-    if (v.includes("perd") || v.includes("grasa") || v.includes("defin")) return "perder grasa";
-    if (v.includes("masa") || v.includes("mus") || v.includes("gan")) return "ganar masa muscular";
-    if (v.includes("mant")) return "mantener peso";
-    return "mantener peso";
-};
-
-const normalizeIntensidad = (value) => {
-    const v = stripAccents(value).toLowerCase();
-    if (v.includes("baj")) return "baja";
-    if (v.includes("alt")) return "alta";
-    if (v.includes("med")) return "media";
-    return "media";
-};
-
-const mealsFromIntensidad = (intensidad) => {
-    return ({ baja: 3, media: 4, alta: 5 })[intensidad] ?? 4;
 };
 
 const validatePlanShape = (obj) => {
@@ -142,45 +102,27 @@ export default async function handler(request, _context){
         });
     }
     
-    const {
-        id_usuario,
-        idioma,
-        objetivo,
-        intensidad,
-        Altura,
-        Peso_actual,
-        Peso_objetivo,
-        Edad,
-    } = payload;
+    const { id_usuario, plan_alimenta, idioma } = payload;
     if (!id_usuario) {
         return new Response(JSON.stringify({ error: "Missing id_usuario" }), {
             status: 400,
             headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
     }
-    const objetivoNorm = normalizeObjetivo(objetivo);
-    const intensidadNorm = normalizeIntensidad(intensidad);
-    const mealsPerDay = mealsFromIntensidad(intensidadNorm);
+    if (plan_alimenta == null) {
+        return new Response(
+            JSON.stringify({ error: "Missing plan_alimenta (expected a JSON string or object)" }),
+            {
+                status: 400,
+                headers: { ...corsHeaders, "Content-Type": "application/json" },
+            }
+        );
+    }
 
     const idiomaNorm = String(idioma ?? "").trim().toLowerCase() === "en" ? "en" : "es";
-    const idiomaLabel = idiomaNorm === "en" ? "English" : "Español";
-    const t = (es, en) => (idiomaNorm === "en" ? en : es);
-
     const ALL_DIAS_ES = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"];
     const ALL_DIAS_EN = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
     const ALL_DIAS = idiomaNorm === "en" ? ALL_DIAS_EN : ALL_DIAS_ES;
-
-    const objetivoPrompt = (() => {
-        if (objetivoNorm === "perder grasa") return t("Perder grasa", "Lose fat");
-        if (objetivoNorm === "ganar masa muscular") return t("Ganar masa muscular", "Gain muscle");
-        return t("Mantener peso", "Maintain weight");
-    })();
-
-    const intensidadPrompt = (() => {
-        if (intensidadNorm === "baja") return t("baja", "low");
-        if (intensidadNorm === "alta") return t("alta", "high");
-        return t("media", "medium");
-    })();
 
     const DAY_INDEX_BY_NAME = {
         // Spanish (stripAccents)
@@ -250,106 +192,23 @@ export default async function handler(request, _context){
             root.configuracion_semanal = semanal.map((d, idx) => ({ ...d, dia: ALL_DIAS[idx] }));
         }
 
-        // Persistir en el JSON final la configuración usada (en el idioma de salida)
-        root.usuario = (root.usuario && typeof root.usuario === "object") ? root.usuario : {};
-        root.usuario.objetivo = objetivoPrompt;
-        root.usuario.intensidad = intensidadPrompt;
         return parsed;
     };
+    try {
+        let parsed;
+        if (typeof plan_alimenta === "object" && plan_alimenta) {
+            parsed = plan_alimenta;
+        } else {
+            const extracted = extractLikelyJson(plan_alimenta);
+            parsed = safeJsonParse(extracted) ?? safeJsonParse(String(plan_alimenta ?? "").trim());
+        }
 
-    const schemaDays = ALL_DIAS.map((d) =>
-        `        {"dia":"${d}","calorias_objetivo":2000,"comidas":[{"nombre":"<string>","descripcion":"<string>","calorias_aprox":500}],"macros_porcentaje":{"carbohidratos":40,"proteinas":30,"grasas":30},"recomendaciones_alimentos":["<string>"],"tips":["<string>"]}`
-    ).join(",\n");
-
-		const prompt = idiomaNorm === "en" ? `Return ONLY valid JSON (RFC 8259).
-FORBIDDEN: extra text, markdown, code blocks, comments, trailing commas.
-
-Generate a 7-day weekly meal plan in strict JSON.
-Requirements:
-- Language for ALL TEXT VALUES: English.
-- Keep ALL JSON KEYS exactly as the schema (do not translate keys).
-- Person data: edad=${Edad}, estatura_cm=${Altura}, peso_actual_kg=${Peso_actual}, peso_objetivo_kg=${Peso_objetivo}.
-- Goal: "${objetivoPrompt}".
-- Intensity: "${intensidadPrompt}". This defines meals per day: ${mealsPerDay}.
-- For each weekday (use EXACTLY these names and in this order): ${ALL_DIAS.join(", ")}
-    include:
-    - calorias_objetivo (integer)
-    - comidas: array of ${mealsPerDay} meals. Each meal: nombre, descripcion, calorias_aprox (optional integer).
-    - macros_porcentaje: { carbohidratos: number, proteinas: number, grasas: number } (sum to 100).
-    - recomendaciones_alimentos: array of strings
-    - tips: array of strings
-
-Return exactly this root structure:
-{
-    "plan_alimentacion": {
-        "usuario": {
-            "edad": number,
-            "estatura_cm": number,
-            "peso_actual_kg": number,
-            "peso_objetivo_kg": number,
-            "objetivo": string,
-            "intensidad": string
-        },
-        "configuracion_semanal": [
-${schemaDays}
-        ],
-        "nota_general": string
-    }
-}
-Do not add any text outside the JSON.`
-:
-`Devuelve UNICAMENTE un JSON válido (RFC 8259).
-PROHIBIDO: texto extra, markdown, bloques de código, comentarios, comas finales.
-
-Generá un plan de alimentación semanal (7 días) en formato JSON estricto.
-Requisitos:
-- Idioma de los VALORES de texto: ${idiomaLabel}.
-- Mantén las CLAVES JSON exactamente como el esquema (no traduzcas claves).
-- Debe estar pensado para una persona con estos datos: edad=${Edad}, estatura_cm=${Altura}, peso_actual_kg=${Peso_actual}, peso_objetivo_kg=${Peso_objetivo}.
-- Objetivo del plan: "${objetivoPrompt}".
-- Intensidad del plan: "${intensidadPrompt}". Esto define la cantidad de comidas por día: ${mealsPerDay}.
-- Para cada día de la semana (usa EXACTAMENTE estos nombres y en este orden): ${ALL_DIAS.join(", ")}
-    (en el idioma seleccionado), incluir:
-    - calorias_objetivo (número entero)
-    - comidas: array de ${mealsPerDay} comidas. Cada comida con: nombre, descripcion, calorias_aprox (número entero opcional).
-    - macros_porcentaje: { carbohidratos: number, proteinas: number, grasas: number } (porcentajes que sumen 100).
-    - recomendaciones_alimentos: array de strings (recomendaciones acordes a la cantidad de comidas del día).
-    - tips: array de strings (tips prácticos del día).
-
-Devolver exactamente con esta estructura raíz:
-{
-    "plan_alimentacion": {
-        "usuario": {
-            "edad": number,
-            "estatura_cm": number,
-            "peso_actual_kg": number,
-            "peso_objetivo_kg": number,
-            "objetivo": string,
-            "intensidad": string
-        },
-        "configuracion_semanal": [
-${schemaDays}
-        ],
-        "nota_general": string
-    }
-}
-No agregues texto fuera del JSON.`;
-	try {
-		const ai = await getAiClient();
-		const response = await ai.models.generateContent({
-        model: "gemini-3-flash-preview",
-        contents: prompt,
-        });
-
-        const text = response?.text ?? response?.choices?.[0]?.content?.parts?.[0]?.text ?? response?.choices?.[0]?.content?.parts?.[0] ?? "";
-        const extracted = extractLikelyJson(text);
-        let parsed = safeJsonParse(extracted);
         parsed = normalizePlanDays(parsed);
         const validationError = validatePlanShape(parsed);
         if (validationError) {
-            return new Response(JSON.stringify({ error: `Respuesta IA inválida: ${validationError}`, raw: String(text ?? "").slice(0, 4000) }), {
+            return new Response(JSON.stringify({ error: `Plan inválido: ${validationError}` }), {
                 headers: { ...corsHeaders, "Content-Type": "application/json" },
-                status: 502,
+                status: 400,
             });
         }
 
