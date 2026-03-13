@@ -607,6 +607,69 @@ footer {
 	}
 }
 
+/* Escritorio / pantallas anchas: sidebar derecha (navegación) + logout al fondo */
+@media (min-width: 1024px) {
+	:root {
+		--sidebar-w: 320px;
+		/* En escritorio el footer pasa a ser sidebar, no reservamos espacio inferior */
+		--footer-fixed: 0px !important;
+	}
+
+	/* Reservar el ancho de la sidebar para que el contenido no quede por debajo */
+	body {
+		padding-right: calc(var(--sidebar-w) + env(safe-area-inset-right));
+	}
+
+	/* Header fijo: que no quede debajo de la sidebar */
+	body > header {
+		right: calc(var(--sidebar-w) + env(safe-area-inset-right));
+	}
+
+	main {
+		max-width: none;
+		margin: calc(var(--header-fixed, 72px) + env(safe-area-inset-top)) 0 0;
+		min-height: calc(100svh - var(--header-fixed, 72px) - env(safe-area-inset-top));
+	}
+
+	/* Sidebar derecha: reutiliza el footer */
+	footer {
+		left: auto;
+		right: 0;
+		top: 0;
+		bottom: 0;
+		width: calc(var(--sidebar-w) + env(safe-area-inset-right));
+		padding: calc(14px + env(safe-area-inset-top)) var(--pad) calc(14px + env(safe-area-inset-bottom));
+		border-top: 0;
+		border-left: 1px solid var(--stroke);
+		box-shadow: -10px 0 30px rgba(0, 0, 0, .22);
+		justify-content: flex-start;
+		align-items: stretch;
+		flex-direction: column;
+		gap: 10px;
+	}
+
+	.footer-nav {
+		width: 100%;
+		margin: 0;
+		flex-direction: column;
+		align-items: stretch;
+		justify-content: flex-start;
+		gap: 10px;
+	}
+
+	.footer-btn {
+		flex: 0 0 auto;
+		width: 100%;
+	}
+
+	/* Logout dentro de la sidebar: ocupar ancho y empujar al fondo */
+	footer > #logout_button {
+		width: 100%;
+		min-height: 48px;
+		margin-top: auto;
+	}
+}
+
 @media (prefers-reduced-motion: reduce) {
 	* {
 		scroll-behavior: auto !important;

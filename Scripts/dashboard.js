@@ -998,8 +998,15 @@ window.onload = async () => {
 
     await recuperar_planes();
 
-    document.getElementById("username").textContent = username;
-    document.getElementById("icono_usuario").src = avatar;
+    const userEl = document.getElementById("username");
+    const avatarEl = document.getElementById("icono_usuario");
+    if (userEl) userEl.textContent = username || "";
+    if (avatarEl && avatar) avatarEl.src = avatar;
+
+    const userSidebarEl = document.getElementById("username_sidebar");
+    const avatarSidebarEl = document.getElementById("icono_usuario_sidebar");
+    if (userSidebarEl) userSidebarEl.textContent = username || "";
+    if (avatarSidebarEl && avatar) avatarSidebarEl.src = avatar;
 
     verificacion_plan_entrenamiento();
     verificacion_plan_alimentacion();
@@ -1791,6 +1798,50 @@ function initDetallePorDiaPlan() {
 function initPlanDiaPager() {
     const scroller = document.getElementById("Plan_ejercicio");
     if (!scroller) return;
+
+    const mqDesktop = (() => {
+        try {
+            return window.matchMedia ? window.matchMedia("(min-width: 1024px)") : null;
+        } catch {
+            return null;
+        }
+    })();
+
+    const mode = mqDesktop && mqDesktop.matches ? "desktop" : "mobile";
+
+    // Reconfigurar automáticamente al cruzar el breakpoint.
+    if (mqDesktop && scroller.dataset.diaPagerMqInit !== "1") {
+        scroller.dataset.diaPagerMqInit = "1";
+        const onChange = () => initPlanDiaPager();
+        try {
+            mqDesktop.addEventListener("change", onChange);
+        } catch {
+            // Safari antiguo
+            try { mqDesktop.addListener(onChange); } catch { }
+        }
+    }
+
+    const prevMode = scroller.dataset.diaPagerMode || "";
+    if (prevMode && prevMode !== mode) {
+        if (typeof scroller.__diaPagerCleanup === "function") {
+            try {
+                scroller.__diaPagerCleanup();
+            } catch {
+                // ignore
+            }
+        }
+        scroller.__diaPagerCleanup = null;
+        scroller.dataset.diaPagerInit = "0";
+    }
+
+    scroller.dataset.diaPagerMode = mode;
+
+    // En escritorio los días se muestran en horizontal por CSS.
+    // No interceptamos wheel/touch para no romper el scroll nativo.
+    if (mode === "desktop") {
+        return;
+    }
+
     if (scroller.dataset.diaPagerInit === "1") return;
     scroller.dataset.diaPagerInit = "1";
 
@@ -1851,7 +1902,7 @@ function initPlanDiaPager() {
     let wheelTimer = null;
     const WHEEL_THRESHOLD = 26;
 
-    scroller.addEventListener("wheel", (e) => {
+    const onWheel = (e) => {
         const days = getDays();
         if (days.length <= 1) return;
         if (e.ctrlKey) return; // pinch zoom
@@ -1875,7 +1926,9 @@ function initPlanDiaPager() {
         const dir = wheelAccum > 0 ? 1 : -1;
         wheelAccum = 0;
         stepBy(dir);
-    }, { passive: false });
+    };
+
+    scroller.addEventListener("wheel", onWheel, { passive: false });
 
     let touchStartY = 0;
     let touchStartX = 0;
@@ -1883,7 +1936,7 @@ function initPlanDiaPager() {
     let touchFromGrid = false;
     const TOUCH_THRESHOLD = 44;
 
-    scroller.addEventListener("touchstart", (e) => {
+    const onTouchStart = (e) => {
         const days = getDays();
         if (days.length <= 1) return;
         if (!e.touches || e.touches.length !== 1) return;
@@ -1896,9 +1949,11 @@ function initPlanDiaPager() {
         const target = e.target;
         const grid = (target instanceof Element) ? target.closest(".plan-grid") : null;
         touchFromGrid = !!grid;
-    }, { passive: true });
+    };
 
-    scroller.addEventListener("touchend", (e) => {
+    scroller.addEventListener("touchstart", onTouchStart, { passive: true });
+
+    const onTouchEnd = (e) => {
         if (!touchArmed) return;
         touchArmed = false;
 
@@ -1916,7 +1971,16 @@ function initPlanDiaPager() {
 
         const dir = dy < 0 ? 1 : -1;
         stepBy(dir);
-    }, { passive: true });
+    };
+
+    scroller.addEventListener("touchend", onTouchEnd, { passive: true });
+
+    scroller.__diaPagerCleanup = () => {
+        scroller.removeEventListener("wheel", onWheel);
+        scroller.removeEventListener("touchstart", onTouchStart);
+        scroller.removeEventListener("touchend", onTouchEnd);
+        scroller.dataset.diaPagerInit = "0";
+    };
 }
 document.getElementById("boton_eliminar")?.addEventListener("click", async () => {
     const confirmResult = await sweetalert.fire({

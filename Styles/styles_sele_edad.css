@@ -134,6 +134,29 @@ header h1 {
 	letter-spacing: .2px;
 }
 
+/* Botón "Inicio" para pantallas anchas (se muestra con media query) */
+.header-home {
+	position: absolute;
+	right: var(--pad);
+	top: 50%;
+	transform: translateY(-50%);
+	z-index: 2;
+	display: none;
+	align-items: center;
+	justify-content: center;
+	width: 42px;
+	height: 42px;
+	border-radius: 999px;
+	border: 1px solid var(--stroke2);
+	background: color-mix(in srgb, #fff 7%, transparent);
+}
+
+.header-home img {
+	width: 20px;
+	height: 20px;
+	display: block;
+}
+
 main {
 	max-width: var(--content-max);
 	margin:
@@ -371,6 +394,21 @@ button[type="submit"]:active {
 
 	header h1 {
 		font-size: 22px;
+	}
+}
+
+/* Escritorio / pantalla ancha: el botón "Inicio" va al header y el footer se oculta */
+@media (min-width: 1024px) {
+	:root {
+		--footer-fixed: 0px !important;
+	}
+
+	.header-home {
+		display: inline-flex;
+	}
+
+	footer {
+		display: none;
 	}
 }
 

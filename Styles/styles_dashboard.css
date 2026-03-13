@@ -889,6 +889,52 @@ footer>* {
 	user-select: none;
 }
 
+/* El botón de Perfil vive en el footer nav, pero solo se muestra como sidebar en escritorio */
+.footer-btn--profile {
+	display: none;
+	justify-content: flex-start;
+	text-align: left;
+	gap: 12px;
+	padding: 10px 12px;
+}
+
+.footer-btn--profile .footer-profile-avatar {
+	width: 34px;
+	height: 34px;
+	border-radius: 999px;
+	border: 1px solid var(--stroke2);
+	object-fit: cover;
+	background: color-mix(in srgb, #fff 10%, transparent);
+	box-shadow: var(--shadow-soft);
+	flex: 0 0 auto;
+}
+
+.footer-btn--profile .footer-profile-text {
+	min-width: 0;
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+}
+
+.footer-btn--profile .footer-profile-name {
+	margin: 0;
+	font-size: 13.5px;
+	font-weight: 600;
+	color: var(--muted);
+	max-width: 100%;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	line-height: 1.1;
+}
+
+.footer-btn--profile .footer-profile-sub {
+	font-size: 12px;
+	font-weight: 650;
+	color: var(--muted2);
+	line-height: 1;
+}
+
 .footer-btn--small {
 	font-size: 13px;
 	line-height: 1.05;
@@ -945,6 +991,113 @@ footer>* {
 
 	section {
 		padding: 18px;
+	}
+}
+
+/* Escritorio / pantallas anchas: sidebar derecha (perfil + navegación), plan más ancho,
+   días del plan en horizontal y anuncios debajo del plan. */
+@media (min-width: 1024px) {
+	:root {
+		--sidebar-w: 320px;
+		/* En escritorio el footer pasa a ser sidebar, no reservamos espacio inferior */
+		--footer-fixed: 0px !important;
+	}
+
+	/* Reservar el ancho de la sidebar para que el contenido no quede por debajo */
+	body {
+		padding-right: calc(var(--sidebar-w) + env(safe-area-inset-right));
+	}
+
+	/* Columna izquierda (contenido): que no quede debajo de la sidebar */
+	body>header {
+		right: calc(var(--sidebar-w) + env(safe-area-inset-right));
+	}
+
+	main {
+		max-width: none;
+		grid-template-columns: 1fr 1fr;
+		align-items: start;
+		margin: calc(var(--header-fixed, 72px) + env(safe-area-inset-top)) 0 0;
+	}
+
+	/* Reordenar visualmente para que los anuncios queden debajo del plan */
+	main > section {
+		grid-column: 1 / -1;
+		grid-row: 1;
+	}
+
+	main > #anuncios {
+		grid-row: 2;
+	}
+
+	main > #anuncios:first-of-type {
+		grid-column: 1;
+	}
+
+	main > #anuncios:nth-of-type(2) {
+		grid-column: 2;
+	}
+
+	/* Sidebar derecha: reutiliza el footer */
+	footer {
+		left: auto;
+		right: 0;
+		top: 0;
+		bottom: 0;
+		width: calc(var(--sidebar-w) + env(safe-area-inset-right));
+		padding: calc(14px + env(safe-area-inset-top)) var(--pad) calc(14px + env(safe-area-inset-bottom));
+		border-top: 0;
+		border-left: 1px solid var(--stroke);
+		box-shadow: -10px 0 30px rgba(0, 0, 0, .22);
+	}
+
+	footer::before {
+		background:
+			radial-gradient(900px 140px at 0% 20%, color-mix(in srgb, var(--accent) 18%, transparent) 0%, transparent 60%),
+			radial-gradient(900px 140px at 10% 80%, color-mix(in srgb, var(--accent2) 16%, transparent) 0%, transparent 65%);
+	}
+
+	.footer-nav {
+		width: 100%;
+		margin: 0;
+		flex-direction: column;
+		align-items: stretch;
+		justify-content: flex-start;
+		gap: 10px;
+	}
+
+	.footer-btn {
+		flex: 0 0 auto;
+		width: 100%;
+	}
+
+	.footer-btn--profile {
+		display: inline-flex;
+	}
+
+	/* En escritorio el Perfil vive en la sidebar */
+	#usuario {
+		display: none;
+	}
+
+	/* Plan: evitar overflow horizontal (wrap a filas) y permitir scroll vertical */
+	#Plan_ejercicio {
+		overflow-x: hidden;
+		overflow-y: auto;
+		scroll-snap-type: none;
+		touch-action: pan-y;
+	}
+
+	.plan-container.plan-snap {
+		display: grid;
+		grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+		gap: 12px;
+		height: auto;
+	}
+
+	.plan-container.plan-snap .plan-dia {
+		min-width: 0;
+		height: auto;
 	}
 }
 

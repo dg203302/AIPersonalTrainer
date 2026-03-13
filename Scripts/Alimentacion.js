@@ -457,6 +457,54 @@ const initDetallePorDiaPlanAliment = () => {
 const initPlanDiaPagerAliment = () => {
     const scroller = document.getElementById("Plan_alimentacion");
     if (!scroller) return;
+
+    const mqDesktop = (() => {
+        try {
+            return window.matchMedia ? window.matchMedia("(min-width: 1024px)") : null;
+        } catch {
+            return null;
+        }
+    })();
+
+    const mode = mqDesktop && mqDesktop.matches ? "desktop" : "mobile";
+
+    // Reconfigurar automáticamente al cruzar el breakpoint.
+    if (mqDesktop && scroller.dataset.diaPagerMqInit !== "1") {
+        scroller.dataset.diaPagerMqInit = "1";
+        const onChange = () => initPlanDiaPagerAliment();
+        try {
+            mqDesktop.addEventListener("change", onChange);
+        } catch {
+            // Safari antiguo
+            try {
+                mqDesktop.addListener(onChange);
+            } catch {
+                // ignore
+            }
+        }
+    }
+
+    const prevMode = scroller.dataset.diaPagerMode || "";
+    if (prevMode && prevMode !== mode) {
+        if (typeof scroller.__diaPagerCleanup === "function") {
+            try {
+                scroller.__diaPagerCleanup();
+            } catch {
+                // ignore
+            }
+        }
+        scroller.__diaPagerCleanup = null;
+        scroller.dataset.diaPagerInit = "0";
+    }
+
+    scroller.dataset.diaPagerMode = mode;
+
+    // En escritorio los días se muestran en grilla por CSS.
+    // No interceptamos wheel/touch para no romper el scroll nativo.
+    if (mode === "desktop") {
+        return;
+    }
+
     if (scroller.dataset.diaPagerInit === "1") return;
     scroller.dataset.diaPagerInit = "1";
 
@@ -519,33 +567,31 @@ const initPlanDiaPagerAliment = () => {
     let wheelTimer = null;
     const WHEEL_THRESHOLD = 26;
 
-    scroller.addEventListener(
-        "wheel",
-        (e) => {
-            const days = getDays();
-            if (days.length <= 1) return;
-            if (e.ctrlKey) return; // pinch zoom
+    const onWheel = (e) => {
+        const days = getDays();
+        if (days.length <= 1) return;
+        if (e.ctrlKey) return; // pinch zoom
 
-            const deltaY = e.deltaY;
-            const target = e.target;
-            const grid = target instanceof Element ? target.closest(".plan-grid") : null;
-            if (grid && canScrollInnerGrid(grid, deltaY)) return;
+        const deltaY = e.deltaY;
+        const target = e.target;
+        const grid = target instanceof Element ? target.closest(".plan-grid") : null;
+        if (grid && canScrollInnerGrid(grid, deltaY)) return;
 
-            e.preventDefault();
-            wheelAccum += deltaY;
+        e.preventDefault();
+        wheelAccum += deltaY;
 
-            if (wheelTimer) window.clearTimeout(wheelTimer);
-            wheelTimer = window.setTimeout(() => {
-                wheelAccum = 0;
-            }, 140);
-
-            if (Math.abs(wheelAccum) < WHEEL_THRESHOLD) return;
-            const dir = wheelAccum > 0 ? 1 : -1;
+        if (wheelTimer) window.clearTimeout(wheelTimer);
+        wheelTimer = window.setTimeout(() => {
             wheelAccum = 0;
-            stepBy(dir);
-        },
-        { passive: false }
-    );
+        }, 140);
+
+        if (Math.abs(wheelAccum) < WHEEL_THRESHOLD) return;
+        const dir = wheelAccum > 0 ? 1 : -1;
+        wheelAccum = 0;
+        stepBy(dir);
+    };
+
+    scroller.addEventListener("wheel", onWheel, { passive: false });
 
     let touchStartY = 0;
     let touchStartX = 0;
@@ -553,47 +599,50 @@ const initPlanDiaPagerAliment = () => {
     let touchFromGrid = false;
     const TOUCH_THRESHOLD = 44;
 
-    scroller.addEventListener(
-        "touchstart",
-        (e) => {
-            const days = getDays();
-            if (days.length <= 1) return;
-            if (!e.touches || e.touches.length !== 1) return;
+    const onTouchStart = (e) => {
+        const days = getDays();
+        if (days.length <= 1) return;
+        if (!e.touches || e.touches.length !== 1) return;
 
-            const t = e.touches[0];
-            touchStartY = t.clientY;
-            touchStartX = t.clientX;
-            touchArmed = true;
+        const t = e.touches[0];
+        touchStartY = t.clientY;
+        touchStartX = t.clientX;
+        touchArmed = true;
 
-            const target = e.target;
-            const grid = target instanceof Element ? target.closest(".plan-grid") : null;
-            touchFromGrid = !!grid;
-        },
-        { passive: true }
-    );
+        const target = e.target;
+        const grid = target instanceof Element ? target.closest(".plan-grid") : null;
+        touchFromGrid = !!grid;
+    };
 
-    scroller.addEventListener(
-        "touchend",
-        (e) => {
-            if (!touchArmed) return;
-            touchArmed = false;
+    scroller.addEventListener("touchstart", onTouchStart, { passive: true });
 
-            const days = getDays();
-            if (days.length <= 1) return;
-            const t = e.changedTouches && e.changedTouches[0];
-            if (!t) return;
+    const onTouchEnd = (e) => {
+        if (!touchArmed) return;
+        touchArmed = false;
 
-            const dy = t.clientY - touchStartY;
-            const dx = t.clientX - touchStartX;
-            if (Math.abs(dy) < TOUCH_THRESHOLD) return;
-            if (Math.abs(dy) < Math.abs(dx)) return;
-            if (touchFromGrid) return;
+        const days = getDays();
+        if (days.length <= 1) return;
+        const t = e.changedTouches && e.changedTouches[0];
+        if (!t) return;
 
-            const dir = dy < 0 ? 1 : -1;
-            stepBy(dir);
-        },
-        { passive: true }
-    );
+        const dy = t.clientY - touchStartY;
+        const dx = t.clientX - touchStartX;
+        if (Math.abs(dy) < TOUCH_THRESHOLD) return;
+        if (Math.abs(dy) < Math.abs(dx)) return;
+        if (touchFromGrid) return;
+
+        const dir = dy < 0 ? 1 : -1;
+        stepBy(dir);
+    };
+
+    scroller.addEventListener("touchend", onTouchEnd, { passive: true });
+
+    scroller.__diaPagerCleanup = () => {
+        scroller.removeEventListener("wheel", onWheel);
+        scroller.removeEventListener("touchstart", onTouchStart);
+        scroller.removeEventListener("touchend", onTouchEnd);
+        scroller.dataset.diaPagerInit = "0";
+    };
 };
 
 const openGenerarPlanAlimentModal = async (planPrevioRaw = null) => {
@@ -1114,6 +1163,11 @@ window.onload = async () => {
     const avatarEl = document.getElementById("icono_usuario");
     if (userEl) userEl.textContent = username || "";
     if (avatarEl && avatar) avatarEl.src = avatar;
+
+    const userSidebarEl = document.getElementById("username_sidebar");
+    const avatarSidebarEl = document.getElementById("icono_usuario_sidebar");
+    if (userSidebarEl) userSidebarEl.textContent = username || "";
+    if (avatarSidebarEl && avatar) avatarSidebarEl.src = avatar;
 
     bindUiHandlers();
     await recuperar_planes();

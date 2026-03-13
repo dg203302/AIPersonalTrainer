@@ -230,6 +230,47 @@ const initFixedChromeObservers = () => {
 	}
 };
 
+const initLogoutSidebarPlacement = () => {
+	const header = document.querySelector("header");
+	const footer = document.querySelector("footer");
+	const logoutBtn = document.getElementById("logout_button");
+	if (!header || !footer || !logoutBtn) return;
+
+	const mqDesktop = (() => {
+		try {
+			return window.matchMedia ? window.matchMedia("(min-width: 1024px)") : null;
+		} catch {
+			return null;
+		}
+	})();
+
+	const place = () => {
+		const isDesktop = !!(mqDesktop && mqDesktop.matches);
+		const target = isDesktop ? footer : header;
+		if (logoutBtn.parentElement !== target) {
+			target.appendChild(logoutBtn);
+			updateFixedChromeHeights();
+		}
+	};
+
+	place();
+
+	// Reconfigurar automáticamente al cruzar el breakpoint.
+	if (mqDesktop && document.documentElement.dataset.logoutSidebarMqInit !== "1") {
+		document.documentElement.dataset.logoutSidebarMqInit = "1";
+		try {
+			mqDesktop.addEventListener("change", place);
+		} catch {
+			// Safari antiguo
+			try {
+				mqDesktop.addListener(place);
+			} catch {
+				// ignore
+			}
+		}
+	}
+};
+
 const TRANSPARENCIA_STORAGE_KEY = "ui_transparencia";
 
 const isTransparenciaEnabled = () => {
@@ -291,9 +332,17 @@ const initIdiomaToggle = () => {
 };
 
 if (document.readyState === "loading") {
-	document.addEventListener("DOMContentLoaded", initFixedChromeObservers, { once: true });
+	document.addEventListener(
+		"DOMContentLoaded",
+		() => {
+			initFixedChromeObservers();
+			initLogoutSidebarPlacement();
+		},
+		{ once: true }
+	);
 } else {
 	initFixedChromeObservers();
+	initLogoutSidebarPlacement();
 }
 
 window.onload = async () => {
