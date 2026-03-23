@@ -1,5 +1,6 @@
 import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.94.1/+esm";
 import { generatePlanEntreno } from "./generacion_planes/gen_plan_entreno.js";
+import { initPlanAlimentacion } from "./Alimentacion.js";
 
 const supabaseUrl = "https://lhecmoeilmhzgxpcetto.supabase.co";
 const supabaseKey = "sb_publishable_oLC8LcDLa3jR72Hpd_jJsA_eXjMlP3-";
@@ -200,6 +201,116 @@ if (document.readyState === "loading") {
 
 
 const sweetalert = window.swal;
+
+const canUseBottomSheet = () => {
+    try {
+        return !!globalThis.PTBottomSheet && typeof globalThis.PTBottomSheet.open === "function";
+    } catch {
+        return false;
+    }
+};
+
+const closeBottomSheetSafe = () => {
+    try {
+        globalThis.PTBottomSheet?.close?.();
+    } catch {
+        // ignore
+    }
+};
+
+const openStatusSheet = async ({ title, message, html } = {}) => {
+    const safeTitle = String(title || "");
+    const safeMessage = String(message || "");
+    const safeHtml = html != null ? String(html) : null;
+
+    if (canUseBottomSheet()) {
+        await globalThis.PTBottomSheet.open({
+            title: safeTitle,
+            ariaLabel: safeTitle,
+            html:
+                safeHtml ??
+                `
+                    <div class="pt-status">
+                        <div class="pt-status-row">
+                            <div class="pt-status-text">${escapeHtml(safeMessage)}</div>
+                        </div>
+                        <div class="pt-status-actions">
+                            <button type="button" class="btn-primary" data-pt-close>${escapeHtml(tLang("Listo", "Done"))}</button>
+                        </div>
+                    </div>
+                `,
+            showClose: false,
+            showHandle: true,
+            allowOutsideClose: true,
+            allowEscapeClose: true,
+            allowDragClose: true,
+            didOpen: (sheet) => {
+                sheet.querySelector("[data-pt-close]")?.addEventListener("click", () => closeBottomSheetSafe());
+                try { globalThis.UIIdioma?.translatePage?.(sheet); } catch { }
+            },
+        });
+        return;
+    }
+
+    // Fallback nativo (sin SweetAlert)
+    try {
+        const msg = [safeTitle, safeMessage].filter(Boolean).join("\n\n");
+        if (msg) window.alert(msg);
+    } catch {
+        // ignore
+    }
+};
+
+const openConfirmSheet = async ({ title, message, confirmText, cancelText } = {}) => {
+    const safeTitle = String(title || tLang("Confirmar", "Confirm"));
+    const safeMessage = String(message || "");
+    const okText = String(confirmText || tLang("Aceptar", "OK"));
+
+    if (!canUseBottomSheet()) {
+        try {
+            return window.confirm([safeTitle, safeMessage].filter(Boolean).join("\n\n"));
+        } catch {
+            return false;
+        }
+    }
+
+    return await new Promise((resolve) => {
+        let resolved = false;
+        const safeResolve = (v) => {
+            if (resolved) return;
+            resolved = true;
+            resolve(!!v);
+        };
+
+        void globalThis.PTBottomSheet.open({
+            title: safeTitle,
+            ariaLabel: safeTitle,
+            html: `
+                <div class="pt-status">
+                    <div class="pt-status-row">
+                        <div class="pt-status-text">${escapeHtml(safeMessage)}</div>
+                    </div>
+                    <div class="pt-status-actions">
+                        <button type="button" class="btn-primary" data-pt-confirm>${escapeHtml(okText)}</button>
+                    </div>
+                </div>
+            `,
+            showClose: false,
+            showHandle: true,
+            allowOutsideClose: true,
+            allowEscapeClose: true,
+            allowDragClose: true,
+            didOpen: (sheet) => {
+                try { globalThis.UIIdioma?.translatePage?.(sheet); } catch { }
+                sheet.querySelector("[data-pt-confirm]")?.addEventListener("click", () => {
+                    safeResolve(true);
+                    closeBottomSheetSafe();
+                });
+            },
+            willClose: () => safeResolve(false),
+        });
+    });
+};
 
 const getIdiomaPreferido = () => {
     try {
@@ -1137,7 +1248,11 @@ window.onload = async () => {
     if (avatarSidebarEl && avatar) avatarSidebarEl.src = avatar;
 
     verificacion_plan_entrenamiento();
-    verificacion_plan_alimentacion();
+    await initPlanAlimentacion({
+        root: document.getElementById("Alimentacion"),
+        skipRecuperarPlanes: true,
+        autofocus: false,
+    });
 
     // Al cargar: llevar el foco al contenedor del plan de entreno.
     autofocusPlanEntrenoOncePerSession();
@@ -1182,18 +1297,43 @@ function verificacion_plan_entrenamiento() {
         try { globalThis.UIIdioma?.translatePage?.(boton_ejercicios); } catch { }
         boton_ejercicios.onclick = async () => {
             await recuperar_planes();
-            sweetalert.fire({
-                title: tLang("Plan de entrenamiento actualizado", "Training plan updated"),
-                text: tLang(
-                    "Tu plan de entrenamiento ha sido refrescado correctamente.",
-                    "Your training plan was refreshed successfully."
-                ),
-                icon: 'success',
-                toast: true,
-                position: 'top-end',
-                showConfirmButton: false,
-                timer: 3000
-            });
+            const title = tLang("Plan de entrenamiento actualizado", "Training plan updated");
+            const message = tLang(
+                "Tu plan de entrenamiento ha sido refrescado correctamente.",
+                "Your training plan was refreshed successfully."
+            );
+
+            if (window.PTBottomSheet && typeof window.PTBottomSheet.open === "function") {
+                try { window.PTBottomSheet.close?.(); } catch { }
+                await window.PTBottomSheet.open({
+                    title,
+                    ariaLabel: title,
+                    html: `
+                        <div class="pt-status">
+                            <div class="pt-status-row">
+                                <div class="pt-status-text">${escapeHtml(message)}</div>
+                            </div>
+                            <div class="pt-status-actions">
+                                <button type="button" class="btn-primary" data-pt-sheet-close>${escapeHtml(tLang("Listo", "Done"))}</button>
+                            </div>
+                        </div>
+                    `,
+                    showClose: false,
+                    showHandle: true,
+                    allowOutsideClose: true,
+                    allowEscapeClose: true,
+                    allowDragClose: true,
+                    didOpen: (sheet) => {
+                        sheet.querySelector("[data-pt-sheet-close]")?.addEventListener("click", () => {
+                            try { window.PTBottomSheet.close?.(); } catch { }
+                        });
+                        try { globalThis.UIIdioma?.translatePage?.(sheet); } catch { }
+                    },
+                });
+                return;
+            }
+
+            await openStatusSheet({ title, message });
         }
     }
     else if (plan_entrenamiento == "Ninguno" || plan_entrenamiento == null) {
@@ -1423,24 +1563,16 @@ async function crearPlanEntreno(lugar, objetivo, diasSeleccionados, ejerciciosSe
     }
 }
 
-function verificacion_plan_alimentacion() {
-    // inutil, solo para evitar reference error en el console.log de recuperar_planes() que rompe la ejecución
-}
-
 async function recuperar_planes() {
     const { user } = await supabase.auth.getUser().then(({ data: { user } }) => user);
     if (user) {
         const { datos2, error2 } = await supabase
             .from("Planes").select("Plan_entreno, Plan_alimenta").eq("ID_user", user.id).single();
         if (error2) {
-            swal.fire({
+            await openStatusSheet({
                 title: tLang("Error", "Error"),
-                text: tLang("Error al obtener los datos del usuario: ", "Failed to fetch user data: ") + error2.message,
-                toast: true,
-                position: 'top-end',
-                icon: 'error',
-                timer: 5000
-            })
+                message: tLang("Error al obtener los datos del usuario: ", "Failed to fetch user data: ") + error2.message,
+            });
             return;
         }
         const plan_entreno = datos2.Plan_entreno;
@@ -2214,19 +2346,17 @@ function initPlanDiaPager() {
     };
 }
 document.getElementById("boton_eliminar")?.addEventListener("click", async () => {
-    const confirmResult = await sweetalert.fire({
+    const ok = await openConfirmSheet({
         title: tLang("¿Estás seguro?", "Are you sure?"),
-        text: tLang(
+        message: tLang(
             "Esta acción eliminará tu plan de entrenamiento actual.",
             "This action will delete your current training plan."
         ),
-        icon: "warning",
-        showCancelButton: true,
-        confirmButtonText: tLang("Sí, eliminar", "Yes, delete"),
-        cancelButtonText: tLang("Cancelar", "Cancel"),
+        confirmText: tLang("Sí, eliminar", "Yes, delete"),
+        cancelText: tLang("Cancelar", "Cancel"),
     });
 
-    if (!confirmResult.isConfirmed) return;
+    if (!ok) return;
 
     localStorage.setItem("plan_entreno_usuario", "Ninguno");
     await actualizar_cambios_plan_entreno();
@@ -2235,14 +2365,9 @@ document.getElementById("boton_eliminar")?.addEventListener("click", async () =>
     document.getElementById("boton_regenerar").style.display = "none";
     verificacion_plan_entrenamiento();
 
-    sweetalert.fire({
+    await openStatusSheet({
         title: tLang("Plan eliminado", "Plan deleted"),
-        text: tLang("Tu plan de entrenamiento ha sido eliminado.", "Your training plan has been deleted."),
-        icon: "success",
-        toast: true,
-        position: "top-end",
-        showConfirmButton: false,
-        timer: 3000,
+        message: tLang("Tu plan de entrenamiento ha sido eliminado.", "Your training plan has been deleted."),
     });
 });
 async function actualizar_cambios_plan_entreno() {
@@ -2349,46 +2474,24 @@ async function Regen_plan() {
     const ejerciciosPorDiaMap = { baja: 4, media: 6, alta: 8 };
     const ejerciciosPorDiaDetectados = ejerciciosPorDiaMap[intensidadDetectada] ?? 6;
 
-    const result = await swal.fire({
-        title: tLang("Regenerando plan de entrenamiento", "Regenerating training plan"),
-        text: isEnglish()
+    const ok = await openConfirmSheet({
+        title: tLang("Regenerar plan de entrenamiento", "Regenerate training plan"),
+        message: isEnglish()
             ? `Your current plan will be deleted and a new one will be generated based on the previous configuration. Detected intensity: ${intensidadDetectada} (${ejerciciosPorDiaDetectados} exercises per day).`
             : `Se eliminará el plan actual y se generará uno nuevo basado en la configuración previa. Intensidad detectada: ${intensidadDetectada} (${ejerciciosPorDiaDetectados} ejercicios por día).`,
-        icon: "info",
-
-        showCancelButton: true,
-        confirmButtonText: tLang("Sí, regenerar", "Yes, regenerate"),
-        cancelButtonText: tLang("Cancelar", "Cancel"),
+        confirmText: tLang("Sí, regenerar", "Yes, regenerate"),
+        cancelText: tLang("Cancelar", "Cancel"),
     });
 
-    if (!result.isConfirmed) {
-        swal.fire({
-            title: tLang("Regeneración cancelada", "Regeneration cancelled"),
-            text: tLang(
-                "El plan de entrenamiento actual se mantiene sin cambios.",
-                "Your current training plan remains unchanged."
-            ),
-            icon: "info",
-            toast: true,
-            position: "top-end",
-            showConfirmButton: false,
-            timer: 3000,
-        });
-        return;
-    }
+    if (!ok) return;
 
     if (plan_entreno_actual == null || plan_entreno_actual === "Ninguno") {
-        sweetalert.fire({
+        await openStatusSheet({
             title: tLang("No hay plan para regenerar", "No plan to regenerate"),
-            text: tLang(
+            message: tLang(
                 "Primero debés generar un plan de entrenamiento.",
                 "You need to generate a training plan first."
             ),
-            icon: "error",
-            toast: true,
-            position: "top-end",
-            showConfirmButton: false,
-            timer: 3000,
         });
         return;
     }

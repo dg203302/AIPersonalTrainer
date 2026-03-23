@@ -17,6 +17,173 @@ const tLang = (es, en) => (isEnglish() ? en : es);
 
 const NETLIFY_EDGE_UNCAUGHT = "uncaught exception during edge function invocation";
 
+const canUseBottomSheet = () => {
+    try {
+        return !!globalThis.PTBottomSheet && typeof globalThis.PTBottomSheet.open === "function";
+    } catch {
+        return false;
+    }
+};
+
+const closeBottomSheetSafe = () => {
+    try {
+        globalThis.PTBottomSheet?.close?.();
+    } catch {
+        // ignore
+    }
+};
+
+const closeModalSafe = () => {
+    try {
+        globalThis.PTBottomSheet?.close?.();
+        return;
+    } catch {
+        // ignore
+    }
+    try {
+        sweetalert?.close?.();
+    } catch {
+        // ignore
+    }
+};
+
+const openStatusSheet = async ({
+    title,
+    html,
+    ariaLabel,
+    showClose = false,
+    showHandle = true,
+    allowOutsideClose = true,
+    allowEscapeClose = true,
+    allowDragClose = true,
+    closeText = tLang("Cerrar", "Close"),
+    didOpen,
+    willClose,
+} = {}) => {
+    if (canUseBottomSheet()) {
+        await globalThis.PTBottomSheet.open({
+            title: title || "",
+            ariaLabel: ariaLabel || title || "",
+            html: html || "",
+            closeText,
+            showClose,
+            showHandle,
+            allowOutsideClose,
+            allowEscapeClose,
+            allowDragClose,
+            didOpen,
+            willClose,
+        });
+        return;
+    }
+
+    // Sin PTBottomSheet: fallback nativo (evita SweetAlert)
+    try {
+        const strip = (s) => String(s || "").replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
+        const msg = [strip(title), strip(html)].filter(Boolean).join("\n\n");
+        if (msg) window.alert(msg);
+    } catch {
+        // ignore
+    }
+};
+
+const showBlockingLoading = ({ title, text } = {}) => {
+    const safeTitle = String(title || tLang("Generando", "Generating"));
+    const safeText = String(text || tLang("Por favor, esperá...", "Please wait..."));
+
+    if (canUseBottomSheet()) {
+        void globalThis.PTBottomSheet.open({
+            title: safeTitle,
+            ariaLabel: safeTitle,
+            html: `
+                <div class="pt-status">
+                    <div class="pt-status-row">
+                        <div class="pt-spinner" aria-hidden="true"></div>
+                        <div class="pt-status-text">${escapeHtml(safeText)}</div>
+                    </div>
+                </div>
+            `,
+            showClose: false,
+            showHandle: false,
+            allowOutsideClose: false,
+            allowEscapeClose: false,
+            allowDragClose: false,
+            didOpen: (sheet) => {
+                try {
+                    globalThis.UIIdioma?.translatePage?.(sheet);
+                } catch {
+                    // ignore
+                }
+            },
+        });
+        return () => closeBottomSheetSafe();
+    }
+
+    // Sin PTBottomSheet: no bloquear con SweetAlert (fallback no-op)
+    return () => {
+        // no-op
+    };
+};
+
+const openConfirmSheet = ({ title, message, confirmText } = {}) => {
+    const safeTitle = String(title || tLang("Confirmar", "Confirm"));
+    const safeMessage = String(message || "");
+    const safeConfirm = String(confirmText || tLang("Aceptar", "OK"));
+
+    if (!canUseBottomSheet()) {
+        // Fallback nativo: evita SweetAlert
+        try {
+            return Promise.resolve(window.confirm([safeTitle, safeMessage].filter(Boolean).join("\n\n")));
+        } catch {
+            return Promise.resolve(false);
+        }
+    }
+
+    return new Promise((resolve) => {
+        let resolved = false;
+        const safeResolve = (v) => {
+            if (resolved) return;
+            resolved = true;
+            resolve(!!v);
+        };
+
+        void globalThis.PTBottomSheet.open({
+            title: safeTitle,
+            ariaLabel: safeTitle,
+            html: `
+                <div class="pt-status">
+                    <div class="pt-status-row">
+                        <div class="pt-status-text">${escapeHtml(safeMessage)}</div>
+                    </div>
+                    <div class="pt-status-actions">
+                        <button type="button" class="btn-primary" data-pt-confirm>
+                            ${escapeHtml(safeConfirm)}
+                        </button>
+                    </div>
+                </div>
+            `,
+            showClose: false,
+            showHandle: true,
+            allowOutsideClose: true,
+            allowEscapeClose: true,
+            allowDragClose: true,
+            didOpen: (sheet) => {
+                try {
+                    globalThis.UIIdioma?.translatePage?.(sheet);
+                } catch {
+                    // ignore
+                }
+
+                sheet.querySelector("[data-pt-confirm]")?.addEventListener("click", () => {
+                    safeResolve(true);
+                    closeModalSafe();
+                });
+            },
+            willClose: () => safeResolve(false),
+        });
+    });
+};
+
 const isPlanAlimentacionVacio = (value) => {
     const v = String(value ?? "").trim();
     if (!v) return true;
@@ -47,28 +214,40 @@ const showNetlifyHostingErrorAlert = async ({ endpoint, status, statusText, body
         ? "This is a hosting server error (<strong>Netlify</strong>). Please wait a few minutes and try again."
         : "Este es un error del servidor de hosting (<strong>Netlify</strong>). Por favor, aguardá unos minutos e intentá nuevamente.";
 
-    await sweetalert.fire({
-        icon: "error",
+    const html = `
+        <div class="server-error">
+            <div class="server-error__hero">${escapeHtml(NETLIFY_EDGE_UNCAUGHT)}</div>
+            <div class="server-error__meta">
+                <div><strong>Endpoint:</strong> ${escapeHtml(safeEndpoint)}</div>
+                <div><strong>HTTP:</strong> ${escapeHtml(safeStatus)}${safeStatusText ? ` (${escapeHtml(safeStatusText)})` : ""}</div>
+            </div>
+            ${safeBody ? `<pre class="server-error__body">${escapeHtml(safeBody.slice(0, 1200))}</pre>` : ""}
+            <p class="server-error__note">${hostingNote}</p>
+        </div>
+    `;
+
+    await openStatusSheet({
         title: tLang("Error del servidor", "Server error"),
+        ariaLabel: tLang("Error del servidor", "Server error"),
         html: `
-            <div class="server-error">
-                <div class="server-error__hero">${escapeHtml(NETLIFY_EDGE_UNCAUGHT)}</div>
-                <div class="server-error__meta">
-                    <div><strong>Endpoint:</strong> ${escapeHtml(safeEndpoint)}</div>
-                    <div><strong>HTTP:</strong> ${escapeHtml(safeStatus)}${safeStatusText ? ` (${escapeHtml(safeStatusText)})` : ""}</div>
-                </div>
-                ${safeBody ? `<pre class="server-error__body">${escapeHtml(safeBody.slice(0, 1200))}</pre>` : ""}
-                <p class="server-error__note">
-                    ${hostingNote}
-                </p>
+            ${html}
+            <div class="pt-status-actions">
+                <button type="button" class="btn-primary" data-pt-close>${escapeHtml(tLang("Entendido", "OK"))}</button>
             </div>
         `,
-        allowOutsideClick: false,
-        allowEscapeKey: true,
-        confirmButtonText: tLang("Entendido", "OK"),
-        customClass: {
-            popup: "dashboard-swal server-error-swal",
-            confirmButton: "dashboard-swal-confirm",
+        showClose: false,
+        showHandle: true,
+        allowOutsideClose: true,
+        allowEscapeClose: true,
+        allowDragClose: true,
+        didOpen: (sheet) => {
+            try {
+                globalThis.UIIdioma?.translatePage?.(sheet);
+            } catch {
+                // ignore
+            }
+
+            sheet.querySelector("[data-pt-close]")?.addEventListener("click", () => closeModalSafe());
         },
     });
 };
@@ -116,25 +295,24 @@ const scrollToWithFixedHeader = (el, { behavior = "auto" } = {}) => {
     window.scrollTo({ top: Math.max(0, top), behavior });
 };
 
-const focusPlanAlimentacionContainer = ({ behavior = "auto" } = {}) => {
-    const plan = document.getElementById("Plan_alimentacion");
+const focusPlanAlimentacionContainer = (planEl, { behavior = "auto" } = {}) => {
     const section = document.getElementById("Alimentacion");
-    const visiblePlan = plan && plan.style.display !== "none";
-    const target = visiblePlan ? plan : (section || plan);
+    const visiblePlan = planEl && planEl.style.display !== "none";
+    const target = visiblePlan ? planEl : (section || planEl);
     if (!target) return;
     scrollToWithFixedHeader(target, { behavior });
     if (typeof target.focus === "function") target.focus({ preventScroll: true });
 };
 
-const autofocusPlanAlimentacionOncePerSession = () => {
+const autofocusPlanAlimentacionOncePerSession = (planEl) => {
     const behavior = prefersReducedMotion() ? "auto" : "smooth";
     try {
         const key = "autofocus_plan_aliment_done";
         if (sessionStorage.getItem(key) === "1") return;
         sessionStorage.setItem(key, "1");
-        focusPlanAlimentacionContainer({ behavior });
+        focusPlanAlimentacionContainer(planEl, { behavior });
     } catch {
-        focusPlanAlimentacionContainer({ behavior });
+        focusPlanAlimentacionContainer(planEl, { behavior });
     }
 };
 
@@ -351,8 +529,7 @@ const mapear_plan_alimentacion = (planRaw) => {
     return `<div class="plan-container plan-snap">${html}</div>`;
 };
 
-const initDetallePorDiaPlanAliment = () => {
-    const contenedor = document.getElementById("Plan_alimentacion");
+const initDetallePorDiaPlanAliment = (contenedor) => {
     if (!contenedor) return;
     if (contenedor.dataset.detalleDiaInit === "1") return;
     contenedor.dataset.detalleDiaInit = "1";
@@ -496,8 +673,7 @@ const initDetallePorDiaPlanAliment = () => {
     });
 };
 
-const initPlanDiaPagerAliment = () => {
-    const scroller = document.getElementById("Plan_alimentacion");
+const initPlanDiaPagerAliment = (scroller) => {
     if (!scroller) return;
 
     const mqDesktop = (() => {
@@ -513,7 +689,7 @@ const initPlanDiaPagerAliment = () => {
     // Reconfigurar automáticamente al cruzar el breakpoint.
     if (mqDesktop && scroller.dataset.diaPagerMqInit !== "1") {
         scroller.dataset.diaPagerMqInit = "1";
-        const onChange = () => initPlanDiaPagerAliment();
+        const onChange = () => initPlanDiaPagerAliment(scroller);
         try {
             mqDesktop.addEventListener("change", onChange);
         } catch {
@@ -687,79 +863,148 @@ const initPlanDiaPagerAliment = () => {
     };
 };
 
-const openGenerarPlanAlimentModal = async (planPrevioRaw = null) => {
+const openGenerarPlanAlimentModal = async (ctx, planPrevioRaw = null) => {
     const baseObjetivo = localStorage.getItem("dieta_objetivo") || "mantener";
     const baseIntensidad = localStorage.getItem("dieta_intensidad") || "media";
 
-    const result = await sweetalert.fire({
-        title: tLang("Generar Plan de Alimentación con IA", "Generate Meal Plan with AI"),
-        html: `
-            <div class="swal-gen">
-                <p class="swal-helper">${tLang(
-                    "Elegí tu objetivo y la intensidad del plan. Esto define el enfoque y la cantidad de comidas por día.",
-                    "Choose your goal and the plan intensity. This defines the approach and the number of meals per day."
-                )}</p>
+    const sheetTitle = tLang("Generar Plan de Alimentación con IA", "Generate Meal Plan with AI");
+    const html = `
+        <div class="pt-detail pt-gen">
+            <p class="swal-helper">${escapeHtml(tLang(
+                "Elegí tu objetivo y la intensidad del plan. Esto define el enfoque y la cantidad de comidas por día.",
+                "Choose your goal and the plan intensity. This defines the approach and the number of meals per day."
+            ))}</p>
 
-                <section class="swal-section" aria-label="${tLang("Opciones de plan de alimentación", "Meal plan options")}">
-                    <h3>${tLang("Objetivo", "Goal")}</h3>
-                    <div class="swal-grid">
-                        <div class="swal-field">
-                            <label class="swal-radio"><input type="radio" name="objetivo" value="grasa"><span>${tLang("Perder grasa", "Lose fat")}</span></label>
-                            <label class="swal-radio"><input type="radio" name="objetivo" value="musculo"><span>${tLang("Ganar masa muscular", "Gain muscle")}</span></label>
-                            <label class="swal-radio"><input type="radio" name="objetivo" value="mantener"><span>${tLang("Mantener peso", "Maintain weight")}</span></label>
-                        </div>
+            <section class="swal-section" aria-label="${escapeHtml(tLang("Opciones de plan de alimentación", "Meal plan options"))}">
+                <h3>${escapeHtml(tLang("Objetivo", "Goal"))}</h3>
+                <div class="swal-grid">
+                    <div class="swal-field">
+                        <label class="swal-radio"><input type="radio" name="objetivo" value="grasa"><span>${escapeHtml(tLang("Perder grasa", "Lose fat"))}</span></label>
+                        <label class="swal-radio"><input type="radio" name="objetivo" value="musculo"><span>${escapeHtml(tLang("Ganar masa muscular", "Gain muscle"))}</span></label>
+                        <label class="swal-radio"><input type="radio" name="objetivo" value="mantener"><span>${escapeHtml(tLang("Mantener peso", "Maintain weight"))}</span></label>
                     </div>
-                </section>
+                </div>
+            </section>
 
-                <section class="swal-section" aria-label="${tLang("Intensidad de plan de alimentación", "Meal plan intensity")}">
-                    <h3>${tLang("Intensidad", "Intensity")}</h3>
-                    <div class="swal-grid">
-                        <div class="swal-field">
-                            <label class="swal-radio"><input type="radio" name="intensidad" value="baja"><span>${tLang("Intensidad baja", "Low intensity")}</span></label>
-                            <label class="swal-radio"><input type="radio" name="intensidad" value="media"><span>${tLang("Intensidad media", "Medium intensity")}</span></label>
-                            <label class="swal-radio"><input type="radio" name="intensidad" value="alta"><span>${tLang("Intensidad alta", "High intensity")}</span></label>
-                            <p class="swal-helper">${tLang(
-                                "La intensidad ajusta la cantidad de comidas por día (baja: 3, media: 4, alta: 5).",
-                                "Intensity adjusts the number of meals per day (low: 3, medium: 4, high: 5)."
-                            )}</p>
-                        </div>
+            <section class="swal-section" aria-label="${escapeHtml(tLang("Intensidad de plan de alimentación", "Meal plan intensity"))}">
+                <h3>${escapeHtml(tLang("Intensidad", "Intensity"))}</h3>
+                <div class="swal-grid">
+                    <div class="swal-field">
+                        <label class="swal-radio"><input type="radio" name="intensidad" value="baja"><span>${escapeHtml(tLang("Intensidad baja", "Low intensity"))}</span></label>
+                        <label class="swal-radio"><input type="radio" name="intensidad" value="media"><span>${escapeHtml(tLang("Intensidad media", "Medium intensity"))}</span></label>
+                        <label class="swal-radio"><input type="radio" name="intensidad" value="alta"><span>${escapeHtml(tLang("Intensidad alta", "High intensity"))}</span></label>
+                        <p class="swal-helper">${escapeHtml(tLang(
+                            "La intensidad ajusta la cantidad de comidas por día (baja: 3, media: 4, alta: 5).",
+                            "Intensity adjusts the number of meals per day (low: 3, medium: 4, high: 5)."
+                        ))}</p>
                     </div>
-                </section>
-            </div>
-        `,
-        showCancelButton: true,
-        confirmButtonText: tLang("Generar", "Generate"),
-        cancelButtonText: tLang("Cancelar", "Cancel"),
-        customClass: {
-            popup: "dashboard-swal",
-            confirmButton: "dashboard-swal-confirm",
-            cancelButton: "dashboard-swal-cancel",
-        },
-        didOpen: () => {
-            const popup = sweetalert.getPopup();
-            const obj = popup?.querySelector(`input[name="objetivo"][value="${CSS.escape(baseObjetivo)}"]`);
-            const inten = popup?.querySelector(`input[name="intensidad"][value="${CSS.escape(baseIntensidad)}"]`);
-            if (obj) obj.checked = true;
-            if (inten) inten.checked = true;
-        },
-        preConfirm: () => {
-            const popup = sweetalert.getPopup();
-            const objetivo = popup?.querySelector('input[name="objetivo"]:checked')?.value;
-            const intensidad = popup?.querySelector('input[name="intensidad"]:checked')?.value;
-            if (!objetivo) {
-                sweetalert.showValidationMessage(tLang("Seleccioná un objetivo", "Select a goal"));
-                return;
-            }
-            if (!intensidad) {
-                sweetalert.showValidationMessage(tLang("Seleccioná una intensidad", "Select an intensity"));
-                return;
-            }
-            return { objetivo, intensidad };
-        },
-    });
+                </div>
+            </section>
 
-    if (!result.isConfirmed) return;
-    const { objetivo, intensidad } = result.value;
+            <div class="pt-form-error" data-pt-alim-error style="display:none;"></div>
+        </div>
+    `;
+
+    const askConfig = () => {
+        if (!canUseBottomSheet()) return null;
+        return new Promise((resolve) => {
+            let resolved = false;
+            const safeResolve = (v) => {
+                if (resolved) return;
+                resolved = true;
+                resolve(v);
+            };
+
+            void globalThis.PTBottomSheet.open({
+                title: sheetTitle,
+                ariaLabel: sheetTitle,
+                html,
+                closeText: tLang("Cerrar", "Close"),
+                showClose: false,
+                showHandle: true,
+                allowOutsideClose: true,
+                allowEscapeClose: true,
+                allowDragClose: true,
+                didOpen: (sheet) => {
+                    try {
+                        globalThis.UIIdioma?.translatePage?.(sheet);
+                    } catch {
+                        // ignore
+                    }
+
+                    const header = sheet.querySelector(".pt-sheet-header");
+                    if (header) {
+                        const btn = document.createElement("button");
+                        btn.type = "button";
+                        btn.className = "btn-primary";
+                        btn.textContent = tLang("Generar", "Generate");
+                        btn.addEventListener("click", () => {
+                            const objetivo = sheet.querySelector('input[name="objetivo"]:checked')?.value;
+                            const intensidad = sheet.querySelector('input[name="intensidad"]:checked')?.value;
+                            const errEl = sheet.querySelector("[data-pt-alim-error]");
+
+                            const showErr = (msg) => {
+                                if (!errEl) return;
+                                errEl.textContent = msg;
+                                errEl.style.display = "block";
+                            };
+
+                            if (!objetivo) {
+                                showErr(tLang("Seleccioná un objetivo", "Select a goal"));
+                                return;
+                            }
+                            if (!intensidad) {
+                                showErr(tLang("Seleccioná una intensidad", "Select an intensity"));
+                                return;
+                            }
+
+                            try {
+                                btn.disabled = true;
+                            } catch {
+                                // ignore
+                            }
+
+                            safeResolve({ objetivo, intensidad });
+                            closeBottomSheetSafe();
+                        });
+                        header.appendChild(btn);
+                    }
+
+                    const obj = sheet.querySelector(`input[name="objetivo"][value="${CSS.escape(baseObjetivo)}"]`);
+                    const inten = sheet.querySelector(`input[name="intensidad"][value="${CSS.escape(baseIntensidad)}"]`);
+                    if (obj) obj.checked = true;
+                    if (inten) inten.checked = true;
+                },
+                willClose: () => safeResolve(null),
+            });
+        });
+    };
+
+    const bottomSheetAvailable = canUseBottomSheet();
+    let config = bottomSheetAvailable ? ((await askConfig()) || null) : null;
+    if (bottomSheetAvailable && !config) {
+        // Si el usuario cerró el bottom-sheet, no abrir ningún fallback.
+        return;
+    }
+
+    if (!bottomSheetAvailable) {
+        // Sin bottom-sheet disponible: no usar SweetAlert; abortar el flujo.
+        await openStatusSheet({
+            title: tLang("No disponible", "Not available"),
+            ariaLabel: tLang("No disponible", "Not available"),
+            html: `<div class="pt-status"><div class="pt-status-row"><div class="pt-status-text">${escapeHtml(
+                tLang(
+                    "No se pudo abrir el modal de configuración.",
+                    "Could not open the configuration modal."
+                )
+            )}</div></div></div>`,
+            showClose: false,
+        });
+        return;
+    }
+
+    if (!config) return;
+    const { objetivo, intensidad } = config;
 
     // Persistir para regenerar con prefill
     try {
@@ -769,7 +1014,7 @@ const openGenerarPlanAlimentModal = async (planPrevioRaw = null) => {
         // ignore
     }
 
-    await crearPlanAlimentacion(objetivo, intensidad);
+    await crearPlanAlimentacion(objetivo, intensidad, ctx);
 };
 
 const obtenerPerfilBasico = () => {
@@ -826,14 +1071,13 @@ async function recuperar_planes() {
         .maybeSingle();
 
     if (err2) {
-        await sweetalert.fire({
-            title: "Error",
-            text: (isEnglish() ? "Error fetching your plan: " : "Error al obtener tu plan: ") + err2.message,
-            toast: true,
-            position: "top-end",
-            icon: "error",
-            timer: 5000,
-            showConfirmButton: false,
+        await openStatusSheet({
+            title: tLang("Error", "Error"),
+            ariaLabel: tLang("Error", "Error"),
+            html: `<div class="pt-status"><div class="pt-status-row"><div class="pt-status-text">${escapeHtml(
+                (isEnglish() ? "Error fetching your plan: " : "Error al obtener tu plan: ") + err2.message
+            )}</div></div></div>`,
+            showClose: false,
         });
         return;
     }
@@ -842,17 +1086,55 @@ async function recuperar_planes() {
     localStorage.setItem("plan_dieta_usuario", isPlanAlimentacionVacio(plan) ? "Ninguno" : plan);
 }
 
-function verificacion_plan_alimentacion() {
+const resolveId = (root, ...ids) => {
+    const tryCssEscape = (value) => {
+        try {
+            return CSS && typeof CSS.escape === "function" ? CSS.escape(value) : value;
+        } catch {
+            return value;
+        }
+    };
+
+    for (const id of ids.filter(Boolean)) {
+        try {
+            if (root && typeof root.querySelector === "function") {
+                const el = root.querySelector(`#${tryCssEscape(String(id))}`);
+                if (el) return el;
+            }
+        } catch {
+            // ignore
+        }
+        const globalEl = document.getElementById(String(id));
+        if (globalEl) return globalEl;
+    }
+    return null;
+};
+
+const getPlanAlimentacionCtx = (root) => {
+    const scope = root && typeof root.querySelector === "function" ? root : document;
+    return {
+        root: scope,
+        boton: resolveId(scope, "boton_alimentacion"),
+        botonEliminar: resolveId(scope, "boton_eliminar_alim", "boton_eliminar"),
+        botonRegenerar: resolveId(scope, "boton_regenerar_alim", "boton_regenerar"),
+        cont: resolveId(scope, "Plan_alimentacion"),
+        desc: resolveId(scope, "descripcion_previa_alim", "descripcion_previa"),
+    };
+};
+
+const verificacion_plan_alimentacion = (ctx) => {
     const planRaw = localStorage.getItem("plan_dieta_usuario");
-    const boton = document.getElementById("boton_alimentacion");
-    const botonEliminar = document.getElementById("boton_eliminar");
-    const botonRegenerar = document.getElementById("boton_regenerar");
-    const cont = document.getElementById("Plan_alimentacion");
-    const desc = document.getElementById("descripcion_previa");
+    const boton = ctx?.boton;
+    const botonEliminar = ctx?.botonEliminar;
+    const botonRegenerar = ctx?.botonRegenerar;
+    const cont = ctx?.cont;
+    const desc = ctx?.desc;
+    const planActionsPill = ctx?.root?.querySelector?.(".plan-actions-pill") || null;
 
     const hasPlan = !isPlanAlimentacionVacio(planRaw);
 
     if (hasPlan) {
+        planActionsPill?.classList.add("is-pill");
         if (desc) desc.style.display = "none";
         boton?.classList.remove("btn-primary");
         if (boton) {
@@ -863,32 +1145,47 @@ function verificacion_plan_alimentacion() {
         if (botonEliminar) botonEliminar.style.display = "inline-block";
 
         if (boton) {
-            boton.innerHTML = '<img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9ImN1cnJlbnRDb2xvciIgc3Ryb2tlLXdpZHRoPSIyIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiIGNsYXNzPSJsdWNpZGUgbHVjaWRlLXJlZnJlc2gtY2N3LWljb24gbHVjaWRlLXJlZnJlc2gtY2N3Ij48cGF0aCBkPSJNMjEgMTJhOSA5IDAgMCAwLTktOSA5Ljc1IDkuNzUgMCAwIDAtNi43NCAyLjc0TDMgOCIvPjxwYXRoIGQ9Ik0zIDN2NWg1Ii8+PHBhdGggZD0iTTMgMTJhOSA5IDAgMCAwIDkgOSA5Ljc1IDkuNzUgMCAwIDAgNi43NC0yLjc0TDIxIDE2Ii8+PHBhdGggZD0iTTE2IDE2aDV2NSIvPjwvc3ZnPg==">';
-            boton.style.width = "50px";
-            boton.style.height = "50px";
+            boton.innerHTML = '<img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiNmZmZmZmYiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIiBjbGFzcz0ibHVjaWRlIGx1Y2lkZS1yb3RhdGUtY3ctaWNvbiBsdWNpZGUtcm90YXRlLWN3Ij48cGF0aCBkPSJNMjEgMTJhOSA5IDAgMSAxLTktOWMyLjUyIDAgNC45MyAxIDYuNzQgMi43NEwyMSA4Ii8+PHBhdGggZD0iTTIxIDN2NWgtNSIvPjwvc3ZnPg==">';
+            boton.classList.add("btn-icon-sm");
+            boton.style.width = "";
+            boton.style.height = "";
             boton.setAttribute("aria-label", "Refrescar plan de alimentación");
             boton.setAttribute("data-i18n-en-aria-label", "Refresh meal plan");
             try { globalThis.UIIdioma?.translatePage?.(boton); } catch { }
             boton.onclick = async () => {
                 await recuperar_planes();
-                sweetalert.fire({
+                await openStatusSheet({
                     title: tLang("Plan de alimentación actualizado", "Meal plan updated"),
-                    text: tLang("Tu plan de alimentación ha sido refrescado correctamente.", "Your meal plan has been refreshed successfully."),
-                    icon: 'success',
-                    toast: true,
-                    position: 'top-end',
-                    showConfirmButton: false,
-                    timer: 3000
+                    ariaLabel: tLang("Plan de alimentación actualizado", "Meal plan updated"),
+                    html: `<div class="pt-status"><div class="pt-status-row"><div class="pt-status-text">${escapeHtml(
+                        tLang(
+                            "Tu plan de alimentación ha sido refrescado correctamente.",
+                            "Your meal plan has been refreshed successfully."
+                        )
+                    )}</div></div><div class="pt-status-actions"><button type="button" class="btn-primary" data-pt-sheet-close>${escapeHtml(
+                        tLang("Listo", "Done")
+                    )}</button></div></div>`,
+                    showClose: false,
+                    didOpen: (sheet) => {
+                        sheet.querySelector("[data-pt-sheet-close]")?.addEventListener("click", () => closeModalSafe());
+                        try {
+                            globalThis.UIIdioma?.translatePage?.(sheet);
+                        } catch {
+                            // ignore
+                        }
+                    },
                 });
             };
         }
     } else {
+        planActionsPill?.classList.remove("is-pill");
         if (desc) desc.style.display = "block";
         if (botonEliminar) botonEliminar.style.display = "none";
         if (botonRegenerar) botonRegenerar.style.display = "none";
 
         if (boton) {
             boton?.classList.add("btn-primary");
+            boton?.classList.remove("btn-icon-sm");
             boton.textContent = "Generar plan";
             boton.setAttribute("data-i18n-en", "Generate plan");
             boton.setAttribute("aria-label", "Generar plan de alimentación");
@@ -897,7 +1194,7 @@ function verificacion_plan_alimentacion() {
             boton.style.width = "auto";
             boton.style.height = "auto";
             boton.onclick = async () => {
-                await openGenerarPlanAlimentModal();
+                await openGenerarPlanAlimentModal(ctx);
             };
         }
     }
@@ -907,22 +1204,26 @@ function verificacion_plan_alimentacion() {
             cont.innerHTML = mapear_plan_alimentacion(planRaw);
             try { globalThis.UIIdioma?.translatePage?.(cont); } catch { }
             cont.style.display = "block";
-            initDetallePorDiaPlanAliment();
-            initPlanDiaPagerAliment();
+            initDetallePorDiaPlanAliment(cont);
+            initPlanDiaPagerAliment(cont);
         } else {
             cont.innerHTML = "";
             cont.style.display = "none";
         }
     }
-}
+};
 
-async function crearPlanAlimentacion(objetivo, intensidad) {
+async function crearPlanAlimentacion(objetivo, intensidad, ctx) {
     const { data, error } = await supabase.auth.getUser();
     if (error || !data?.user) {
-        await sweetalert.fire({
+        await openStatusSheet({
             title: tLang("Sesión requerida", "Session required"),
-            text: tLang("Tenés que iniciar sesión para generar tu plan.", "You must be logged in to generate your plan."),
-            icon: "info",
+            ariaLabel: tLang("Sesión requerida", "Session required"),
+            html: `<div class="pt-status"><div class="pt-status-row"><div class="pt-status-text">${escapeHtml(tLang(
+                "Tenés que iniciar sesión para generar tu plan.",
+                "You must be logged in to generate your plan."
+            ))}</div></div></div>`,
+            showClose: false,
         });
         return;
     }
@@ -930,27 +1231,23 @@ async function crearPlanAlimentacion(objetivo, intensidad) {
 
     const perfil = obtenerPerfilBasico();
     if (!perfil.Altura || !perfil.Peso_actual || !perfil.Peso_objetivo || !perfil.Edad) {
-        await sweetalert.fire({
+        await openStatusSheet({
             title: tLang("Perfil incompleto", "Incomplete profile"),
-            text: tLang(
+            ariaLabel: tLang("Perfil incompleto", "Incomplete profile"),
+            html: `<div class="pt-status"><div class="pt-status-row"><div class="pt-status-text">${escapeHtml(tLang(
                 "Completá tu perfil (edad, altura, peso actual y objetivo) para generar el plan.",
                 "Complete your profile (age, height, current weight, and goal) to generate the plan."
-            ),
-            icon: "warning",
+            ))}</div></div></div>`,
+            showClose: false,
         });
         return;
     }
 
-    sweetalert.fire({
+    const stopLoading = showBlockingLoading({
         title: tLang("Generando Plan", "Generating plan"),
         text: isEnglish()
             ? `Goal: ${objetivo} | Intensity: ${intensidad}. Please wait...`
             : `Objetivo: ${objetivo} | Intensidad: ${intensidad}. Por favor, esperá...`,
-        icon: "info",
-        allowOutsideClick: false,
-        allowEscapeKey: false,
-        showConfirmButton: false,
-        didOpen: () => sweetalert.showLoading(),
     });
 
     let planAlimentaObj;
@@ -962,12 +1259,15 @@ async function crearPlanAlimentacion(objetivo, intensidad) {
             ...perfil,
         });
     } catch (err) {
-        await sweetalert.fire({
-            title: "Error",
-            text:
+        stopLoading();
+        await openStatusSheet({
+            title: tLang("Error", "Error"),
+            ariaLabel: tLang("Error", "Error"),
+            html: `<div class="pt-status"><div class="pt-status-row"><div class="pt-status-text">${escapeHtml(
                 (isEnglish() ? "Could not generate the plan with AI: " : "No se pudo generar el plan con IA: ") +
-                (err?.message || String(err)),
-            icon: "error",
+                (err?.message || String(err))
+            )}</div></div></div>`,
+            showClose: false,
         });
         return;
     }
@@ -988,15 +1288,20 @@ async function crearPlanAlimentacion(objetivo, intensidad) {
         });
         bodyText = await response.text();
     } catch (err) {
-        await sweetalert.fire({
-            title: "Error",
-            text: (isEnglish() ? "Could not contact the server: " : "No se pudo contactar al servidor: ") + (err?.message || String(err)),
-            icon: "error",
+        stopLoading();
+        await openStatusSheet({
+            title: tLang("Error", "Error"),
+            ariaLabel: tLang("Error", "Error"),
+            html: `<div class="pt-status"><div class="pt-status-row"><div class="pt-status-text">${escapeHtml(
+                (isEnglish() ? "Could not contact the server: " : "No se pudo contactar al servidor: ") + (err?.message || String(err))
+            )}</div></div></div>`,
+            showClose: false,
         });
         return;
     }
 
     if (!response.ok) {
+        stopLoading();
         if (isNetlifyEdgeUncaughtInvocation(bodyText)) {
             await showNetlifyHostingErrorAlert({
                 endpoint: "/generar_plan_alimentacion",
@@ -1015,10 +1320,13 @@ async function crearPlanAlimentacion(objetivo, intensidad) {
             // ignore
         }
 
-        await sweetalert.fire({
-            title: "Error",
-            text: (isEnglish() ? "Could not generate the plan: " : "No se pudo generar el plan: ") + String(msg).slice(0, 240),
-            icon: "error",
+        await openStatusSheet({
+            title: tLang("Error", "Error"),
+            ariaLabel: tLang("Error", "Error"),
+            html: `<div class="pt-status"><div class="pt-status-row"><div class="pt-status-text">${escapeHtml(
+                (isEnglish() ? "Could not generate the plan: " : "No se pudo generar el plan: ") + String(msg).slice(0, 240)
+            )}</div></div></div>`,
+            showClose: false,
         });
         return;
     }
@@ -1032,24 +1340,42 @@ async function crearPlanAlimentacion(objetivo, intensidad) {
 
     const plan = dataJson?.plan_alimenta;
     if (!plan) {
-        await sweetalert.fire({
-            title: "Error",
-            text: tLang("El servidor respondió sin plan.", "The server responded without a plan."),
-            icon: "error",
+        stopLoading();
+        await openStatusSheet({
+            title: tLang("Error", "Error"),
+            ariaLabel: tLang("Error", "Error"),
+            html: `<div class="pt-status"><div class="pt-status-row"><div class="pt-status-text">${escapeHtml(
+                tLang("El servidor respondió sin plan.", "The server responded without a plan.")
+            )}</div></div></div>`,
+            showClose: false,
         });
         return;
     }
 
+    stopLoading();
+
     localStorage.setItem("plan_dieta_usuario", plan);
     await recuperar_planes();
-    verificacion_plan_alimentacion();
+    verificacion_plan_alimentacion(ctx ?? getPlanAlimentacionCtx(document.getElementById("Alimentacion") || document));
 
-    await sweetalert.fire({
+    await openStatusSheet({
         title: tLang("¡Plan Generado!", "Plan generated!"),
-        text: tLang("Tu plan de alimentación se creó correctamente.", "Your meal plan was created successfully."),
-        icon: "success",
-        timer: 3500,
-        showConfirmButton: false,
+        ariaLabel: tLang("¡Plan Generado!", "Plan generated!"),
+        html: `<div class="pt-status"><div class="pt-status-row"><div class="pt-status-text">${escapeHtml(
+            tLang("Tu plan de alimentación se creó correctamente.", "Your meal plan was created successfully.")
+        )}</div></div><div class="pt-status-actions"><button type="button" class="btn-primary" data-pt-sheet-close>${escapeHtml(
+            tLang("Listo", "Done")
+        )}</button></div></div>`,
+        showClose: false,
+        showHandle: true,
+        didOpen: (sheet) => {
+            sheet.querySelector("[data-pt-sheet-close]")?.addEventListener("click", () => closeModalSafe());
+            try {
+                globalThis.UIIdioma?.translatePage?.(sheet);
+            } catch {
+                // ignore
+            }
+        },
     });
 }
 
@@ -1109,112 +1435,121 @@ async function actualizar_cambios_plan_alimentacion(planValue) {
     }
 }
 
-const bindUiHandlers = () => {
-    document.getElementById("boton_eliminar")?.addEventListener("click", async () => {
-        const confirmResult = await sweetalert.fire({
+const bindUiHandlers = (ctx) => {
+    const root = ctx?.root;
+    if (root && root.dataset && root.dataset.planAlimentHandlersInit === "1") return;
+    if (root && root.dataset) root.dataset.planAlimentHandlersInit = "1";
+
+    ctx?.botonEliminar?.addEventListener("click", async () => {
+        const ok = await openConfirmSheet({
             title: tLang("¿Estás seguro?", "Are you sure?"),
-            text: tLang("Esta acción eliminará tu plan de alimentación actual.", "This action will delete your current meal plan."),
-            icon: "warning",
-            showCancelButton: true,
-            confirmButtonText: tLang("Sí, eliminar", "Yes, delete"),
-            cancelButtonText: tLang("Cancelar", "Cancel"),
-            customClass: {
-                popup: "dashboard-swal",
-                confirmButton: "dashboard-swal-confirm",
-                cancelButton: "dashboard-swal-cancel",
-            },
+            message: tLang("Esta acción eliminará tu plan de alimentación actual.", "This action will delete your current meal plan."),
+            confirmText: tLang("Sí, eliminar", "Yes, delete"),
         });
-        if (!confirmResult.isConfirmed) return;
+        if (!ok) return;
 
         try {
             localStorage.setItem("plan_dieta_usuario", "Ninguno");
             await actualizar_cambios_plan_alimentacion("Ninguno");
-            verificacion_plan_alimentacion();
-            await sweetalert.fire({
+            verificacion_plan_alimentacion(ctx);
+            await openStatusSheet({
                 title: tLang("Plan eliminado", "Plan deleted"),
-                text: tLang("Tu plan de alimentación ha sido eliminado.", "Your meal plan has been deleted."),
-                icon: "success",
-                toast: true,
-                position: "top-end",
-                showConfirmButton: false,
-                timer: 3000,
+                ariaLabel: tLang("Plan eliminado", "Plan deleted"),
+                html: `<div class="pt-status"><div class="pt-status-row"><div class="pt-status-text">${escapeHtml(
+                    tLang("Tu plan de alimentación ha sido eliminado.", "Your meal plan has been deleted.")
+                )}</div></div><div class="pt-status-actions"><button type="button" class="btn-primary" data-pt-sheet-close>${escapeHtml(
+                    tLang("Listo", "Done")
+                )}</button></div></div>`,
+                showClose: false,
+                didOpen: (sheet) => {
+                    sheet.querySelector("[data-pt-sheet-close]")?.addEventListener("click", () => closeModalSafe());
+                },
             });
         } catch (e) {
-            await sweetalert.fire({
-                title: "Error",
-                text: (isEnglish() ? "Could not delete: " : "No se pudo eliminar: ") + (e?.message || String(e)),
-                icon: "error",
+            await openStatusSheet({
+                title: tLang("Error", "Error"),
+                ariaLabel: tLang("Error", "Error"),
+                html: `<div class="pt-status"><div class="pt-status-row"><div class="pt-status-text">${escapeHtml(
+                    (isEnglish() ? "Could not delete: " : "No se pudo eliminar: ") + (e?.message || String(e))
+                )}</div></div></div>`,
+                showClose: false,
             });
         }
     });
 
-    document.getElementById("boton_regenerar")?.addEventListener("click", async () => {
-        const result = await sweetalert.fire({
+    ctx?.botonRegenerar?.addEventListener("click", async () => {
+        const ok = await openConfirmSheet({
             title: tLang("Regenerar plan de alimentación", "Regenerate meal plan"),
-            text: tLang(
+            message: tLang(
                 "Se eliminará el plan actual y se generará uno nuevo basado en tu configuración previa.",
                 "The current plan will be deleted and a new one will be generated based on your previous settings."
             ),
-            icon: "info",
-            showCancelButton: true,
-            confirmButtonText: tLang("Sí, regenerar", "Yes, regenerate"),
-            cancelButtonText: tLang("Cancelar", "Cancel"),
-            customClass: {
-                popup: "dashboard-swal",
-                confirmButton: "dashboard-swal-confirm",
-                cancelButton: "dashboard-swal-cancel",
-            },
+            confirmText: tLang("Sí, regenerar", "Yes, regenerate"),
         });
-        if (!result.isConfirmed) return;
+        if (!ok) return;
 
         try {
             localStorage.setItem("plan_dieta_usuario", "Ninguno");
             await actualizar_cambios_plan_alimentacion("Ninguno");
-            verificacion_plan_alimentacion();
-            await openGenerarPlanAlimentModal(null);
+            verificacion_plan_alimentacion(ctx);
+            await openGenerarPlanAlimentModal(ctx, null);
         } catch (e) {
-            await sweetalert.fire({
-                title: "Error",
-                text: (isEnglish() ? "Could not regenerate: " : "No se pudo regenerar: ") + (e?.message || String(e)),
-                icon: "error",
+            await openStatusSheet({
+                title: tLang("Error", "Error"),
+                ariaLabel: tLang("Error", "Error"),
+                html: `<div class="pt-status"><div class="pt-status-row"><div class="pt-status-text">${escapeHtml(
+                    (isEnglish() ? "Could not regenerate: " : "No se pudo regenerar: ") + (e?.message || String(e))
+                )}</div></div></div>`,
+                showClose: false,
             });
         }
     });
 };
 
-// Boot
-if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", initFixedChromeObservers, { once: true });
-} else {
-    initFixedChromeObservers();
-}
+const domReady = () =>
+    new Promise((resolve) => {
+        if (document.readyState === "loading") {
+            document.addEventListener("DOMContentLoaded", () => resolve(), { once: true });
+        } else {
+            resolve();
+        }
+    });
 
-window.onload = async () => {
-    if (username) {
-        sweetalert.fire({
-            title: isEnglish() ? `Welcome back, ${username}!` : `Bienvenido de nuevo, ${username}!`,
-            icon: "success",
-            toast: true,
-            position: "top-end",
-            showConfirmButton: false,
-            timer: 3000,
-        });
+export const initPlanAlimentacion = async ({ root = null, skipRecuperarPlanes = false, autofocus = false } = {}) => {
+    await domReady();
+
+    try {
+        const key = "ptFixedChromeObserversInit";
+        if (document.documentElement?.dataset?.[key] !== "1") {
+            document.documentElement.dataset[key] = "1";
+            initFixedChromeObservers();
+        }
+    } catch {
+        initFixedChromeObservers();
     }
 
-    const userEl = document.getElementById("username");
-    const avatarEl = document.getElementById("icono_usuario");
-    if (userEl) userEl.textContent = username || "";
-    if (avatarEl && avatar) avatarEl.src = avatar;
+    const rootEl = root || document.getElementById("Alimentacion") || document;
+    const ctx = getPlanAlimentacionCtx(rootEl);
+    bindUiHandlers(ctx);
 
-    const userSidebarEl = document.getElementById("username_sidebar");
-    const avatarSidebarEl = document.getElementById("icono_usuario_sidebar");
-    if (userSidebarEl) userSidebarEl.textContent = username || "";
-    if (avatarSidebarEl && avatar) avatarSidebarEl.src = avatar;
+    if (!skipRecuperarPlanes) {
+        await recuperar_planes();
+    }
 
-    bindUiHandlers();
-    await recuperar_planes();
-    verificacion_plan_alimentacion();
+    verificacion_plan_alimentacion(ctx);
 
-    // Al cargar: llevar el foco al contenedor del plan de alimentación.
-    autofocusPlanAlimentacionOncePerSession();
+    if (autofocus) {
+        autofocusPlanAlimentacionOncePerSession(ctx.cont);
+    }
+
+    return ctx;
 };
+
+// Auto-init solo en la página dedicada (evita colisionar con Dashboard)
+try {
+    if (document.body?.dataset?.ptPage === "alimentacion") {
+        void initPlanAlimentacion({ autofocus: true });
+    }
+} catch {
+    // ignore
+}

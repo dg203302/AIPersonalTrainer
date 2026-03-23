@@ -27,10 +27,8 @@ const showNetlifyHostingErrorAlert = async ({ endpoint, status, statusText, body
 	const safeStatusText = String(statusText ?? "").trim() || "";
 	const safeBody = String(bodyText ?? "").trim();
 
-	await swal.fire({
-		icon: "error",
-		title: "Error del servidor",
-		html: `
+	const contentHtml = `
+		<div class="server-error-swal">
 			<div class="server-error">
 				<div class="server-error__hero">${escapeHtml(NETLIFY_EDGE_UNCAUGHT)}</div>
 				<div class="server-error__meta">
@@ -42,15 +40,57 @@ const showNetlifyHostingErrorAlert = async ({ endpoint, status, statusText, body
 					Este es un error del servidor de hosting (<strong>Netlify</strong>). Por favor, aguardá unos minutos e intentá nuevamente cuando se restaure el servicio.
 				</p>
 			</div>
-		`,
-		allowOutsideClick: false,
-		allowEscapeKey: true,
-		confirmButtonText: "Entendido",
-		customClass: {
-			popup: "perfil-swal server-error-swal",
-			confirmButton: "perfil-swal-confirm",
-		},
-	});
+		</div>
+		<div class="pt-status-actions">
+			<button type="button" class="btn-primary" data-pt-close>Entendido</button>
+		</div>
+	`;
+
+	try {
+		const canUseSheet = !!window.PTBottomSheet && typeof window.PTBottomSheet.open === "function";
+		if (canUseSheet) {
+			await window.PTBottomSheet.open({
+				title: "Error del servidor",
+				ariaLabel: "Error del servidor",
+				html: contentHtml,
+				showClose: false,
+				showHandle: true,
+				allowOutsideClose: true,
+				allowEscapeClose: true,
+				allowDragClose: true,
+				didOpen: (sheet) => {
+					try {
+						window.UIIdioma?.translatePage?.(sheet);
+					} catch {
+						// ignore
+					}
+					sheet.querySelector("[data-pt-close]")?.addEventListener("click", () => {
+						try {
+							window.PTBottomSheet?.close?.();
+						} catch {
+							// ignore
+						}
+					});
+				},
+			});
+			return;
+		}
+	} catch {
+		// ignore
+	}
+
+	try {
+		const fallbackText = [
+			"Error del servidor",
+			`${NETLIFY_EDGE_UNCAUGHT}`,
+			`Endpoint: ${safeEndpoint}`,
+			`HTTP: ${safeStatus}${safeStatusText ? ` (${safeStatusText})` : ""}`,
+			safeBody ? `\n${safeBody.slice(0, 800)}` : "",
+		].filter(Boolean).join("\n");
+		window.alert(fallbackText);
+	} catch {
+		// ignore
+	}
 };
 
 const WHEEL_ITEM_HEIGHT = 44;
@@ -205,6 +245,120 @@ const initPesoWheelInPopup = (popupEl, { mode, currentPesoAct, currentPesoObj })
 		values: weights,
 		format: (kg) => `${kg} kg`,
 		initialValue: safeAct,
+	});
+};
+
+const canUseBottomSheet = () => {
+	try {
+		return !!window.PTBottomSheet && typeof window.PTBottomSheet.open === "function";
+	} catch {
+		return false;
+	}
+};
+
+const closeBottomSheetSafe = () => {
+	try {
+		window.PTBottomSheet?.close?.();
+	} catch {
+		// ignore
+	}
+};
+
+const openStatusSheet = async ({ title, message } = {}) => {
+	const safeTitle = String(title || "");
+	const safeMessage = String(message || "");
+
+	if (canUseBottomSheet()) {
+		await window.PTBottomSheet.open({
+			title: safeTitle,
+			ariaLabel: safeTitle,
+			html: `
+				<div class="pt-status">
+					<div class="pt-status-row">
+						<div class="pt-status-text">${escapeHtml(safeMessage)}</div>
+					</div>
+					<div class="pt-status-actions">
+						<button type="button" class="btn-primary" data-pt-close>Listo</button>
+					</div>
+				</div>
+			`,
+			showClose: false,
+			showHandle: true,
+			allowOutsideClose: true,
+			allowEscapeClose: true,
+			allowDragClose: true,
+			didOpen: (sheet) => {
+				try {
+					window.UIIdioma?.translatePage?.(sheet);
+				} catch {
+					// ignore
+				}
+				sheet.querySelector("[data-pt-close]")?.addEventListener("click", () => closeBottomSheetSafe());
+			},
+		});
+		return;
+	}
+
+	try {
+		const msg = [safeTitle, safeMessage].filter(Boolean).join("\n\n");
+		if (msg) window.alert(msg);
+	} catch {
+		// ignore
+	}
+};
+
+const openConfirmSheet = async ({ title, message, confirmText, cancelText } = {}) => {
+	const safeTitle = String(title || "Confirmar");
+	const safeMessage = String(message || "");
+	const okText = String(confirmText || "Aceptar");
+
+	if (!canUseBottomSheet()) {
+		try {
+			return window.confirm([safeTitle, safeMessage].filter(Boolean).join("\n\n"));
+		} catch {
+			return false;
+		}
+	}
+
+	return await new Promise((resolve) => {
+		let resolved = false;
+		const safeResolve = (v) => {
+			if (resolved) return;
+			resolved = true;
+			resolve(!!v);
+		};
+
+		void window.PTBottomSheet.open({
+			title: safeTitle,
+			ariaLabel: safeTitle,
+			html: `
+				<div class="pt-status">
+					<div class="pt-status-row">
+						<div class="pt-status-text">${escapeHtml(safeMessage)}</div>
+					</div>
+					<div class="pt-status-actions">
+						<button type="button" class="btn-primary" data-pt-confirm>${escapeHtml(okText)}</button>
+					</div>
+				</div>
+			`,
+			showClose: false,
+			showHandle: true,
+			allowOutsideClose: true,
+			allowEscapeClose: true,
+			allowDragClose: true,
+			didOpen: (sheet) => {
+				try {
+					window.UIIdioma?.translatePage?.(sheet);
+				} catch {
+					// ignore
+				}
+				sheet.querySelector("[data-pt-confirm]")?.addEventListener("click", () => {
+					safeResolve(true);
+					closeBottomSheetSafe();
+				});
+			},
+			willClose: () => safeResolve(false),
+		});
 	});
 };
 
@@ -603,21 +757,14 @@ document.getElementById("eliminar_cuenta").addEventListener("click", async () =>
 })
 
 async function EliminarPerfil(){
-	const result = await swal.fire({
-		title: '¿Estás seguro?',
-		text: "Esta acción no se puede deshacer. Se eliminará toda tu información.",
-		icon: 'warning',
-		showCancelButton: true,
-		confirmButtonText: 'Sí, eliminar mi cuenta',
-		cancelButtonText: 'Cancelar',
-		customClass: {
-			popup: 'perfil-swal',
-			confirmButton: 'perfil-swal-confirm',
-			cancelButton: 'perfil-swal-cancel',
-		},
+	const ok = await openConfirmSheet({
+		title: "¿Estás seguro?",
+		message: "Esta acción no se puede deshacer. Se eliminará toda tu información.",
+		confirmText: "Sí, eliminar mi cuenta",
+		cancelText: "Cancelar",
 	});
 
-	if (!result.isConfirmed) return;
+	if (!ok) return;
 
 	let response;
 	try {
@@ -627,14 +774,9 @@ async function EliminarPerfil(){
 			body: JSON.stringify({ id_usuario: id_usuario }),
 		});
 	} catch (e) {
-		await swal.fire({
-			icon: 'error',
-			title: 'Error',
-			text: 'No se pudo conectar con el servidor. Intentá nuevamente.',
-			customClass: {
-				popup: 'perfil-swal',
-				confirmButton: 'perfil-swal-confirm',
-			},
+		await openStatusSheet({
+			title: "Error",
+			message: "No se pudo conectar con el servidor. Intentá nuevamente.",
 		});
 		return;
 	}
@@ -659,32 +801,23 @@ async function EliminarPerfil(){
 
 		let payload = {};
 		try { payload = JSON.parse(bodyText || "{}"); } catch { payload = {}; }
-		await swal.fire({
-			icon: 'error',
-			title: 'Error al eliminar',
-			text: payload?.error ? String(payload.error) : 'No se pudo eliminar la cuenta. Intentá nuevamente.',
-			customClass: {
-				popup: 'perfil-swal',
-				confirmButton: 'perfil-swal-confirm',
-			},
+		await openStatusSheet({
+			title: "Error al eliminar",
+			message: payload?.error ? String(payload.error) : "No se pudo eliminar la cuenta. Intentá nuevamente.",
 		});
 		return;
 	}
 
-	await swal.fire({
-		icon: 'success',
-		title: 'Cuenta eliminada',
-		text: 'Tu cuenta ha sido eliminada correctamente.',
-		toast: true,
-		position: 'top-end',
-		showConfirmButton: false,
-		timer: 2500,
-		timerProgressBar: true,
+	await openStatusSheet({
+		title: "Cuenta eliminada",
+		message: "Tu cuenta ha sido eliminada correctamente.",
 	});
 
-	setTimeout(async () => {
+	try {
 		await logout();
-	}, 800);
+	} catch {
+		// ignore
+	}
 }
 
 async function subirCambiosPerfil(){
@@ -702,14 +835,9 @@ async function subirCambiosPerfil(){
 		});
 	} catch (e) {
 		console.log("[EdgeFunction:/cargar_cambios_perfil] Error de red:", e);
-		await swal.fire({
-			icon: 'error',
+		await openStatusSheet({
 			title: 'Error',
-			text: 'No se pudo conectar con el servidor. Intentá nuevamente.',
-			customClass: {
-				popup: 'perfil-swal',
-				confirmButton: 'perfil-swal-confirm',
-			},
+			message: 'No se pudo conectar con el servidor. Intentá nuevamente.',
 		});
 		return;
 	}
@@ -719,15 +847,9 @@ async function subirCambiosPerfil(){
 	try { result = JSON.parse(bodyText || "{}"); } catch { result = {}; }
 
 	if (response.ok) {
-		swal.fire({
-			icon: 'success',
+		await openStatusSheet({
 			title: 'Cambios guardados',
-			text: 'Tu perfil ha sido actualizado correctamente.',
-			toast: true,
-			position: 'top-end',
-			showConfirmButton: false,
-			timer: 2000,
-			timerProgressBar: true,
+			message: 'Tu perfil ha sido actualizado correctamente.',
 		});
 		console.log("Cambios de perfil subidos correctamente:", result);
 	} else {
