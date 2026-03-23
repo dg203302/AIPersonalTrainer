@@ -167,6 +167,17 @@ const scrollToWithFixedHeader = (el, { behavior = "auto" } = {}) => {
     window.scrollTo({ top: Math.max(0, top), behavior });
 };
 
+const ensureSwipePageVisible = (pageEl, { behavior = "auto" } = {}) => {
+    try {
+        const swipe = document.getElementById("pt-plan-swipe");
+        if (!swipe || !pageEl) return;
+        if (!swipe.contains(pageEl)) return;
+        swipe.scrollTo({ left: pageEl.offsetLeft, behavior });
+    } catch {
+        // ignore
+    }
+};
+
 const focusPlanEntrenoContainer = ({ behavior = "auto" } = {}) => {
     const plan = document.getElementById("Plan_ejercicio");
     const section = document.getElementById("Ejercicios");
@@ -174,6 +185,9 @@ const focusPlanEntrenoContainer = ({ behavior = "auto" } = {}) => {
 
     const target = visiblePlan ? plan : (section || plan);
     if (!target) return;
+
+    // Si el dashboard está en modo swipe horizontal, asegurar que se vea Entreno.
+    ensureSwipePageVisible(section, { behavior });
 
     scrollToWithFixedHeader(target, { behavior });
     if (typeof target.focus === "function") {

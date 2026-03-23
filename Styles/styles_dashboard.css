@@ -677,6 +677,33 @@ main {
 	gap: 14px;
 }
 
+/* Swipe horizontal: Entreno <-> Alimentación */
+.pt-plan-swipe {
+	display: flex;
+	flex-direction: row;
+	overflow-x: auto;
+	overflow-y: visible;
+	scroll-snap-type: x mandatory;
+	scroll-snap-stop: always;
+	-webkit-overflow-scrolling: touch;
+	overscroll-behavior-x: contain;
+	gap: 0;
+	max-width: 100%;
+
+	/* ocultar scrollbar */
+	scrollbar-width: none;
+}
+
+.pt-plan-swipe::-webkit-scrollbar {
+	display: none;
+}
+
+.pt-plan-page {
+	flex: 0 0 100%;
+	scroll-snap-align: start;
+	min-width: 100%;
+}
+
 section {
 	border-radius: var(--radius-xl);
 	border: 1px solid var(--stroke2);
