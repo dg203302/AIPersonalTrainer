@@ -79,6 +79,11 @@ body::before {
 			transparent 58%
 		),
 		radial-gradient(
+			circle at 78% 22%,
+			color-mix(in srgb, var(--accent2) 26%, transparent) 0%,
+			transparent 55%
+		),
+		radial-gradient(
 			circle at 70% 65%,
 			color-mix(in srgb, var(--accent) 28%, transparent) 0%,
 			transparent 62%
