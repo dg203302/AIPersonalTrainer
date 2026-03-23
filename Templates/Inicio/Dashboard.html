@@ -7,47 +7,46 @@
     <script src="/Scripts/ui_idioma.js"></script>
     <link rel="stylesheet" href="/Styles/styles_dashboard.css">
     <meta name="theme-color" content="#0A1226">
-    <title data-i18n-en="Training plan">Plan de Entreno</title>
+    <title data-i18n-en="Home">Inicio</title>
 </head>
 <body>
     <header>
         <div id="textos">
-            <h1 data-i18n-en="Training plan">Plan de Entreno</h1>
+            <h1 data-i18n-en="Home">Inicio</h1>
             <h2>Personal TrAIner</h2>
         </div>
 
         <a id="usuario" class="header-user-link" href="/Templates/Inicio/perfil_usuario.html" aria-label="Ir a Perfil" data-i18n-en-aria-label="Go to profile">
-            <img src="https://www.gravatar.com/avatar/00000000000000000000000000000000?d=mp&f=y" alt="avatar" id="icono_usuario">
             <div class="header-user-text">
-                <h2 id="username">...</h2>
-                <span class="header-user-sub" data-i18n-en="Profile">Perfil</span>
+                <h2 id="welcome_msg">...</h2>
+                <span id="username" class="header-user-sub">...</span>
             </div>
+            <img src="https://www.gravatar.com/avatar/00000000000000000000000000000000?d=mp&f=y" alt="avatar" id="icono_usuario">
         </a>
 
     </header>
     <main>
-        <div id="anuncios">
-            <div id="container-2c37d5b5e17e64db7572dcb96935e91c"></div>
-        </div>
         <section id="Ejercicios" tabindex="-1">
-            <h1 style="text-align: center;" data-i18n-en="Training plan">Plan de Entreno</h1>
             <div id="botones_accion">
+                <div class="plan-topbar">
+                    <h1 class="plan-title" data-i18n-en="Training plan">Plan de Entreno</h1>
+                    <div class="plan-actions-pill" role="group" aria-label="Acciones del plan" data-i18n-en-aria-label="Plan actions">
+                        <button id="boton_ejercicios">...</button>
+                        <button id="boton_regenerar" class="btn-icon-sm" style="display: none;"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiNmZmZmZmYiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIiBjbGFzcz0ibHVjaWRlIGx1Y2lkZS1yZWRvLWljb24gbHVjaWRlLXJlZG8iPjxwYXRoIGQ9Ik0yMSA3djZoLTYiLz48cGF0aCBkPSJNMyAxN2E5IDkgMCAwIDEgOS05IDkgOSAwIDAgMSA2IDIuM2wzIDIuNyIvPjwvc3ZnPg==" alt="rehacer" data-i18n-en-alt="redo"></button>
+                        <button id="boton_eliminar" class="btn-icon-sm" style="display: none;"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiNmZmZmZmYiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIiBjbGFzcz0ibHVjaWRlIGx1Y2lkZS10cmFzaDItaWNvbiBsdWNpZGUtdHJhc2gtMiI+PHBhdGggZD0iTTEwIDExdjYiLz48cGF0aCBkPSJNMTQgMTF2NiIvPjxwYXRoIGQ9Ik0xOSA2djE0YTIgMiAwIDAgMS0yIDJIN2EyIDIgMCAwIDEtMi0yVjYiLz48cGF0aCBkPSJNMyA2aDE4Ii8+PHBhdGggZD0iTTggNlY0YTIgMiAwIDAgMSAyLTJoNGEyIDIgMCAwIDEgMiAydjIiLz48L3N2Zz4=" alt="eliminar" data-i18n-en-alt="delete"></button>
+                    </div>
+                </div>
+
                 <p id="descripcion_previa" class="descripcion_previa" style="display: none;" data-i18n-en="Here you can generate a personalized workout plan (weekly routine) with exercises, sets/reps, rest times, and suggested progression. To build it, we consider where you train (home or gym), your main goal (fat loss or muscle gain), and your basic data (age, height, current weight, and target weight).">
                     Acá vas a poder generar un plan de entrenamiento personalizado (rutina semanal) con ejercicios, series/repeticiones, descansos y una progresión sugerida.
                     Para armarlo se tiene en cuenta dónde entrenás (en casa o en gimnasio), tu objetivo principal (priorizar pérdida de grasa o ganancia muscular) y tus datos básicos (edad, altura, peso actual y peso objetivo).
                 </p>
-                <div style="display: flex;flex-direction: row;gap: 10px;justify-content: space-between;width: 100%;">
-                    <button id="boton_ejercicios">...</button>
-                    <div style="display: flex;flex-direction: row;gap: 10px;">
-                        <button id="boton_regenerar" style="display: none;"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9ImN1cnJlbnRDb2xvciIgc3Ryb2tlLXdpZHRoPSIyIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiIGNsYXNzPSJsdWNpZGUgbHVjaWRlLXJlZG8tZG90LWljb24gbHVjaWRlLXJlZG8tZG90Ij48Y2lyY2xlIGN4PSIxMiIgY3k9IjE3IiByPSIxIi8+PHBhdGggZD0iTTIxIDd2NmgtNiIvPjxwYXRoIGQ9Ik0zIDE3YTkgOSAwIDAgMSA5LTkgOSA5IDAgMCAxIDYgMi4zbDMgMi43Ii8+PC9zdmc+" alt="rehacer" data-i18n-en-alt="redo"></button>
-                        <button id="boton_eliminar" style="display: none;"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9ImN1cnJlbnRDb2xvciIgc3Ryb2tlLXdpZHRoPSIyIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiIGNsYXNzPSJsdWNpZGUgbHVjaWRlLXRyYXNoLWljb24gbHVjaWRlLXRyYXNoIj48cGF0aCBkPSJNMTkgNnYxNGEyIDIgMCAwIDEtMiAySDdhMiAyIDAgMCAxLTItMlY2Ii8+PHBhdGggZD0iTTMgNmgxOCIvPjxwYXRoIGQ9Ik04IDZWNGEyIDIgMCAwIDEgMi0yaDRhMiAyIDAgMCAxIDIgMnYyIi8+PC9zdmc+" alt="eliminar" data-i18n-en-alt="delete"></button>
-                    </div>
-                </div>
                 </div>
                 <div id="Plan_ejercicio" tabindex="-1" style="display: none;">
                 </div>
             </section>
             <div id="anuncios">
+                <div id="container-2c37d5b5e17e64db7572dcb96935e91c"></div>
                 <script>
                     atOptions = {
                     'key' : '15c5aed1499ba419f76aaf81e43f8e18',
@@ -62,20 +61,35 @@
     </main>
     <footer>
         <nav class="footer-nav" aria-label="Navegación inferior" data-i18n-en-aria-label="Bottom navigation">
-            <a class="footer-btn is-active footer-btn--small footer-btn--profile" href="/Templates/Inicio/perfil_usuario.html" aria-label="Ir a Perfil" data-i18n-en-aria-label="Go to profile">
+            <a class="footer-btn footer-btn--small footer-btn--profile" href="/Templates/Inicio/perfil_usuario.html" aria-label="Ir a Perfil" data-i18n-en-aria-label="Go to profile">
                 <img class="footer-profile-avatar" id="icono_usuario_sidebar" src="https://www.gravatar.com/avatar/00000000000000000000000000000000?d=mp&f=y" alt="avatar">
                 <div class="footer-profile-text">
                     <h2 class="footer-profile-name" id="username_sidebar">...</h2>
                     <span class="footer-profile-sub" data-i18n-en="Profile">Perfil</span>
                 </div>
             </a>
-            <a class="footer-btn is-active footer-btn--small" href="/Templates/Inicio/Plan_alimentacion.html" data-i18n-en="Meal plan">Plan de Alimentación</a>
-            <a class="footer-btn is-active footer-btn--small" href="/Templates/Inicio/Ayuda.html" data-i18n-en="Help">Ayuda</a>
+            <a class="footer-btn is-active footer-btn--small" href="/Templates/Inicio/Dashboard.html" aria-label="Plan de Entreno" data-i18n-en-aria-label="Training plan">
+                <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiNmZmZmZmYiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIiBjbGFzcz0ibHVjaWRlIGx1Y2lkZS1ob3VzZS1pY29uIGx1Y2lkZS1ob3VzZSI+PHBhdGggZD0iTTE1IDIxdi04YTEgMSAwIDAgMC0xLTFoLTRhMSAxIDAgMCAwLTEgMXY4Ii8+PHBhdGggZD0iTTMgMTBhMiAyIDAgMCAxIC43MDktMS41MjhsNy02YTIgMiAwIDAgMSAyLjU4MiAwbDcgNkEyIDIgMCAwIDEgMjEgMTB2OWEyIDIgMCAwIDEtMiAySDVhMiAyIDAgMCAxLTItMnoiLz48L3N2Zz4=" alt="" aria-hidden="true">
+                <span class="sr-only" data-i18n-en="Training plan">Plan de Entreno</span>
+            </a>
+            <a class="footer-btn footer-btn--small" href="/Templates/Inicio/Plan_alimentacion.html" aria-label="Plan de Alimentación" data-i18n-en-aria-label="Meal plan">
+                <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiNmZmZmZmYiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIiBjbGFzcz0ibHVjaWRlIGx1Y2lkZS11dGVuc2lscy1jcm9zc2VkLWljb24gbHVjaWRlLXV0ZW5zaWxzLWNyb3NzZWQiPjxwYXRoIGQ9Im0xNiAyLTIuMyAyLjNhMyAzIDAgMCAwIDAgNC4ybDEuOCAxLjhhMyAzIDAgMCAwIDQuMiAwTDIyIDgiLz48cGF0aCBkPSJNMTUgMTUgMy4zIDMuM2E0LjIgNC4yIDAgMCAwIDAgNmw3LjMgNy4zYy43LjcgMiAuNyAyLjggMEwxNSAxNVptMCAwIDcgNyIvPjxwYXRoIGQ9Im0yLjEgMjEuOCA2LjQtNi4zIi8+PHBhdGggZD0ibTE5IDUtNyA3Ii8+PC9zdmc+" alt="" aria-hidden="true">
+                <span class="sr-only" data-i18n-en="Meal plan">Plan de Alimentación</span>
+            </a>
+            <a class="footer-btn footer-btn--small" href="/Templates/Inicio/Ayuda.html" aria-label="Ayuda" data-i18n-en-aria-label="Help">
+                <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiNmZmZmZmYiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIiBjbGFzcz0ibHVjaWRlIGx1Y2lkZS1pbmZvLWljb24gbHVjaWRlLWluZm8iPjxjaXJjbGUgY3g9IjEyIiBjeT0iMTIiIHI9IjEwIi8+PHBhdGggZD0iTTEyIDE2di00Ii8+PHBhdGggZD0iTTEyIDhoLjAxIi8+PC9zdmc+" alt="" aria-hidden="true">
+                <span class="sr-only" data-i18n-en="Help">Ayuda</span>
+            </a>
+            <a class="footer-btn footer-btn--small" href="/Templates/Inicio/perfil_usuario.html" aria-label="Perfil" data-i18n-en-aria-label="Profile">
+                <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiNmZmZmZmYiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIiBjbGFzcz0ibHVjaWRlIGx1Y2lkZS1jb2ctaWNvbiBsdWNpZGUtY29nIj48cGF0aCBkPSJNMTEgMTAuMjcgNyAzLjM0Ii8+PHBhdGggZD0ibTExIDEzLjczLTQgNi45MyIvPjxwYXRoIGQ9Ik0xMiAyMnYtMiIvPjxwYXRoIGQ9Ik0xMiAydjIiLz48cGF0aCBkPSJNMTQgMTJoOCIvPjxwYXRoIGQ9Im0xNyAyMC42Ni0xLTEuNzMiLz48cGF0aCBkPSJtMTcgMy4zNC0xIDEuNzMiLz48cGF0aCBkPSJNMiAxMmgyIi8+PHBhdGggZD0ibTIwLjY2IDE3LTEuNzMtMSIvPjxwYXRoIGQ9Im0yMC42NiA3LTEuNzMgMSIvPjxwYXRoIGQ9Im0zLjM0IDE3IDEuNzMtMSIvPjxwYXRoIGQ9Im0zLjM0IDcgMS43MyAxIi8+PGNpcmNsZSBjeD0iMTIiIGN5PSIxMiIgcj0iMiIvPjxjaXJjbGUgY3g9IjEyIiBjeT0iMTIiIHI9IjgiLz48L3N2Zz4=" alt="" aria-hidden="true">
+                <span class="sr-only" data-i18n-en="Profile">Perfil</span>
+            </a>
         </nav>
     </footer>
     
     <script async="async" data-cfasync="false" src="https://pl28560870.effectivegatecpm.com/2c37d5b5e17e64db7572dcb96935e91c/invoke.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="/Scripts/ui_bottom_sheet.js"></script>
     <script src="/Scripts/dashboard.js" type="module"></script>
 </body>
 </html>

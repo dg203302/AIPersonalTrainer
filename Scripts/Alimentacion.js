@@ -417,24 +417,66 @@ const initDetallePorDiaPlanAliment = () => {
 
         const kcal = dia.calorias_objetivo != null ? `${Math.round(dia.calorias_objetivo)} kcal` : "-";
 
-        await sweetalert.fire({
-            title: `${tLang("Detalle", "Details")}: ${escapeHtml(dia.dia)}`,
-            html: `
-                <div class="plan-detalle-scroll">
-                    <div class="plan-card">
-                        <h3 class="plan-nombre">${tLang("Ingesta del día", "Daily intake")}</h3>
-                        <p class="plan-desc">${tLang("Objetivo calórico", "Calorie target")}: <strong>${escapeHtml(kcal)}</strong></p>
-                        ${macrosHtml}
-                        ${comidasHtml}
-                        ${recHtml ? recHtml.replace("Recomendaciones", recHeading) : ""}
-                        ${tipsHtml ? tipsHtml.replace("Tips", tipsHeading) : ""}
+        const closeText = tLang("Cerrar", "Close");
+        const titleText = `${tLang("Detalle", "Details")}: ${String(dia.dia ?? "")}`;
+        const macrosCard = macros
+            ? `
+              <section class="pt-detail-card">
+                <div class="pt-detail-card-title">${tLang("Macros", "Macros")}</div>
+                ${macrosHtml}
+              </section>
+            `
+            : "";
+
+        const recCard = recHtml
+            ? `<section class="pt-detail-card">
+                  <div class="pt-detail-card-title">${escapeHtml(recHeading)}</div>
+                  ${recHtml.replace("Recomendaciones", recHeading)}
+               </section>`
+            : "";
+
+        const tipsCard = tipsHtml
+            ? `<section class="pt-detail-card">
+                  <div class="pt-detail-card-title">${escapeHtml(tipsHeading)}</div>
+                  ${tipsHtml.replace("Tips", tipsHeading)}
+               </section>`
+            : "";
+
+        const html = `
+                <div class="pt-detail">
+                    <div class="pt-detail-hero">
+                        <div class="pt-detail-hero-title">${escapeHtml(String(dia.dia ?? ""))}</div>
+                        <div class="pt-detail-hero-sub">${tLang("Objetivo calórico", "Calorie target")}: <strong>${escapeHtml(kcal)}</strong></div>
+                    </div>
+
+                    <div class="plan-detalle-scroll pt-detail-scroll">
+                        <section class="pt-detail-card">
+                            <div class="pt-detail-card-title">${tLang("Comidas", "Meals")}</div>
+                            ${comidasHtml}
+                        </section>
+                        ${macrosCard}
+                        ${recCard}
+                        ${tipsCard}
                     </div>
                 </div>
-            `,
-            confirmButtonText: tLang("Cerrar", "Close"),
-            customClass: {
-                popup: "dashboard-swal",
-                confirmButton: "dashboard-swal-confirm",
+            `;
+
+        const openWithSheet = globalThis.PTBottomSheet && typeof globalThis.PTBottomSheet.open === "function";
+        if (!openWithSheet) {
+            console.error("PTBottomSheet helper not loaded; cannot open meal plan detail modal.");
+            return;
+        }
+
+        await globalThis.PTBottomSheet.open({
+            title: titleText,
+            html,
+            closeText,
+            didOpen: (sheet) => {
+                try {
+                    globalThis.UIIdioma?.translatePage?.(sheet);
+                } catch {
+                    // ignore
+                }
             },
         });
     };

@@ -220,6 +220,60 @@ const getIdiomaPreferido = () => {
 const isEnglish = () => getIdiomaPreferido() === "en";
 const tLang = (es, en) => (isEnglish() ? en : es);
 
+const getGreetingByHour = (hour) => {
+    const h = Number.isFinite(Number(hour)) ? Number(hour) : new Date().getHours();
+    // Rango simple y predecible:
+    // 05:00–11:59 -> día | 12:00–19:59 -> tarde | 20:00–04:59 -> noche
+    const isMorning = h >= 5 && h < 12;
+    const isAfternoon = h >= 12 && h < 20;
+
+    if (isEnglish()) {
+        if (isMorning) return "Good morning";
+        if (isAfternoon) return "Good afternoon";
+        return "Good evening";
+    }
+
+    if (isMorning) return "Buenos días";
+    if (isAfternoon) return "Buenas tardes";
+    return "Buenas noches";
+};
+
+const getNextGreetingChangeDelayMs = () => {
+    const now = new Date();
+    const h = now.getHours();
+    const next = new Date(now);
+    // Próximos cortes: 05:00, 12:00, 20:00
+    const setTo = (hour) => {
+        next.setHours(hour, 0, 5, 0); // +5s para evitar edge en cambio exacto
+    };
+
+    if (h < 5) setTo(5);
+    else if (h < 12) setTo(12);
+    else if (h < 20) setTo(20);
+    else {
+        // mañana a las 05:00
+        next.setDate(next.getDate() + 1);
+        setTo(5);
+    }
+    return Math.max(5_000, next.getTime() - now.getTime());
+};
+
+const initDynamicGreeting = () => {
+    const welcomeEl = document.getElementById("welcome_msg");
+    if (!welcomeEl) return;
+
+    const sync = () => {
+        welcomeEl.textContent = getGreetingByHour(new Date().getHours());
+    };
+
+    sync();
+    // Re-sincronizar justo cuando cambia el rango (mañana/tarde/noche).
+    window.setTimeout(function tick() {
+        sync();
+        window.setTimeout(tick, getNextGreetingChangeDelayMs());
+    }, getNextGreetingChangeDelayMs());
+};
+
 const formatPlanLugar = (code) => {
     const v = String(code ?? "").toLowerCase();
     if (isEnglish()) {
@@ -455,28 +509,36 @@ const showNetlifyHostingErrorAlert = async ({ endpoint, status, statusText, body
         ? "This is a hosting server error (<strong>Netlify</strong>). Please wait a few minutes and try again."
         : "Este es un error del servidor de hosting (<strong>Netlify</strong>). Por favor, aguardá unos minutos e intentá nuevamente cuando se restaure el servicio.";
 
-    await sweetalert.fire({
-        icon: "error",
-        title: tLang("Error del servidor", "Server error"),
-        html: `
-            <div class="server-error">
-                <div class="server-error__hero">${escapeHtml(NETLIFY_EDGE_UNCAUGHT)}</div>
-                <div class="server-error__meta">
-                    <div><strong>Endpoint:</strong> ${escapeHtml(safeEndpoint)}</div>
-                    <div><strong>HTTP:</strong> ${escapeHtml(safeStatus)}${safeStatusText ? ` (${escapeHtml(safeStatusText)})` : ""}</div>
-                </div>
-                ${safeBody ? `<pre class="server-error__body">${escapeHtml(safeBody.slice(0, 1200))}</pre>` : ""}
-                <p class="server-error__note">
-                    ${hostingNote}
-                </p>
+    const sheetHtml = `
+        <div class="server-error">
+            <div class="server-error__hero">${escapeHtml(NETLIFY_EDGE_UNCAUGHT)}</div>
+            <div class="server-error__meta">
+                <div><strong>Endpoint:</strong> ${escapeHtml(safeEndpoint)}</div>
+                <div><strong>HTTP:</strong> ${escapeHtml(safeStatus)}${safeStatusText ? ` (${escapeHtml(safeStatusText)})` : ""}</div>
             </div>
-        `,
-        allowOutsideClick: false,
-        allowEscapeKey: true,
-        confirmButtonText: tLang("Entendido", "OK"),
-        customClass: {
-            popup: "dashboard-swal server-error-swal",
-            confirmButton: "dashboard-swal-confirm",
+            ${safeBody ? `<pre class="server-error__body">${escapeHtml(safeBody.slice(0, 1200))}</pre>` : ""}
+            <p class="server-error__note">${hostingNote}</p>
+            <div class="pt-status-actions">
+                <button type="button" class="btn-primary" data-pt-sheet-close>
+                    ${escapeHtml(tLang("Entendido", "OK"))}
+                </button>
+            </div>
+        </div>
+    `;
+
+    return await window.PTBottomSheet?.open?.({
+        title: tLang("Error del servidor", "Server error"),
+        subtitle: "Netlify",
+        ariaLabel: tLang("Error del servidor", "Server error"),
+        html: sheetHtml,
+        showClose: false,
+        showHandle: false,
+        allowOutsideClose: false,
+        allowEscapeClose: true,
+        allowDragClose: false,
+        didOpen: (sheet) => {
+            const btn = sheet.querySelector("[data-pt-sheet-close]");
+            btn?.addEventListener("click", () => window.PTBottomSheet?.close?.());
         },
     });
 };
@@ -830,173 +892,239 @@ const openGenerarPlanModal = async (planPrevioRaw = null) => {
     const lastEjEnabled = Array.isArray(prefillPlan?.ejercicios) ? true : baseEjEnabled;
     const lastIntensidad = prefillPlan?.intensidad || baseIntensidad;
 
-    const result = await sweetalert.fire({
-        title: tLang("Generar Plan de Entrenamiento con IA", "Generate Training Plan with AI"),
-        html: `
-            <div class="swal-gen">
-                <p class="swal-helper">
+    const sheetHtml = `
+        <div class="pt-detail pt-gen">
+            <div class="pt-detail-hero pt-detail-hero-focus">
+                <div class="pt-detail-hero-row">
+                    <div class="pt-detail-hero-title">${escapeHtml(tLang("Configurar plan", "Configure plan"))}</div>
+                    <div class="pt-gen-header-actions">
+                        <button type="button" class="btn-primary pt-gen-generate" data-pt-generate>
+                            ${escapeHtml(tLang("Generar", "Generate"))}
+                        </button>
+                    </div>
+                </div>
+                <div class="pt-detail-hero-sub">
                     ${escapeHtml(tLang(
                         "Elegí tu contexto y prioridad. Esto nos ayuda a seleccionar ejercicios y armar una progresión coherente.",
                         "Choose your context and priority. This helps us select exercises and build a coherent progression."
                     ))}
-                </p>
-
-                <section class="swal-section" aria-label="${escapeHtml(tLang("Opciones de plan", "Plan options"))}">
-                    <h3>${escapeHtml(tLang("Opciones", "Options"))}</h3>
-                    <div class="swal-grid">
-                        <div class="swal-field">
-                            <p class="swal-label">${escapeHtml(tLang("¿Dónde entrenás?", "Where do you train?"))}</p>
-                            <label class="swal-radio"><input type="radio" name="lugar" value="casa"><span>${escapeHtml(tLang("Entreno en casa", "I train at home"))}</span></label>
-                            <label class="swal-radio"><input type="radio" name="lugar" value="gimnasio"><span>${escapeHtml(tLang("Entreno en gimnasio", "I train at the gym"))}</span></label>
-                        </div>
-                        <div class="swal-field">
-                            <p class="swal-label">${escapeHtml(tLang("¿Qué priorizás?", "What do you prioritize?"))}</p>
-                            <label class="swal-radio"><input type="radio" name="objetivo" value="grasa"><span>${escapeHtml(tLang("Priorizar pérdida de grasa", "Prioritize fat loss"))}</span></label>
-                            <label class="swal-radio"><input type="radio" name="objetivo" value="musculo"><span>${escapeHtml(tLang("Priorizar ganancia muscular", "Prioritize muscle gain"))}</span></label>
-                        </div>
-                    </div>
-                </section>
-                
-                ${renderSelectorIntensidad()}
-
-                <section class="swal-section" aria-label="${escapeHtml(tLang("Días de entrenamiento", "Training days"))}">
-                    <h3>${escapeHtml(tLang("Días de la semana", "Days of the week"))}</h3>
-                    ${renderDiasSelector()}
-                </section>
-
-                <section class="swal-section" aria-label="${escapeHtml(tLang("Ejercicios disponibles", "Available exercises"))}">
-                    <h3>${escapeHtml(tLang("Ejercicios disponibles (índice)", "Available exercises (index)"))}</h3>
-                    <p class="swal-helper">${escapeHtml(tLang(
-                        "Opcional: si querés, marcá ejercicios preferidos. Si no seleccionás nada, la IA elige automáticamente.",
-                        "Optional: pick preferred exercises. If you don't select any, the AI will choose automatically."
-                    ))}</p>
-                    <label class="swal-toggle">
-                        <input type="checkbox" id="swal_ej_toggle">
-                        <span>${escapeHtml(tLang("Quiero elegir ejercicios", "I want to choose exercises"))}</span>
-                    </label>
-                    <div class="swal-ejercicios">
-                        ${renderListaEjerciciosSelectable()}
-                    </div>
-                </section>
+                </div>
+                <div class="pt-form-error" id="pt_gen_error" role="alert"></div>
             </div>
-        `,
-        showCancelButton: true,
-        confirmButtonText: tLang("Generar", "Generate"),
-        cancelButtonText: tLang("Cancelar", "Cancel"),
-        customClass: {
-            popup: "dashboard-swal",
-            confirmButton: "dashboard-swal-confirm",
-            cancelButton: "dashboard-swal-cancel",
-        },
-        didOpen: () => {
-            const popup = (typeof sweetalert.getPopup === "function" && sweetalert.getPopup()) || document.querySelector(".swal2-popup");
-            popup?.querySelector(`input[name="lugar"][value="${lastLugar}"]`)?.click();
-            popup?.querySelector(`input[name="objetivo"][value="${lastObjetivo}"]`)?.click();
-            popup?.querySelector(`input[name="intensidad"][value="${lastIntensidad}"]`)?.click();
 
-            const diasSet = new Set(lastDias);
-            popup?.querySelectorAll(".swal-dia-btn")?.forEach((btn) => {
-                const code = btn.getAttribute("data-dia");
-                const isOn = diasSet.has(String(code ?? "").toUpperCase());
-                btn.classList.toggle("is-selected", isOn);
-                btn.setAttribute("aria-pressed", isOn ? "true" : "false");
-            });
+            <div class="pt-detail-body">
+                <div class="pt-detail-viewport plan-detalle-viewport" role="region" aria-label="${escapeHtml(tLang("Opciones del plan", "Plan options"))}">
+                    <div class="pt-detail-card">
+                        <div class="pt-detail-card-inner">
+                            <div class="pt-sheet-section-title">${escapeHtml(tLang("Opciones", "Options"))}</div>
+                            <div class="swal-grid">
+                                <div class="swal-field">
+                                    <p class="swal-label">${escapeHtml(tLang("¿Dónde entrenás?", "Where do you train?"))}</p>
+                                    <label class="swal-radio"><input type="radio" name="lugar" value="casa"><span>${escapeHtml(tLang("Entreno en casa", "I train at home"))}</span></label>
+                                    <label class="swal-radio"><input type="radio" name="lugar" value="gimnasio"><span>${escapeHtml(tLang("Entreno en gimnasio", "I train at the gym"))}</span></label>
+                                </div>
+                                <div class="swal-field">
+                                    <p class="swal-label">${escapeHtml(tLang("¿Qué priorizás?", "What do you prioritize?"))}</p>
+                                    <label class="swal-radio"><input type="radio" name="objetivo" value="grasa"><span>${escapeHtml(tLang("Priorizar pérdida de grasa", "Prioritize fat loss"))}</span></label>
+                                    <label class="swal-radio"><input type="radio" name="objetivo" value="musculo"><span>${escapeHtml(tLang("Priorizar ganancia muscular", "Prioritize muscle gain"))}</span></label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
 
-            // toggle con delegación
-            popup?.querySelector(".swal-dias")?.addEventListener("click", (ev) => {
-                const target = ev.target;
-                if (!(target instanceof HTMLElement)) return;
-                const btn = target.closest(".swal-dia-btn");
-                if (!(btn instanceof HTMLButtonElement)) return;
-                const pressed = btn.getAttribute("aria-pressed") === "true";
-                const next = !pressed;
-                btn.classList.toggle("is-selected", next);
-                btn.setAttribute("aria-pressed", next ? "true" : "false");
-            });
+                    <div class="pt-detail-card">
+                        <div class="pt-detail-card-inner">
+                            ${renderSelectorIntensidad()}
+                        </div>
+                    </div>
 
-            // ejercicios (opcional)
-            const toggle = popup?.querySelector("#swal_ej_toggle");
-            if (toggle instanceof HTMLInputElement) {
-                toggle.checked = lastEjEnabled;
-            }
+                    <div class="pt-detail-card">
+                        <div class="pt-detail-card-inner">
+                            <div class="pt-sheet-section-title">${escapeHtml(tLang("Días", "Days"))}</div>
+                            <p class="swal-helper">${escapeHtml(tLang(
+                                "Tocá para seleccionar los días en los que vas a entrenar.",
+                                "Tap to select the days you plan to train."
+                            ))}</p>
+                            ${renderDiasSelector()}
+                        </div>
+                    </div>
 
-            const selectedSet = new Set(lastEjSeleccionados.map((x) => String(x)));
-            popup?.querySelectorAll('input[name="ejercicios"]')?.forEach((el) => {
-                if (!(el instanceof HTMLInputElement)) return;
-                el.checked = selectedSet.has(el.value);
-            });
+                    <div class="pt-detail-card">
+                        <div class="pt-detail-card-inner">
+                            <div class="pt-sheet-section-title">${escapeHtml(tLang("Ejercicios", "Exercises"))}</div>
+                            <p class="swal-helper">${escapeHtml(tLang(
+                                "Opcional: si querés, marcá ejercicios preferidos. Si no seleccionás nada, la IA elige automáticamente.",
+                                "Optional: pick preferred exercises. If you don't select any, the AI will choose automatically."
+                            ))}</p>
+                            <label class="swal-toggle">
+                                <input type="checkbox" id="swal_ej_toggle">
+                                <span>${escapeHtml(tLang("Quiero elegir ejercicios", "I want to choose exercises"))}</span>
+                            </label>
+                            <div class="swal-ejercicios">
+                                ${renderListaEjerciciosSelectable()}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
 
-            const setEjEnabled = (enabled) => {
-                popup?.classList.toggle("is-ej-disabled", !enabled);
-                popup?.querySelectorAll('input[name="ejercicios"]')?.forEach((el) => {
-                    if (!(el instanceof HTMLInputElement)) return;
-                    el.disabled = !enabled;
+        </div>
+    `;
+
+    return new Promise((resolve) => {
+        let resolved = false;
+        const safeResolve = (value) => {
+            if (resolved) return;
+            resolved = true;
+            resolve(value);
+        };
+
+        window.PTBottomSheet?.open?.({
+            title: tLang("Generar Plan de Entrenamiento con IA", "Generate Training Plan with AI"),
+            ariaLabel: tLang("Generar plan de entrenamiento", "Generate training plan"),
+            html: sheetHtml,
+            className: "",
+            showClose: false,
+            showHandle: true,
+            allowOutsideClose: true,
+            allowEscapeClose: true,
+            allowDragClose: true,
+            didOpen: (sheet) => {
+                const root = sheet.querySelector(".pt-gen") || sheet;
+                const showError = (msg) => {
+                    const err = sheet.querySelector("#pt_gen_error");
+                    if (!(err instanceof HTMLElement)) return;
+                    err.textContent = String(msg ?? "").trim();
+                    err.classList.toggle("is-show", !!err.textContent);
+                    try { err.scrollIntoView({ block: "nearest", behavior: "smooth" }); } catch { }
+                };
+
+                const clearError = () => showError("");
+                sheet.addEventListener("input", clearError);
+                sheet.addEventListener("change", clearError);
+
+                sheet.querySelector(`input[name="lugar"][value="${lastLugar}"]`)?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+                sheet.querySelector(`input[name="objetivo"][value="${lastObjetivo}"]`)?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+                sheet.querySelector(`input[name="intensidad"][value="${lastIntensidad}"]`)?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+
+                const diasSet = new Set(lastDias);
+                sheet.querySelectorAll(".swal-dia-btn")?.forEach((btn) => {
+                    const code = btn.getAttribute("data-dia");
+                    const isOn = diasSet.has(String(code ?? "").toUpperCase());
+                    btn.classList.toggle("is-selected", isOn);
+                    btn.setAttribute("aria-pressed", isOn ? "true" : "false");
                 });
-            };
 
-            setEjEnabled(lastEjEnabled);
-            toggle?.addEventListener("change", () => {
-                const enabled = toggle instanceof HTMLInputElement ? toggle.checked : false;
-                setEjEnabled(enabled);
-            });
-        },
-        preConfirm: () => {
-            const popup = (typeof sweetalert.getPopup === "function" && sweetalert.getPopup()) || document.querySelector(".swal2-popup");
-            const lugar = popup?.querySelector('input[name="lugar"]:checked')?.value;
-            const objetivo = popup?.querySelector('input[name="objetivo"]:checked')?.value;
-            const dias = Array.from(popup?.querySelectorAll('.swal-dia-btn[aria-pressed="true"]') ?? []).map((b) => String(b.getAttribute("data-dia") ?? "").toUpperCase());
-            const intensidad = popup?.querySelector('input[name="intensidad"]:checked')?.value || null;
-            const ejEnabled = !!(popup?.querySelector("#swal_ej_toggle") instanceof HTMLInputElement)
-                ? popup.querySelector("#swal_ej_toggle").checked
-                : false;
-            const ejercicios = ejEnabled
-                ? Array.from(popup?.querySelectorAll('input[name="ejercicios"]:checked') ?? []).map((el) => {
-                    if (el instanceof HTMLInputElement) return String(el.value);
-                    return "";
-                }).filter(Boolean)
-                : null;
+                sheet.querySelector(".swal-dias")?.addEventListener("click", (ev) => {
+                    const target = ev.target;
+                    if (!(target instanceof HTMLElement)) return;
+                    const btn = target.closest(".swal-dia-btn");
+                    if (!(btn instanceof HTMLButtonElement)) return;
+                    const pressed = btn.getAttribute("aria-pressed") === "true";
+                    const next = !pressed;
+                    btn.classList.toggle("is-selected", next);
+                    btn.setAttribute("aria-pressed", next ? "true" : "false");
+                });
 
-            if (!lugar || !objetivo) {
-                if (typeof sweetalert.showValidationMessage === "function") {
-                    sweetalert.showValidationMessage(tLang(
-                        "Elegí dónde entrenás y qué priorizás",
-                        "Choose where you train and what you prioritize"
-                    ));
+                const toggle = sheet.querySelector("#swal_ej_toggle");
+                if (toggle instanceof HTMLInputElement) {
+                    toggle.checked = lastEjEnabled;
                 }
-                return false;
-            }
 
-            if (!dias.length) {
-                if (typeof sweetalert.showValidationMessage === "function") {
-                    sweetalert.showValidationMessage(tLang(
-                        "Seleccioná al menos un día de la semana",
-                        "Select at least one day of the week"
-                    ));
-                }
-                return false;
-            }
+                const selectedSet = new Set(lastEjSeleccionados.map((x) => String(x)));
+                sheet.querySelectorAll('input[name="ejercicios"]')?.forEach((el) => {
+                    if (!(el instanceof HTMLInputElement)) return;
+                    el.checked = selectedSet.has(el.value);
+                });
 
-            return { lugar, objetivo, dias, ejEnabled, ejercicios, intensidad };
-        },
+                const setEjEnabled = (enabled) => {
+                    root.classList.toggle("is-ej-disabled", !enabled);
+                    root.querySelectorAll('input[name="ejercicios"]')?.forEach((el) => {
+                        if (!(el instanceof HTMLInputElement)) return;
+                        el.disabled = !enabled;
+                    });
+                };
+
+                setEjEnabled(lastEjEnabled);
+                toggle?.addEventListener("change", () => {
+                    const enabled = toggle instanceof HTMLInputElement ? toggle.checked : false;
+                    setEjEnabled(enabled);
+                });
+
+                const btnGenerate = sheet.querySelector("[data-pt-generate]");
+                btnGenerate?.addEventListener("click", async () => {
+                    const lugar = sheet.querySelector('input[name="lugar"]:checked')?.value;
+                    const objetivo = sheet.querySelector('input[name="objetivo"]:checked')?.value;
+                    const dias = Array.from(sheet.querySelectorAll('.swal-dia-btn[aria-pressed="true"]') ?? [])
+                        .map((b) => String(b.getAttribute("data-dia") ?? "").toUpperCase())
+                        .filter(Boolean);
+                    const intensidad = sheet.querySelector('input[name="intensidad"]:checked')?.value || null;
+                    const ejToggle = sheet.querySelector("#swal_ej_toggle");
+                    const ejEnabled = ejToggle instanceof HTMLInputElement ? ejToggle.checked : false;
+                    const ejercicios = ejEnabled
+                        ? Array.from(sheet.querySelectorAll('input[name="ejercicios"]:checked') ?? [])
+                            .map((el) => (el instanceof HTMLInputElement ? String(el.value) : ""))
+                            .filter(Boolean)
+                        : null;
+
+                    if (!lugar || !objetivo) {
+                        showError(tLang(
+                            "Elegí dónde entrenás y qué priorizás",
+                            "Choose where you train and what you prioritize"
+                        ));
+                        return;
+                    }
+
+                    if (!dias.length) {
+                        showError(tLang(
+                            "Seleccioná al menos un día de la semana",
+                            "Select at least one day of the week"
+                        ));
+                        return;
+                    }
+
+                    // Persist choices
+                    try {
+                        localStorage.setItem("plan_lugar", String(lugar));
+                        localStorage.setItem("plan_objetivo", String(objetivo));
+                        localStorage.setItem("plan_dias", JSON.stringify(dias));
+                        if (intensidad) localStorage.setItem("plan_intensidad", String(intensidad));
+                        localStorage.setItem("plan_ejercicios_enabled", ejEnabled ? "1" : "0");
+                        localStorage.setItem("plan_ejercicios_selected", JSON.stringify(Array.isArray(ejercicios) ? ejercicios : []));
+                    } catch {
+                        // ignore
+                    }
+
+                    // Prevent double submit
+                    try {
+                        if (btnGenerate instanceof HTMLButtonElement) btnGenerate.disabled = true;
+                    } catch { }
+
+                    safeResolve({ isConfirmed: true, value: { lugar, objetivo, dias, ejEnabled, ejercicios, intensidad } });
+                    window.PTBottomSheet?.close?.();
+
+                    await crearPlanEntreno(lugar, objetivo, dias, ejercicios, intensidad);
+                });
+            },
+            willClose: () => {
+                safeResolve({ isConfirmed: false, value: null });
+            },
+        });
     });
-
-    if (!result.isConfirmed) return;
-    const { lugar, objetivo, dias, ejEnabled, ejercicios, intensidad } = result.value;
-
-
-    await crearPlanEntreno(lugar, objetivo, dias, ejercicios, intensidad);
 };
 window.onload = async () => {
-    sweetalert.fire({
+   /*sweetalert.fire({
         title: isEnglish() ? `Welcome back, ${username}!` : `Bienvenido de nuevo, ${username}!`,
         icon: 'success',
         toast: true,
         position: 'top-end',
         showConfirmButton: false,
         timer: 3000
-    });
+    });*/
 
     await recuperar_planes();
+
+    initDynamicGreeting();
 
     const userEl = document.getElementById("username");
     const avatarEl = document.getElementById("icono_usuario");
@@ -1026,7 +1154,9 @@ function verificacion_plan_entrenamiento() {
     const boton_ejercicios = document.getElementById("boton_ejercicios");
     const boton_eliminar_plan_eje = document.getElementById("boton_eliminar");
     const boton_regenerar = document.getElementById("boton_regenerar");
+    const planActionsPill = document.querySelector(".plan-actions-pill");
     if (plan_entrenamiento != "Ninguno" && plan_entrenamiento != null) {
+        planActionsPill?.classList.add("is-pill");
         desc.style.display = "none";
         boton_ejercicios?.classList.remove("btn-primary");
         if (boton_ejercicios) {
@@ -1043,9 +1173,10 @@ function verificacion_plan_entrenamiento() {
         contenedor_ejercicios.innerHTML = mapear_plan(plan_entrenamiento)
         try { globalThis.UIIdioma?.translatePage?.(contenedor_ejercicios); } catch { }
         initPlanDiaPager();
-        boton_ejercicios.innerHTML = '<img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9ImN1cnJlbnRDb2xvciIgc3Ryb2tlLXdpZHRoPSIyIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiIGNsYXNzPSJsdWNpZGUgbHVjaWRlLXJlZnJlc2gtY2N3LWljb24gbHVjaWRlLXJlZnJlc2gtY2N3Ij48cGF0aCBkPSJNMjEgMTJhOSA5IDAgMCAwLTktOSA5Ljc1IDkuNzUgMCAwIDAtNi43NCAyLjc0TDMgOCIvPjxwYXRoIGQ9Ik0zIDN2NWg1Ii8+PHBhdGggZD0iTTMgMTJhOSA5IDAgMCAwIDkgOSA5Ljc1IDkuNzUgMCAwIDAgNi43NC0yLjc0TDIxIDE2Ii8+PHBhdGggZD0iTTE2IDE2aDV2NSIvPjwvc3ZnPg==">';
-        boton_ejercicios.style.width = "50px";
-        boton_ejercicios.style.height = "50px";
+        boton_ejercicios.innerHTML = '<img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiNmZmZmZmYiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIiBjbGFzcz0ibHVjaWRlIGx1Y2lkZS1yb3RhdGUtY3ctaWNvbiBsdWNpZGUtcm90YXRlLWN3Ij48cGF0aCBkPSJNMjEgMTJhOSA5IDAgMSAxLTktOWMyLjUyIDAgNC45MyAxIDYuNzQgMi43NEwyMSA4Ii8+PHBhdGggZD0iTTIxIDN2NWgtNSIvPjwvc3ZnPg==">';
+        boton_ejercicios.classList.add("btn-icon-sm");
+        boton_ejercicios.style.width = "";
+        boton_ejercicios.style.height = "";
         boton_ejercicios.setAttribute("aria-label", "Refrescar plan de entrenamiento");
         boton_ejercicios.setAttribute("data-i18n-en-aria-label", "Refresh training plan");
         try { globalThis.UIIdioma?.translatePage?.(boton_ejercicios); } catch { }
@@ -1066,9 +1197,11 @@ function verificacion_plan_entrenamiento() {
         }
     }
     else if (plan_entrenamiento == "Ninguno" || plan_entrenamiento == null) {
+        planActionsPill?.classList.remove("is-pill");
         if (desc) desc.style.display = "block";
         boton_eliminar_plan_eje.style.display = "none";
         boton_ejercicios?.classList.add("btn-primary");
+        boton_ejercicios?.classList.remove("btn-icon-sm");
         if (boton_ejercicios) {
             boton_ejercicios.textContent = "Generar plan";
             boton_ejercicios.setAttribute("data-i18n-en", "Generate plan");
@@ -1094,18 +1227,30 @@ async function crearPlanEntreno(lugar, objetivo, diasSeleccionados, ejerciciosSe
     // persist user choice for next time
     try { localStorage.setItem("plan_intensidad", intensidad); } catch (e) { }
 
-    sweetalert.fire({
+    // Modal “nuevo” (bottom-sheet) para estado de generación
+    try { window.PTBottomSheet?.close?.(); } catch { }
+
+    const loadingText = isEnglish()
+        ? `Place: ${formatPlanLugar(lugar)} | Goal: ${formatPlanObjetivo(objetivo)} | Intensity: ${formatPlanIntensidad(intensidad)} | Days: ${(diasCodes || []).join(", ") || "-"}. Please wait...`
+        : `Lugar: ${formatPlanLugar(lugar)} | Objetivo: ${formatPlanObjetivo(objetivo)} | Intensidad: ${formatPlanIntensidad(intensidad)} | Días: ${(diasCodes || []).join(", ") || "-"}. Por favor, esperá...`;
+
+    window.PTBottomSheet?.open?.({
         title: tLang("Generando Plan", "Generating plan"),
-        text: isEnglish()
-            ? `Place: ${formatPlanLugar(lugar)} | Goal: ${formatPlanObjetivo(objetivo)} | Intensity: ${formatPlanIntensidad(intensidad)} | Days: ${(diasCodes || []).join(", ") || "-"}. Please wait...`
-            : `Lugar: ${formatPlanLugar(lugar)} | Objetivo: ${formatPlanObjetivo(objetivo)} | Intensidad: ${formatPlanIntensidad(intensidad)} | Días: ${(diasCodes || []).join(", ") || "-"}. Por favor, esperá...`,
-        icon: "info",
-        allowOutsideClick: false,
-        allowEscapeKey: false,
-        showConfirmButton: false,
-        didOpen: () => {
-            sweetalert.showLoading();
-        }
+        subtitle: tLang("Esto puede tardar unos segundos", "This may take a few seconds"),
+        ariaLabel: tLang("Generando plan de entrenamiento", "Generating training plan"),
+        html: `
+            <div class="pt-status" aria-live="polite">
+                <div class="pt-status-row">
+                    <div class="pt-spinner" aria-hidden="true"></div>
+                    <div class="pt-status-text">${escapeHtml(loadingText)}</div>
+                </div>
+            </div>
+        `,
+        showClose: false,
+        showHandle: false,
+        allowOutsideClose: false,
+        allowEscapeClose: false,
+        allowDragClose: false,
     });
 
     let response;
@@ -1136,17 +1281,31 @@ async function crearPlanEntreno(lugar, objetivo, diasSeleccionados, ejerciciosSe
         });
     } catch (err) {
         console.log("[/generar_plan_entreno] Error:", err);
-        sweetalert.fire({
+        try { window.PTBottomSheet?.close?.(); } catch { }
+        window.PTBottomSheet?.open?.({
             title: tLang("Error", "Error"),
-            text: tLang(
-                "No se pudo generar/guardar el plan. Revisá tu conexión y/o la API key de Gemini e intentá de nuevo.",
-                "Could not generate/save the plan. Check your connection and/or Gemini API key and try again."
-            ),
-            icon: "error",
-            toast: true,
-            position: "top-end",
-            showConfirmButton: false,
-            timer: 5000,
+            ariaLabel: tLang("Error", "Error"),
+            html: `
+                <div class="pt-status">
+                    <div class="pt-status-row">
+                        <div class="pt-status-text">${escapeHtml(tLang(
+                            "No se pudo generar/guardar el plan. Revisá tu conexión y/o la API key de Gemini e intentá de nuevo.",
+                            "Could not generate/save the plan. Check your connection and/or Gemini API key and try again."
+                        ))}</div>
+                    </div>
+                    <div class="pt-status-actions">
+                        <button type="button" class="btn-primary" data-pt-sheet-close>${escapeHtml(tLang("Entendido", "OK"))}</button>
+                    </div>
+                </div>
+            `,
+            showClose: false,
+            showHandle: true,
+            allowOutsideClose: true,
+            allowEscapeClose: true,
+            allowDragClose: true,
+            didOpen: (sheet) => {
+                sheet.querySelector("[data-pt-sheet-close]")?.addEventListener("click", () => window.PTBottomSheet?.close?.());
+            },
         });
         return;
     }
@@ -1161,6 +1320,7 @@ async function crearPlanEntreno(lugar, objetivo, diasSeleccionados, ejerciciosSe
         });
 
         if (isNetlifyEdgeUncaughtInvocation(bodyText)) {
+            try { window.PTBottomSheet?.close?.(); } catch { }
             await showNetlifyHostingErrorAlert({
                 endpoint: "/generar_plan_entreno",
                 status: response.status,
@@ -1170,17 +1330,31 @@ async function crearPlanEntreno(lugar, objetivo, diasSeleccionados, ejerciciosSe
             return;
         }
 
-        sweetalert.fire({
+        try { window.PTBottomSheet?.close?.(); } catch { }
+        window.PTBottomSheet?.open?.({
             title: tLang("Error", "Error"),
-            text: tLang(
-                "Error al generar el plan de entrenamiento. Por favor, intentá nuevamente más tarde.",
-                "Failed to generate the training plan. Please try again later."
-            ),
-            icon: "error",
-            toast: true,
-            position: "top-end",
-            showConfirmButton: false,
-            timer: 5000,
+            ariaLabel: tLang("Error", "Error"),
+            html: `
+                <div class="pt-status">
+                    <div class="pt-status-row">
+                        <div class="pt-status-text">${escapeHtml(tLang(
+                            "Error al generar el plan de entrenamiento. Por favor, intentá nuevamente más tarde.",
+                            "Failed to generate the training plan. Please try again later."
+                        ))}</div>
+                    </div>
+                    <div class="pt-status-actions">
+                        <button type="button" class="btn-primary" data-pt-sheet-close>${escapeHtml(tLang("Entendido", "OK"))}</button>
+                    </div>
+                </div>
+            `,
+            showClose: false,
+            showHandle: true,
+            allowOutsideClose: true,
+            allowEscapeClose: true,
+            allowDragClose: true,
+            didOpen: (sheet) => {
+                sheet.querySelector("[data-pt-sheet-close]")?.addEventListener("click", () => window.PTBottomSheet?.close?.());
+            },
         });
         return;
     } else {
@@ -1191,22 +1365,58 @@ async function crearPlanEntreno(lugar, objetivo, diasSeleccionados, ejerciciosSe
             localStorage.setItem("plan_dieta_usuario", data.length === 0 ? "Ninguno" : data[0].Plan_alimenta ?? "Ninguno");
             await recuperar_planes();
             verificacion_plan_entrenamiento();
-            sweetalert.fire({
+            try { window.PTBottomSheet?.close?.(); } catch { }
+            window.PTBottomSheet?.open?.({
                 title: tLang("¡Plan Generado!", "Plan generated!"),
-                text: tLang("Tu rutina se ha creado correctamente.", "Your routine was created successfully."),
-                icon: "success",
-                timer: 4000,
-                showConfirmButton: false
+                ariaLabel: tLang("Plan generado", "Plan generated"),
+                html: `
+                    <div class="pt-status">
+                        <div class="pt-status-row">
+                            <div class="pt-status-text">${escapeHtml(tLang(
+                                "Tu rutina se ha creado correctamente.",
+                                "Your routine was created successfully."
+                            ))}</div>
+                        </div>
+                        <div class="pt-status-actions">
+                            <button type="button" class="btn-primary" data-pt-sheet-close>${escapeHtml(tLang("Listo", "Done"))}</button>
+                        </div>
+                    </div>
+                `,
+                showClose: false,
+                showHandle: true,
+                allowOutsideClose: true,
+                allowEscapeClose: true,
+                allowDragClose: true,
+                didOpen: (sheet) => {
+                    sheet.querySelector("[data-pt-sheet-close]")?.addEventListener("click", () => window.PTBottomSheet?.close?.());
+                },
             });
         } catch (error) {
-            sweetalert.fire({
+            try { window.PTBottomSheet?.close?.(); } catch { }
+            window.PTBottomSheet?.open?.({
                 title: tLang("Error", "Error"),
-                text: tLang("Error al guardar la configuración: ", "Failed to save configuration: ") + error.message,
-                icon: "error",
-                toast: true,
-                position: "top-end",
-                showConfirmButton: false,
-                timer: 5000,
+                ariaLabel: tLang("Error", "Error"),
+                html: `
+                    <div class="pt-status">
+                        <div class="pt-status-row">
+                            <div class="pt-status-text">${escapeHtml(tLang(
+                                "Error al guardar la configuración: ",
+                                "Failed to save configuration: "
+                            ) + (error?.message ?? ""))}</div>
+                        </div>
+                        <div class="pt-status-actions">
+                            <button type="button" class="btn-primary" data-pt-sheet-close>${escapeHtml(tLang("Entendido", "OK"))}</button>
+                        </div>
+                    </div>
+                `,
+                showClose: false,
+                showHandle: true,
+                allowOutsideClose: true,
+                allowEscapeClose: true,
+                allowDragClose: true,
+                didOpen: (sheet) => {
+                    sheet.querySelector("[data-pt-sheet-close]")?.addEventListener("click", () => window.PTBottomSheet?.close?.());
+                },
             });
             return;
         }
@@ -1645,6 +1855,15 @@ function initDetallePorDiaPlan() {
                     const text = String(descripcionDet || descripcionShort || "").trim();
                     const sentences = text.split(/(?<=[.?!])\s+/).map(s => s.trim()).filter(Boolean);
 
+                    const cleanupPrefix = (value, prefixes) => {
+                        let out = String(value || "").trim();
+                        for (const p of prefixes) {
+                            const re = new RegExp(`^\\s*${p}\\s*:\\s*`, "i");
+                            out = out.replace(re, "");
+                        }
+                        return out;
+                    };
+
                     const findSentence = (keywords) => {
                         const low = text.toLowerCase();
                         for (const s of sentences) {
@@ -1655,28 +1874,31 @@ function initDetallePorDiaPlan() {
                         return null;
                     };
 
-                    const tecnica =
+                    const tecnicaRaw =
                         findSentence(["técnic", "tecnica", "postura", "mantener la espalda", "posición", "mantener", "technique", "form", "posture", "position"]) ||
                         sentences[0] ||
                         tLang(
                             "Ejecutar con técnica correcta: mantener postura y rango adecuado.",
                             "Use proper technique: maintain posture and a controlled range of motion."
                         );
-                    const sobrecarga =
+                    const tecnica = cleanupPrefix(tecnicaRaw, ["técnica", "tecnica", "technique"]);
+                    const sobrecargaRaw =
                         findSentence(["sobrecarga", "progres", "aument", "carga", "progresión", "progresiva", "overload", "progress", "increase", "load", "progressive"]) ||
                         tLang(
                             "Incrementar progresivamente la carga (p.ej. +2-5% de carga o +1-2 repeticiones cuando completes el rango objetivo durante 1-2 sesiones).",
                             "Progressively increase the load (e.g., +2-5% weight or +1-2 reps once you hit the target range for 1-2 sessions)."
                         );
-                    const respiracion =
+                    const sobrecarga = cleanupPrefix(sobrecargaRaw, ["sobrecarga", "progression", "overload"]);
+                    const respiracionRaw =
                         findSentence(["respir", "inhal", "exhal", "inspir", "exhalar", "breath", "breathe", "inhale", "exhale"]) ||
                         tLang("Inhalar al bajar, exhalar al subir.", "Inhale on the way down, exhale on the way up.");
+                    const respiracion = cleanupPrefix(respiracionRaw, ["respiración", "respiracion", "breathing"]);
 
                     return `
-                        <ul class="plan-detailed-list">
-                            <li><strong>${escapeHtml(tLang("Técnica", "Technique"))}:</strong> ${escapeHtml(tecnica)}</li>
-                            <li><strong>${escapeHtml(tLang("Sobrecarga", "Progression"))}:</strong> ${escapeHtml(sobrecarga)}</li>
-                            <li><strong>${escapeHtml(tLang("Respiración", "Breathing"))}:</strong> ${escapeHtml(respiracion)}</li>
+                        <ul class="plan-detailed-list pt-detail-list">
+                            <li><span class="pt-detail-tag">${escapeHtml(tLang("Técnica", "Technique"))}</span><span class="pt-detail-text">${escapeHtml(tecnica)}</span></li>
+                            <li><span class="pt-detail-tag">${escapeHtml(tLang("Sobrecarga", "Progression"))}</span><span class="pt-detail-text">${escapeHtml(sobrecarga)}</span></li>
+                            <li><span class="pt-detail-tag">${escapeHtml(tLang("Respiración", "Breathing"))}</span><span class="pt-detail-text">${escapeHtml(respiracion)}</span></li>
                         </ul>
                     `;
                 };
@@ -1692,11 +1914,13 @@ function initDetallePorDiaPlan() {
                 const descanso = escapeHtml(ex.descanso_segundos);
                         const detailedHtml = buildDetailedHtml(descripcionDet, descripcion);
                         return `
-                            <article class="plan-card" style="height:100%;display:flex;flex-direction:column;justify-content:space-between;">
-                                <div>
-                                    <h3 class="plan-nombre" data-i18n-en="${nombreEn}">${nombreEs}</h3>
-                                    ${descripcion ? `<p class="plan-desc">${descripcion}</p>` : ""}
-                                    <div class="plan-meta" style="margin-top:6px;">
+                            <article class="plan-card pt-detail-card">
+                                <div class="pt-detail-card-inner">
+                                    <div class="pt-detail-header">
+                                        <h3 class="plan-nombre pt-detail-ex" data-i18n-en="${nombreEn}">${nombreEs}</h3>
+                                        ${descripcion ? `<p class="plan-desc pt-detail-desc">${descripcion}</p>` : ""}
+                                    </div>
+                                    <div class="plan-meta pt-detail-meta">
                                         <span class="plan-chip">${escapeHtml(tLang("Series", "Sets"))}: <strong>${series}</strong></span>
                                         <span class="plan-chip">${escapeHtml(tLang("Reps", "Reps"))}: <strong>${reps}</strong></span>
                                         <span class="plan-chip plan-chip--vertical"><span class="plan-chip-label">${escapeHtml(tLang("Descanso", "Rest"))}</span><span class="plan-chip-value">${descanso}</span></span>
@@ -1709,29 +1933,31 @@ function initDetallePorDiaPlan() {
             : [];
 
         // Build a vertical snap viewport so each exercise occupies the modal viewport
-        const viewportStyle = "overflow-y:auto;scroll-snap-type:y mandatory;-webkit-overflow-scrolling:touch;padding-right:6px;flex:1;";
-        const panelStyle = "scroll-snap-align:start;height:100%;width:100%;box-sizing:border-box;display:flex;flex-direction:column;justify-content:space-between;padding:18px;";
+        const viewportStyle = "overflow-y:auto;scroll-snap-type:y mandatory;scroll-behavior:smooth;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;touch-action:pan-y;flex:1;";
+        const panelStyle = "scroll-snap-align:start;scroll-snap-stop:always;width:100%;box-sizing:border-box;display:flex;flex-direction:column;padding:12px 0 16px;";
 
         const snapPanels = cardHtmls.length
             ? cardHtmls.map((htmlCard) => `<div class="plan-snap-panel" style="${panelStyle}">${htmlCard}</div>`).join("")
             : `<div class="plan-vacio">${escapeHtml(tLang("No hay ejercicios cargados para este día.", "No exercises loaded for this day."))}</div>`;
 
-        // Build content: header (day + small subtitle) + snapping viewport that fills remaining modal space
-        const containerStyle = "display:flex;flex-direction:column;gap:12px;height:70vh;max-height:74vh;";
         const headerHtml = `
-            <div style="text-align:center;padding:8px 12px;">
-                <h2 style="margin:0;font-size:1.6rem;line-height:1.1;font-weight:700;">${escapeHtml(String(diaInfo.dia ?? tLang("Día", "Day")))}</h2>
-                ${diaInfo.enfoque ? `<div style=\"margin-top:6px;font-size:0.95rem;color:var(--muted,#b3bac6);\">${escapeHtml(String(diaInfo.enfoque))}</div>` : ""}
+            <div class="pt-detail-hero">
+                <div class="pt-detail-hero-row">
+                    <div class="pt-detail-hero-title">${escapeHtml(String(diaInfo.dia ?? tLang("Día", "Day")))}</div>
+                    <div class="pt-detail-hero-count"><strong>${escapeHtml(String(ejercicios.length))}</strong> ${escapeHtml(tLang("ejercicios", "exercises"))}</div>
+                </div>
+                ${diaInfo.enfoque ? `<div class="pt-detail-hero-sub pt-detail-hero-focus">${escapeHtml(String(diaInfo.enfoque))}</div>` : ""}
             </div>
         `;
 
         const html = `
-            <div style="${containerStyle}">
+            <div class="pt-detail">
                 ${headerHtml}
-                <div class="plan-detalle-viewport" style="${viewportStyle};flex:1;">
-                    ${snapPanels}
+                <div class="pt-detail-body">
+                    <div class="plan-detalle-viewport pt-detail-viewport" style="${viewportStyle};flex:1;">
+                        ${snapPanels}
+                    </div>
                 </div>
-                <div style="text-align:center;margin-top:4px;color:var(--muted,#99a);"><small>${escapeHtml(String(ejercicios.length))} ${escapeHtml(tLang("ejercicios", "exercises"))}</small></div>
             </div>
         `;
 
@@ -1741,17 +1967,22 @@ function initDetallePorDiaPlan() {
         void wakeLockManager.requestIfNeeded();
 
         let onResize = null;
-        await sweetalert.fire({
+        const closeText = tLang("Cerrar", "Close");
+
+        const openWithSheet = globalThis.PTBottomSheet && typeof globalThis.PTBottomSheet.open === "function";
+        if (!openWithSheet) {
+            console.error("PTBottomSheet helper not loaded; cannot open plan detail modal.");
+            wakeLockManager.setReason("detalle", false);
+            return;
+        }
+
+        await globalThis.PTBottomSheet.open({
+            title: "",
+            ariaLabel: `${tLang("Detalle", "Details")}: ${String(diaInfo.dia ?? tLang("Día", "Day"))}`,
             html,
-            showCancelButton: false,
-            confirmButtonText: tLang("Cerrar", "Close"),
-            customClass: {
-                popup: "dashboard-swal",
-                confirmButton: "dashboard-swal-confirm",
-            },
-            didOpen: (popup) => {
-                // Ajuste inmediato + 2 frames para asegurar layout estable
-                const root = popup instanceof HTMLElement ? popup : document.body;
+            closeText,
+            didOpen: (sheet) => {
+                const root = sheet instanceof HTMLElement ? sheet : document.body;
                 try {
                     globalThis.UIIdioma?.translatePage?.(root);
                 } catch {

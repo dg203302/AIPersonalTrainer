@@ -63,14 +63,14 @@ main{
 }
 
 .loader{
-	width: min(520px, 100%);
+	width: min(560px, 100%);
 	border-radius: var(--radius-xl);
 	border: 1px solid var(--stroke2);
 	background: color-mix(in srgb, #fff 7%, transparent);
 	box-shadow: var(--shadow);
 	backdrop-filter: blur(12px) saturate(140%);
 	-webkit-backdrop-filter: blur(12px) saturate(140%);
-	padding: 24px;
+	padding: 26px;
 	display: grid;
 	gap: 16px;
 	place-items: center;
@@ -85,7 +85,7 @@ main{
 
 .loader-title{
 	margin: 0;
-	font-size: clamp(22px, 5.2vw, 32px);
+	font-size: clamp(22px, 5.2vw, 34px);
 	letter-spacing: .4px;
 	line-height: 1.1;
 }
@@ -99,35 +99,52 @@ main{
 }
 
 .loader-mark{
-	display: block;
-	width: min(320px, 78vw);
-	height: auto;
+	width: 100%;
+	display: grid;
+	place-items: center;
+	padding: 6px 0;
+}
+
+.ios-spinner{
+	position: relative;
+	width: 64px;
+	height: 64px;
+	opacity: .95;
 	filter:
 		drop-shadow(0 14px 38px rgba(0,0,0,.55))
 		drop-shadow(0 0 18px rgba(255,255,255,.22));
 }
 
-.loader-mark .ring{
-	stroke-dasharray: 90 20;
-	transform-origin: 60px 60px;
-	animation: spin 1.05s linear infinite;
-}
-.loader-mark .core{
-	filter: drop-shadow(0 0 14px rgba(255,255,255,.12));
-}
-
-.loader-mark .core-glass{
-	mix-blend-mode: screen;
-}
-
-.loader-mark .dot{
-	transform-origin: 60px 60px;
-	animation: spin 1.05s linear infinite;
+.ios-spinner span{
+	position: absolute;
+	top: 50%;
+	left: 50%;
+	width: 6px;
+	height: 20px;
+	margin-left: -3px;
+	margin-top: -30px;
+	border-radius: 999px;
+	background: rgba(255,255,255,.92);
+	transform-origin: 3px 30px;
+	animation: iosFade 1s linear infinite;
 }
 
-@keyframes spin{
-	from{ transform: rotate(0deg); }
-	to{ transform: rotate(360deg); }
+.ios-spinner span:nth-child(1){ transform: rotate(0deg); animation-delay: -0.9167s; opacity: .14; }
+.ios-spinner span:nth-child(2){ transform: rotate(30deg); animation-delay: -0.8333s; opacity: .20; }
+.ios-spinner span:nth-child(3){ transform: rotate(60deg); animation-delay: -0.75s; opacity: .26; }
+.ios-spinner span:nth-child(4){ transform: rotate(90deg); animation-delay: -0.6667s; opacity: .32; }
+.ios-spinner span:nth-child(5){ transform: rotate(120deg); animation-delay: -0.5833s; opacity: .38; }
+.ios-spinner span:nth-child(6){ transform: rotate(150deg); animation-delay: -0.5s; opacity: .44; }
+.ios-spinner span:nth-child(7){ transform: rotate(180deg); animation-delay: -0.4167s; opacity: .50; }
+.ios-spinner span:nth-child(8){ transform: rotate(210deg); animation-delay: -0.3333s; opacity: .58; }
+.ios-spinner span:nth-child(9){ transform: rotate(240deg); animation-delay: -0.25s; opacity: .66; }
+.ios-spinner span:nth-child(10){ transform: rotate(270deg); animation-delay: -0.1667s; opacity: .74; }
+.ios-spinner span:nth-child(11){ transform: rotate(300deg); animation-delay: -0.0833s; opacity: .82; }
+.ios-spinner span:nth-child(12){ transform: rotate(330deg); animation-delay: 0s; opacity: .90; }
+
+@keyframes iosFade{
+	0%{ opacity: 1; }
+	100%{ opacity: .12; }
 }
 
 .sr-only{
@@ -143,8 +160,7 @@ main{
 }
 
 @media (prefers-reduced-motion: reduce){
-	.loader-mark .ring,
-	.loader-mark .dot{
+	.ios-spinner span{
 		animation: none;
 	}
 }

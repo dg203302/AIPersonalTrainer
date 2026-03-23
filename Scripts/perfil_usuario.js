@@ -208,6 +208,94 @@ const initPesoWheelInPopup = (popupEl, { mode, currentPesoAct, currentPesoObj })
 	});
 };
 
+const openPerfilWheelSheet = async ({
+	title,
+	ariaLabel,
+	helperText,
+	helperTextEn,
+	html,
+	init,
+	getValue,
+	validate,
+}) => {
+	const bs = window.PTBottomSheet;
+	if (!bs || typeof bs.open !== "function" || typeof bs.close !== "function") {
+		console.warn("PTBottomSheet no está disponible; se mantiene SweetAlert para otros flujos.");
+		return null;
+	}
+
+	let resolved = false;
+	let resolvedValue = null;
+
+	await bs.open({
+		title: title || "",
+		ariaLabel: ariaLabel || title || "Modal",
+		className: "pt-perfil-sheet",
+		html: `
+			<div class="pt-perfil-form">
+				<p class="pt-perfil-helper" data-i18n-en="${escapeHtml(helperTextEn || helperText || "")}">${escapeHtml(helperText || "")}</p>
+				<div class="pt-form-error" data-pt-error role="alert" aria-live="polite"></div>
+				${html || ""}
+				<div class="pt-perfil-actions">
+					<button type="button" class="btn-primary" data-pt-save data-i18n-en="Save">Guardar</button>
+				</div>
+			</div>
+		`,
+		didOpen: (sheet) => {
+			const ui = window.UIIdioma;
+			try {
+				if (ui && typeof ui.translatePage === "function") ui.translatePage(sheet);
+			} catch {
+				// ignore
+			}
+
+			const errorEl = sheet.querySelector("[data-pt-error]");
+			const setError = (msg) => {
+				if (!errorEl) return;
+				const text = String(msg || "").trim();
+				errorEl.textContent = text;
+				errorEl.classList.toggle("is-show", !!text);
+			};
+			const onSave = () => {
+				setError("");
+				let v = null;
+				try {
+					v = typeof getValue === "function" ? getValue(sheet) : null;
+				} catch {
+					v = null;
+				}
+				let err = "";
+				try {
+					err = typeof validate === "function" ? validate(v, sheet) : "";
+				} catch {
+					err = "";
+				}
+				if (err) {
+					setError(err);
+					return;
+				}
+				resolved = true;
+				resolvedValue = v;
+				bs.close();
+			};
+			sheet.querySelector("[data-pt-save]")?.addEventListener("click", onSave);
+
+			try {
+				if (typeof init === "function") init(sheet);
+			} catch {
+				// ignore
+			}
+		},
+		willClose: () => {
+			if (resolved) return;
+			resolved = true;
+			resolvedValue = null;
+		},
+	});
+
+	return resolvedValue;
+};
+
 const updateFixedChromeHeights = () => {
 	const header = document.querySelector("header");
 	const footer = document.querySelector("footer");
@@ -360,45 +448,31 @@ window.onload = async () => {
 document.getElementById("editar_altura").addEventListener("click", async () => {
 	const currentAltura = parseInt(localStorage.getItem("altura_usuario") || "170", 10);
 
-	const result = await swal.fire({
-		title: "Editar Altura",
+	const nuevaAltura = await openPerfilWheelSheet({
+		title: "Editar altura",
+		ariaLabel: "Editar altura",
+		helperText: "Seleccioná tu altura. Podés deslizar, tocar o usar las flechas ↑ ↓.",
+		helperTextEn: "Select your height. You can scroll, tap or use ↑ ↓.",
 		html: `
 			<div class="altura-wheel">
-				<p class="swal-helper">Seleccioná tu altura. Podés deslizar, tocar o usar las flechas ↑ ↓.</p>
-				<div class="wheel-row has-row-highlight" role="group" aria-label="Altura">
-					<div class="wheel" data-field="altura_modal" aria-label="Altura en centímetros" tabindex="0"></div>
+				<div class="wheel-row has-row-highlight" role="group" aria-label="Altura" data-i18n-en-aria-label="Height">
+					<div class="wheel" data-field="altura_modal" aria-label="Altura en centímetros" data-i18n-en-aria-label="Height in centimeters" tabindex="0"></div>
 				</div>
 				<input type="hidden" id="altura_modal" required>
 			</div>
 		`,
-		showCancelButton: true,
-		confirmButtonText: "Guardar",
-		cancelButtonText: "Cancelar",
-		customClass: {
-			popup: "perfil-swal",
-			confirmButton: "perfil-swal-confirm",
-			cancelButton: "perfil-swal-cancel",
+		init: (sheet) => {
+			initAlturaWheelInPopup(sheet, currentAltura);
+			sheet.querySelector(".wheel[data-field='altura_modal']")?.focus?.();
 		},
-		didOpen: () => {
-			const popup = (typeof swal.getPopup === "function" && swal.getPopup()) || document.querySelector(".swal2-popup");
-			initAlturaWheelInPopup(popup, currentAltura);
-		},
-		preConfirm: () => {
-			const popup = (typeof swal.getPopup === "function" && swal.getPopup()) || document.querySelector(".swal2-popup");
-			const input = popup?.querySelector("#altura_modal");
-			const alt = parseInt(input?.value || "", 10);
-			if (!Number.isFinite(alt) || alt < 100 || alt > 200) {
-				if (typeof swal.showValidationMessage === "function") {
-					swal.showValidationMessage("Altura inválida");
-				}
-				return false;
-			}
-			return alt;
+		getValue: (sheet) => parseInt(sheet.querySelector("#altura_modal")?.value || "", 10),
+		validate: (alt) => {
+			if (!Number.isFinite(alt) || alt < 100 || alt > 200) return "Altura inválida";
+			return "";
 		},
 	});
 
-	if (!result.isConfirmed) return;
-	const nuevaAltura = result.value;
+	if (!Number.isFinite(nuevaAltura)) return;
 	localStorage.setItem("altura_usuario", String(nuevaAltura));
 	const alturaSpan = document.getElementById("altura_usuario");
 	if (alturaSpan) alturaSpan.textContent = String(nuevaAltura);
@@ -408,56 +482,54 @@ document.getElementById("editar_altura").addEventListener("click", async () => {
 document.getElementById("editar_edad").addEventListener("click", async () => {
 	const currentEdad = parseInt(localStorage.getItem("edad_usuario") || "26", 10);
 
-	const result = await swal.fire({
-		title: "Editar Edad",
+	const fecha = await openPerfilWheelSheet({
+		title: "Editar edad",
+		ariaLabel: "Editar edad",
+		helperText: "Elegí tu fecha de nacimiento (día/mes/año). Luego calculamos tu edad automáticamente.",
+		helperTextEn: "Pick your birth date (day/month/year). We'll calculate your age automatically.",
 		html: `
 			<div class="edad-wheel">
-				<p class="swal-helper">Elegí tu fecha de nacimiento (día/mes/año). Luego calculamos tu edad automáticamente.</p>
-				<div class="wheel-row" role="group" aria-label="Fecha de nacimiento">
-					<div class="wheel" data-field="dia_modal" aria-label="Día" tabindex="0"></div>
-					<div class="wheel" data-field="mes_modal" aria-label="Mes" tabindex="0"></div>
-					<div class="wheel" data-field="ano_modal" aria-label="Año" tabindex="0"></div>
+				<div class="wheel-row" role="group" aria-label="Fecha de nacimiento" data-i18n-en-aria-label="Birth date">
+					<div class="wheel" data-field="dia_modal" aria-label="Día" data-i18n-en-aria-label="Day" tabindex="0"></div>
+					<div class="wheel" data-field="mes_modal" aria-label="Mes" data-i18n-en-aria-label="Month" tabindex="0"></div>
+					<div class="wheel" data-field="ano_modal" aria-label="Año" data-i18n-en-aria-label="Year" tabindex="0"></div>
 				</div>
 				<input type="hidden" id="dia_modal" required>
 				<input type="hidden" id="mes_modal" required>
 				<input type="hidden" id="ano_modal" required>
 			</div>
 		`,
-		showCancelButton: true,
-		confirmButtonText: "Guardar",
-		cancelButtonText: "Cancelar",
-		customClass: {
-			popup: "perfil-swal",
-			confirmButton: "perfil-swal-confirm",
-			cancelButton: "perfil-swal-cancel",
+		init: (sheet) => {
+			initEdadWheelsInPopup(sheet, currentEdad);
+			sheet.querySelector(".wheel[data-field='dia_modal']")?.focus?.();
 		},
-		didOpen: () => {
-			const popup = (typeof swal.getPopup === "function" && swal.getPopup()) || document.querySelector(".swal2-popup");
-			initEdadWheelsInPopup(popup, currentEdad);
+		getValue: (sheet) => {
+			const dia = parseInt(sheet.querySelector("#dia_modal")?.value || "", 10);
+			const mes = parseInt(sheet.querySelector("#mes_modal")?.value || "", 10);
+			const ano = parseInt(sheet.querySelector("#ano_modal")?.value || "", 10);
+			return { dia, mes, ano };
 		},
-		preConfirm: () => {
-			const popup = (typeof swal.getPopup === "function" && swal.getPopup()) || document.querySelector(".swal2-popup");
-			const dia = parseInt(popup?.querySelector("#dia_modal")?.value || "", 10);
-			const mes = parseInt(popup?.querySelector("#mes_modal")?.value || "", 10);
-			const ano = parseInt(popup?.querySelector("#ano_modal")?.value || "", 10);
-			if (!isValidYMD(ano, mes, dia)) {
-				if (typeof swal.showValidationMessage === "function") swal.showValidationMessage("Fecha de nacimiento inválida");
-				return false;
-			}
+		validate: ({ dia, mes, ano }) => {
+			if (!isValidYMD(ano, mes, dia)) return "Fecha de nacimiento inválida";
 			const edad = calcAgeFromYMD(ano, mes, dia);
-			if (!Number.isFinite(edad) || edad < 1 || edad > 120) {
-				if (typeof swal.showValidationMessage === "function") swal.showValidationMessage("Edad inválida");
-				return false;
-			}
-			return edad;
+			if (!Number.isFinite(edad) || edad < 1 || edad > 120) return "Edad inválida";
+			return "";
 		},
 	});
 
-	if (!result.isConfirmed) return;
-	const nuevaEdad = result.value;
-	localStorage.setItem("edad_usuario", String(nuevaEdad));
+	const edadCalculada = (() => {
+		if (!fecha || typeof fecha !== "object") return null;
+		const { dia, mes, ano } = fecha;
+		if (!isValidYMD(ano, mes, dia)) return null;
+		const edad = calcAgeFromYMD(ano, mes, dia);
+		if (!Number.isFinite(edad) || edad < 1 || edad > 120) return null;
+		return edad;
+	})();
+
+	if (!Number.isFinite(edadCalculada)) return;
+	localStorage.setItem("edad_usuario", String(edadCalculada));
 	const edadSpan = document.getElementById("edad_usuario");
-	if (edadSpan) edadSpan.textContent = String(nuevaEdad);
+	if (edadSpan) edadSpan.textContent = String(edadCalculada);
 	await subirCambiosPerfil();
 })
 
@@ -468,55 +540,44 @@ const openPesoModal = async ({ mode = "act" } = {}) => {
 	const isObj = mode === "obj";
 	const title = isObj ? "Editar Peso Objetivo" : "Editar Peso Actual";
 	const sectionTitle = isObj ? "Peso objetivo" : "Peso actual";
+	const sectionTitleEn = isObj ? "Target weight" : "Current weight";
 	const wheelField = isObj ? "peso_desea_modal" : "peso_act_modal";
 	const wheelAria = isObj ? "Peso objetivo en kilogramos" : "Peso actual en kilogramos";
 	const inputId = isObj ? "peso_desea_modal" : "peso_act_modal";
 
-	const result = await swal.fire({
-		title: title,
+	const newValue = await openPerfilWheelSheet({
+		title: isObj ? "Editar peso objetivo" : "Editar peso actual",
+		ariaLabel: isObj ? "Editar peso objetivo" : "Editar peso actual",
+		helperText: `Ajustá tu ${sectionTitle.toLowerCase()}. Podés deslizar, tocar o usar ↑ ↓.`,
+		helperTextEn: `Adjust your ${isObj ? "target weight" : "current weight"}. You can scroll, tap or use ↑ ↓.`,
 		html: `
 			<div class="pesos-wheel">
-				<p class="swal-helper">Ajustá tu ${sectionTitle.toLowerCase()}. Podés deslizar, tocar o usar ↑ ↓.</p>
-				<div class="pesos-grid" role="group" aria-label="Selección de pesos">
+				<div class="pesos-grid" role="group" aria-label="Selección de pesos" data-i18n-en-aria-label="Weight selection">
 					<section class="field">
-						<h3>${sectionTitle}</h3>
+						<h3 data-i18n-en="${escapeHtml(sectionTitleEn)}">${escapeHtml(sectionTitle)}</h3>
 						<div class="wheel-wrap">
-							<div class="wheel" data-field="${wheelField}" aria-label="${wheelAria}" tabindex="0"></div>
+							<div class="wheel" data-field="${escapeHtml(wheelField)}" aria-label="${escapeHtml(wheelAria)}" tabindex="0"></div>
 							<div class="wheel-highlight" aria-hidden="true"></div>
 						</div>
-						<input type="hidden" id="${inputId}" required>
+						<input type="hidden" id="${escapeHtml(inputId)}" required>
 					</section>
 				</div>
 			</div>
 		`,
-		showCancelButton: true,
-		confirmButtonText: "Guardar",
-		cancelButtonText: "Cancelar",
-		customClass: {
-			popup: "perfil-swal",
-			confirmButton: "perfil-swal-confirm",
-			cancelButton: "perfil-swal-cancel",
+		init: (sheet) => {
+			initPesoWheelInPopup(sheet, { mode, currentPesoAct, currentPesoObj });
+			sheet.querySelector(`.wheel[data-field="${wheelField}"]`)?.focus?.();
 		},
-		didOpen: () => {
-			const popup = (typeof swal.getPopup === "function" && swal.getPopup()) || document.querySelector(".swal2-popup");
-			initPesoWheelInPopup(popup, { mode, currentPesoAct, currentPesoObj });
-			popup?.querySelector(`.wheel[data-field="${wheelField}"]`)?.focus?.();
-		},
-		preConfirm: () => {
-			const popup = (typeof swal.getPopup === "function" && swal.getPopup()) || document.querySelector(".swal2-popup");
-			const value = parseInt(popup?.querySelector(`#${inputId}`)?.value || "", 10);
+		getValue: (sheet) => parseInt(sheet.querySelector(`#${inputId}`)?.value || "", 10),
+		validate: (value) => {
 			if (!Number.isFinite(value) || value < 40 || value > 200) {
-				if (typeof swal.showValidationMessage === "function") {
-					swal.showValidationMessage(isObj ? "Peso objetivo inválido" : "Peso actual inválido");
-				}
-				return false;
+				return isObj ? "Peso objetivo inválido" : "Peso actual inválido";
 			}
-			return value;
+			return "";
 		},
 	});
 
-	if (!result.isConfirmed) return;
-	const newValue = result.value;
+	if (!Number.isFinite(newValue)) return;
 	if (isObj) {
 		localStorage.setItem("peso_objetivo_usuario", String(newValue));
 		const pesoObjSpan = document.getElementById("peso_objetivo_usuario");

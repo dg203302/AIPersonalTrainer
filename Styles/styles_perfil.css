@@ -70,7 +70,7 @@ html.no-transparency header,
 html.no-transparency footer,
 html.no-transparency section,
 html.no-transparency .creditos-box,
-html.no-transparency .footer-btn,
+html.no-transparency .footer-btn.is-active,
 html.no-transparency #logout_button,
 html.no-transparency button {
 	backdrop-filter: none !important;
@@ -90,7 +90,7 @@ html.no-transparency .creditos-box {
 	background: var(--bg1) !important;
 }
 
-html.no-transparency .footer-btn,
+html.no-transparency .footer-btn.is-active,
 html.no-transparency #logout_button,
 html.no-transparency button {
 	background: color-mix(in srgb, #fff 10%, var(--bg1)) !important;
@@ -105,6 +105,18 @@ a:focus-visible {
 	outline: 3px solid color-mix(in srgb, var(--accent) 70%, transparent);
 	outline-offset: 3px;
 	border-radius: 10px;
+}
+
+.sr-only {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	padding: 0;
+	margin: -1px;
+	overflow: hidden;
+	clip: rect(0, 0, 0, 0);
+	white-space: nowrap;
+	border: 0;
 }
 
 header {
@@ -512,6 +524,72 @@ button:active {
 	transform: translateY(1px);
 }
 
+/* Botón principal (CTA) - mismo estilo que Dashboard */
+.btn-primary {
+	border: 0;
+	color: #071018;
+	font-weight: 800;
+	letter-spacing: .3px;
+	text-transform: none;
+	background: linear-gradient(
+		135deg,
+		color-mix(in srgb, var(--accent) 92%, #ffffff 8%),
+		color-mix(in srgb, var(--accent2) 92%, #ffffff 8%)
+	);
+	box-shadow:
+		0 18px 50px rgba(0, 0, 0, .36),
+		0 0 0 1px rgba(255, 255, 255, .14) inset;
+}
+
+.btn-primary:hover {
+	filter: saturate(1.1) brightness(1.03);
+}
+
+.btn-primary:focus-visible {
+	outline: 3px solid color-mix(in srgb, var(--accent) 70%, transparent);
+	outline-offset: 3px;
+}
+
+/* Perfil: botones editar (solo ícono, sin píldora) */
+#datos_usuario .btn-icon {
+	padding: 0;
+	width: 40px;
+	min-width: 40px;
+	min-height: 40px;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	border-radius: 14px;
+	border: 1px solid transparent;
+	background: transparent;
+	box-shadow: none;
+}
+
+#datos_usuario .btn-icon:hover {
+	background: color-mix(in srgb, #fff 8%, transparent);
+	border-color: color-mix(in srgb, #fff 14%, transparent);
+}
+
+#datos_usuario .btn-icon:active {
+	transform: translateY(1px);
+}
+
+#datos_usuario .btn-icon:focus-visible {
+	outline: 3px solid color-mix(in srgb, var(--accent) 70%, transparent);
+	outline-offset: 3px;
+}
+
+#datos_usuario .btn-icon img {
+	width: 18px;
+	height: 18px;
+	opacity: .92;
+}
+
+html.no-transparency #datos_usuario .btn-icon {
+	background: transparent !important;
+	border-color: transparent !important;
+}
+
 #eliminar_cuenta {
 	width: 100%;
 	min-height: 46px;
@@ -521,15 +599,17 @@ button:active {
 
 footer {
 	position: fixed;
-	left: 0;
-	right: 0;
-	bottom: 0;
+	left: var(--pad);
+	right: var(--pad);
+	bottom: calc(12px + env(safe-area-inset-bottom));
 	z-index: 40;
-	padding: 14px var(--pad) calc(14px + env(safe-area-inset-bottom));
+	padding: 10px;
 	background: color-mix(in srgb, #000 18%, transparent);
 	backdrop-filter: blur(16px) saturate(150%);
 	-webkit-backdrop-filter: blur(16px) saturate(150%);
-	border-top: 1px solid var(--stroke);
+	border: 1px solid var(--stroke);
+	border-radius: var(--radius-xl);
+	box-shadow: var(--shadow-soft);
 	display: flex;
 	justify-content: center;
 }
@@ -555,8 +635,8 @@ footer {
 	gap: 10px;
 
 	appearance: none;
-	border: 1px solid color-mix(in srgb, #fff 22%, transparent);
-	background: color-mix(in srgb, #fff 8%, transparent);
+	border: 1px solid transparent;
+	background: transparent;
 	color: var(--text);
 	border-radius: 999px;
 	padding: 12px 14px;
@@ -564,7 +644,7 @@ footer {
 	font: inherit;
 	font-weight: 650;
 	letter-spacing: .15px;
-	box-shadow: var(--shadow-soft);
+	box-shadow: none;
 	text-decoration: none;
 	user-select: none;
 }
@@ -575,7 +655,7 @@ footer {
 }
 
 .footer-btn:hover {
-	background: color-mix(in srgb, #fff 10%, transparent);
+	opacity: .92;
 }
 
 .footer-btn:active {
@@ -591,6 +671,27 @@ footer {
 	width: 18px;
 	height: 18px;
 	opacity: .9;
+}
+
+.footer-btn svg {
+	width: 18px;
+	height: 18px;
+	opacity: .9;
+}
+
+.footer-btn.is-active {
+	border-color: color-mix(in srgb, #fff 22%, transparent);
+	background: color-mix(in srgb, #fff 8%, transparent);
+	box-shadow: var(--shadow-soft);
+}
+
+.footer-btn.is-active:hover {
+	opacity: 1;
+	background: color-mix(in srgb, #fff 10%, transparent);
+}
+
+.footer-btn.is-active:active {
+	background: color-mix(in srgb, #fff 12%, transparent);
 }
 
 @media (min-width: 720px) {
@@ -610,7 +711,8 @@ footer {
 /* Escritorio / pantallas anchas: sidebar derecha (navegación) + logout al fondo */
 @media (min-width: 1024px) {
 	:root {
-		--sidebar-w: 320px;
+		--sidebar-btn-w: 48px;
+		--sidebar-w: calc(var(--sidebar-btn-w) + (var(--pad) * 2));
 		/* En escritorio el footer pasa a ser sidebar, no reservamos espacio inferior */
 		--footer-fixed: 0px !important;
 	}
@@ -641,6 +743,7 @@ footer {
 		padding: calc(14px + env(safe-area-inset-top)) var(--pad) calc(14px + env(safe-area-inset-bottom));
 		border-top: 0;
 		border-left: 1px solid var(--stroke);
+		border-radius: 0;
 		box-shadow: -10px 0 30px rgba(0, 0, 0, .22);
 		justify-content: flex-start;
 		align-items: stretch;
@@ -652,14 +755,14 @@ footer {
 		width: 100%;
 		margin: 0;
 		flex-direction: column;
-		align-items: stretch;
+		align-items: flex-start;
 		justify-content: flex-start;
 		gap: 10px;
 	}
 
 	.footer-btn {
 		flex: 0 0 auto;
-		width: 100%;
+		width: auto;
 	}
 
 	/* Logout dentro de la sidebar: ocupar ancho y empujar al fondo */
@@ -911,4 +1014,224 @@ footer {
 	.perfil-swal .pesos-grid {
 		grid-template-columns: 1fr 1fr;
 	}
+}
+
+/* Bottom sheet (modales nuevos) */
+.pt-sheet-overlay{
+	position:fixed;
+	inset:0;
+	z-index:9999;
+	display:flex;
+	align-items:flex-end;
+	justify-content:center;
+	padding:14px;
+	background:rgba(0,0,0,.40);
+	-webkit-backdrop-filter: blur(8px);
+	backdrop-filter: blur(8px);
+	opacity:0;
+	transition:opacity .2s ease;
+}
+.pt-sheet-overlay.is-open{opacity:1;}
+.pt-sheet-overlay.is-dragging{transition:none;}
+
+.pt-sheet{
+	width:min(760px, 100%);
+	max-height:min(90vh, 900px);
+	display:flex;
+	flex-direction:column;
+	border-radius:22px;
+	border:1px solid rgba(255,255,255,.12);
+	background:
+		linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.02));
+	-webkit-backdrop-filter: blur(22px);
+	backdrop-filter: blur(22px);
+	box-shadow: 0 22px 70px rgba(0,0,0,.65);
+	transform:translateY(110%);
+	transition:transform .25s ease;
+	overflow:hidden;
+}
+html.no-transparency .pt-sheet{
+	background:rgba(18,20,26,.98);
+	-webkit-backdrop-filter:none;
+	backdrop-filter:none;
+}
+.pt-sheet.is-open{transform:translateY(0);}
+.pt-sheet.is-dragging{transition:none;}
+
+.pt-sheet-header{
+	position:relative;
+	display:flex;
+	align-items:flex-start;
+	justify-content:space-between;
+	gap:12px;
+	padding:14px 14px 12px;
+	touch-action:none;
+	border-bottom:1px solid rgba(255,255,255,.08);
+	background:linear-gradient(180deg, rgba(0,0,0,.10), transparent);
+}
+.pt-sheet-handle{
+	width:54px;
+	height:6px;
+	border-radius:999px;
+	background:rgba(255,255,255,.20);
+	margin:0 auto;
+	position:absolute;
+	left:50%;
+	transform:translateX(-50%);
+	top:10px;
+	touch-action:none;
+}
+.pt-sheet-titlewrap{flex:1; min-width:0; padding-top:12px; padding-right:8px;}
+.pt-sheet-title{margin:0; font-size:16px; font-weight:900; letter-spacing:.2px; color:rgba(255,255,255,.94);}
+.pt-sheet-subtitle{margin-top:4px; font-size:12.5px; color:rgba(255,255,255,.62);}
+
+.pt-sheet-content{
+	padding:10px 12px 16px;
+	flex:1;
+	min-height:0;
+	display:flex;
+	flex-direction:column;
+	overflow:auto;
+}
+
+/* Perfil: sheets de edición (altura/edad/peso) */
+.pt-perfil-sheet{
+	/* Solo para scoping de estilos internos del Perfil.
+	   El contenedor principal hereda el look del sheet base. */
+}
+
+.pt-perfil-sheet .pt-perfil-helper{
+	margin: 0 0 12px;
+	font-size: 13.5px;
+	line-height: 1.55;
+	color: var(--muted);
+}
+
+/* Error inline (mismo que en modales del Dashboard) */
+.pt-form-error{
+	display:none;
+	margin:10px 2px 0;
+	padding:10px 12px;
+	border-radius:14px;
+	border:1px solid color-mix(in srgb, var(--accent) 35%, transparent);
+	background: color-mix(in srgb, #000 22%, transparent);
+	color: color-mix(in srgb, var(--text) 92%, white 8%);
+	font-size:13px;
+	line-height:1.45;
+}
+.pt-form-error.is-show{display:block;}
+
+.pt-perfil-sheet .pt-perfil-actions{
+	display:flex;
+	gap:10px;
+	justify-content:flex-end;
+	margin-top:14px;
+}
+
+.pt-perfil-sheet .wheel-row{
+	position: relative;
+	display: grid;
+	grid-template-columns: 1fr;
+	gap: 10px;
+	align-items: center;
+}
+
+.pt-perfil-sheet .wheel{
+	position: relative;
+	height: 176px;
+	overflow-y: auto;
+	overflow-x: hidden;
+	border-radius: var(--radius-lg);
+	border: 1px solid var(--stroke2);
+	background:
+		radial-gradient(700px 240px at 10% 0%, color-mix(in srgb, var(--accent2) 12%, transparent) 0%, transparent 60%),
+		linear-gradient(180deg, color-mix(in srgb, #000 16%, transparent), color-mix(in srgb, #000 10%, transparent));
+	scroll-snap-type: y mandatory;
+	scroll-snap-stop: always;
+	-webkit-overflow-scrolling: touch;
+	padding: 66px 10px;
+	scroll-padding-top: 66px;
+	scroll-padding-bottom: 66px;
+	outline: none;
+	box-shadow: var(--shadow-soft);
+	scrollbar-width: none;
+}
+
+.pt-perfil-sheet .wheel::-webkit-scrollbar{display:none;}
+
+.pt-perfil-sheet .wheel-item{
+	height: 44px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	font-size: 16px;
+	letter-spacing: .4px;
+	color: color-mix(in srgb, var(--text) 55%, transparent);
+	scroll-snap-align: center;
+	user-select: none;
+}
+
+.pt-perfil-sheet .wheel-item.is-active{
+	color: var(--text);
+	font-weight: 750;
+}
+
+.pt-perfil-sheet .wheel:focus-visible{
+	outline: 3px solid color-mix(in srgb, var(--accent) 60%, transparent);
+	outline-offset: 3px;
+}
+
+.pt-perfil-sheet .wheel-row.has-row-highlight::after{
+	content: "";
+	position: absolute;
+	left: 0;
+	right: 0;
+	top: 50%;
+	transform: translateY(-50%);
+	height: 44px;
+	border-radius: 14px;
+	border: 1px solid color-mix(in srgb, var(--accent) 28%, var(--stroke2));
+	background: color-mix(in srgb, #fff 6%, transparent);
+	box-shadow: inset 0 0 0 1px color-mix(in srgb, #000 20%, transparent);
+	pointer-events: none;
+}
+
+/* Edad sheet: 3 wheels */
+.pt-perfil-sheet .edad-wheel .wheel-row{
+	grid-template-columns: 1fr 1fr 1.3fr;
+}
+
+/* Pesos sheet */
+.pt-perfil-sheet .pesos-grid{
+	display: grid;
+	grid-template-columns: 1fr;
+	gap: 12px;
+	align-items: start;
+}
+
+.pt-perfil-sheet .field h3{
+	margin: 0 0 8px;
+	font-size: 14px;
+	color: var(--text);
+	letter-spacing: .1px;
+}
+
+.pt-perfil-sheet .wheel-wrap{position: relative; width: 100%;}
+
+.pt-perfil-sheet .wheel-highlight{
+	position: absolute;
+	left: 0;
+	right: 0;
+	top: calc(50% - 22px);
+	height: 44px;
+	border-radius: 14px;
+	border: 1px solid color-mix(in srgb, var(--accent) 28%, var(--stroke2));
+	background: color-mix(in srgb, #fff 6%, transparent);
+	box-shadow: inset 0 0 0 1px color-mix(in srgb, #000 20%, transparent);
+	pointer-events: none;
+	z-index: 2;
+}
+
+@media (min-width: 720px) {
+	.pt-perfil-sheet .pesos-grid{grid-template-columns: 1fr 1fr;}
 }
