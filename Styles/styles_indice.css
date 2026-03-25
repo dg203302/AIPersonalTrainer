@@ -79,12 +79,99 @@ body {
 		Arial,
 		sans-serif;
 	line-height: 1.35;
-	background:
-		radial-gradient(1100px 720px at 20% 0%, rgba(255, 255, 255, .06) 0%, transparent 60%),
-		radial-gradient(900px 620px at 80% 100%, rgba(255, 255, 255, .045) 0%, transparent 62%),
-		linear-gradient(180deg, var(--bg0), var(--bg1));
+	background: linear-gradient(180deg, var(--bg0), var(--bg1));
 	min-height: 100svh;
 	overflow-x: hidden;
+	position: relative;
+	isolation: isolate;
+}
+
+/* Fondo "respiración" (igual al dashboard) */
+body::before,
+body::after {
+	content: "";
+	position: fixed;
+	inset: -12vmax;
+	z-index: 0;
+	pointer-events: none;
+	will-change: transform, opacity, filter;
+}
+
+body::before {
+	background:
+		radial-gradient(
+			circle at 30% 35%,
+			color-mix(in srgb, var(--accent) 42%, transparent) 0%,
+			transparent 58%
+		),
+		radial-gradient(
+			circle at 78% 22%,
+			color-mix(in srgb, var(--accent2) 26%, transparent) 0%,
+			transparent 55%
+		),
+		radial-gradient(
+			circle at 70% 65%,
+			color-mix(in srgb, var(--accent) 28%, transparent) 0%,
+			transparent 62%
+		);
+	opacity: 0.34;
+	filter: blur(32px) saturate(115%);
+	transform: scale(1);
+	animation: pt-breathe-a 7.5s ease-in-out infinite;
+}
+
+body::after {
+	background:
+		radial-gradient(
+			circle at 50% 45%,
+			color-mix(in srgb, var(--accent) 18%, transparent) 0%,
+			transparent 60%
+		),
+		linear-gradient(180deg, color-mix(in srgb, var(--bg0) 88%, transparent), transparent 55%);
+	opacity: 0.22;
+	filter: blur(46px) saturate(105%);
+	transform: scale(1);
+	animation: pt-breathe-b 9.5s ease-in-out infinite;
+}
+
+@keyframes pt-breathe-a {
+	0% {
+		opacity: 0.30;
+		transform: scale(1);
+		filter: blur(30px) saturate(110%);
+	}
+	50% {
+		opacity: 0.46;
+		transform: scale(1.08);
+		filter: blur(36px) saturate(125%);
+	}
+	100% {
+		opacity: 0.30;
+		transform: scale(1);
+		filter: blur(30px) saturate(110%);
+	}
+}
+
+@keyframes pt-breathe-b {
+	0% {
+		opacity: 0.18;
+		transform: scale(1);
+	}
+	50% {
+		opacity: 0.28;
+		transform: scale(1.05);
+	}
+	100% {
+		opacity: 0.18;
+		transform: scale(1);
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	body::before,
+	body::after {
+		animation: none !important;
+	}
 }
 
 /* Desactivar transparencias (controlado por el toggle) */
@@ -202,6 +289,8 @@ main {
 		calc(var(--header-fixed, calc(var(--header-h) + env(safe-area-inset-top))) + 18px) var(--pad) calc(var(--footer-fixed, calc(var(--footer-h) + env(safe-area-inset-bottom))) + 18px);
 	max-width: var(--content-max);
 	margin: 0 auto;
+	position: relative;
+	z-index: 1;
 }
 
 /* Anchor links shouldn't hide under the fixed header */
@@ -502,6 +591,96 @@ main>section {
 	color: var(--text);
 	font-size: 12.5px;
 	letter-spacing: .1px;
+}
+
+/* --- Sección: Ejercicios (mejor tipografía + contenedores) --- */
+#ejercicios > h1 {
+	font-size: clamp(22px, 2.2vw, 30px);
+	letter-spacing: .2px;
+	line-height: 1.12;
+	font-weight: 850;
+	margin: 0 0 10px;
+}
+
+#ejercicios .lead {
+	font-size: 15px;
+	line-height: 1.6;
+	color: var(--text);
+	max-width: 74ch;
+}
+
+#ejercicios .badge-row {
+	gap: 10px;
+	margin: 12px 0 16px;
+}
+
+#ejercicios .badge {
+	font-weight: 700;
+	border-color: color-mix(in srgb, #fff 18%, transparent);
+	background:
+		radial-gradient(220px 110px at 20% 0%, color-mix(in srgb, var(--accent) 10%, transparent) 0%, transparent 60%),
+		color-mix(in srgb, #fff 7%, transparent);
+}
+
+#ejercicios .muted {
+	max-width: 78ch;
+}
+
+#ejercicios .lista-ejercicios {
+	margin-top: 14px;
+	padding: 16px;
+	border-radius: var(--radius-xl);
+	border: 1px solid color-mix(in srgb, #fff 14%, transparent);
+	background:
+		radial-gradient(900px 240px at 10% 0%, color-mix(in srgb, var(--accent2) 10%, transparent) 0%, transparent 60%),
+		color-mix(in srgb, #000 18%, transparent);
+	box-shadow: var(--shadow-soft);
+}
+
+#ejercicios .lista-ejercicios h2 {
+	margin: 14px 0 8px;
+	font-size: 13px;
+	font-weight: 800;
+	letter-spacing: .14em;
+	text-transform: uppercase;
+	color: color-mix(in srgb, var(--muted2) 92%, transparent);
+}
+
+#ejercicios .lista-ejercicios h2:first-of-type {
+	margin-top: 2px;
+}
+
+#ejercicios .lista-ejercicios ul {
+	margin: 0 0 12px;
+	padding-left: 18px;
+	display: grid;
+	gap: 6px;
+}
+
+#ejercicios .lista-ejercicios li {
+	color: var(--muted);
+	line-height: 1.45;
+}
+
+#ejercicios .lista-ejercicios li::marker {
+	color: color-mix(in srgb, var(--accent) 55%, var(--muted2));
+}
+
+#ejercicios .callout {
+	padding: 16px;
+	border-radius: var(--radius-xl);
+	border-color: color-mix(in srgb, #fff 14%, transparent);
+	box-shadow: var(--shadow-soft);
+	background:
+		radial-gradient(900px 260px at 15% 0%, color-mix(in srgb, var(--accent) 14%, transparent) 0%, transparent 60%),
+		radial-gradient(700px 220px at 85% 30%, color-mix(in srgb, var(--accent2) 10%, transparent) 0%, transparent 62%),
+		color-mix(in srgb, #fff 6%, transparent);
+}
+
+#ejercicios .callout h2 {
+	font-size: 16px;
+	font-weight: 850;
+	letter-spacing: .15px;
 }
 
 main>section>h1 {
