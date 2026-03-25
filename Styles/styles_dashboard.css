@@ -1645,6 +1645,23 @@ footer>* {
 		align-items: start;
 	}
 
+	/* En escritorio: mostrar Entreno + Alimentación lado a lado (sin swipe) */
+	.pt-plan-swipe {
+		grid-column: 1 / -1;
+		display: grid;
+		grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+		gap: 14px;
+		overflow-x: hidden;
+		overflow-y: visible;
+		scroll-snap-type: none;
+	}
+
+	.pt-plan-page {
+		flex: initial;
+		min-width: 0;
+		scroll-snap-align: unset;
+	}
+
 	section {
 		padding: 18px;
 	}
