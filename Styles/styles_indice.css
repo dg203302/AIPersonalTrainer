@@ -188,7 +188,7 @@ html.no-transparency #botones>a {
 }
 
 html.no-transparency header {
-	background: var(--bg1) !important;
+	background: linear-gradient(rgba(11,13,16,0.6), rgba(11,13,16,0.34)), url("/Icons/2.png") center/cover no-repeat, var(--bg1) !important;
 }
 
 html.no-transparency footer {
@@ -247,10 +247,9 @@ header {
 	overflow: hidden;
 
 	/* Liquid glass */
-	background:
-		linear-gradient(180deg,
-			color-mix(in srgb, #FFFFFF 12%, transparent),
-			color-mix(in srgb, #FFFFFF 6%, transparent));
+	background: linear-gradient(180deg,
+		color-mix(in srgb, #FFFFFF 12%, transparent),
+		color-mix(in srgb, #FFFFFF 6%, transparent));
 	backdrop-filter: blur(18px) saturate(155%);
 	-webkit-backdrop-filter: blur(18px) saturate(155%);
 	border-bottom: 1px solid var(--stroke);
@@ -266,6 +265,18 @@ header::before {
 		radial-gradient(1000px 140px at 10% 0%, color-mix(in srgb, var(--accent) 18%, transparent) 0%, transparent 60%),
 		radial-gradient(900px 140px at 90% 20%, color-mix(in srgb, var(--accent2) 16%, transparent) 0%, transparent 65%);
 	opacity: .85;
+}
+
+/* Imagen de fondo translúcida (estilo iOS) colocada detrás del contenido */
+header::after {
+	content: "";
+	position: absolute;
+	inset: 0;
+	pointer-events: none;
+	background: url("/Icons/2.png") center/cover no-repeat;
+	opacity: 0.12;
+	filter: saturate(0.85) contrast(0.95) brightness(0.9);
+	z-index: 0;
 }
 
 footer {
