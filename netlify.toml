@@ -4,6 +4,11 @@
   method = "POST"
 
 [[edge_functions]]
+  function = "gen_plan_alimenta"
+  path = "/gen_plan_alimenta"
+  method = "POST"
+
+[[edge_functions]]
   function = "generar_plan_con_IA" 
   path = "/generar_plan_entreno"
   method = "POST"
