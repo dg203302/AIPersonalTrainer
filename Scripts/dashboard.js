@@ -1997,48 +1997,220 @@ function initDetallePorDiaPlan() {
         const diaInfo = dias[idx];
         const ejercicios = Array.isArray(diaInfo.ejercicios) ? diaInfo.ejercicios : [];
 
-                const buildDetailedHtml = (descripcionDet, descripcionShort) => {
-                    const text = String(descripcionDet || descripcionShort || "").trim();
-                    const sentences = text.split(/(?<=[.?!])\s+/).map(s => s.trim()).filter(Boolean);
+                // ── Mapa estático de descripciones detalladas por ejercicio ──────────────
+                const _stripKey = (s) => String(s ?? "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, " ").trim().toLowerCase();
+                const EJERCICIOS_DETALLE = {
+                    // ── PECHO ────────────────────────────────────────────────────────────
+                    "press de banca plano con barra": {
+                        es: { tecnica: "Retrae las escápulas y mantén los pies firmes en el suelo. Baja la barra hasta rozar el pecho (línea del esternón), codos a ~75° del tronco. Rango completo sin rebotar.", sobrecarga: "Sube 2,5 kg cuando completes todas las series y reps con buena técnica durante 2 sesiones consecutivas.", respiracion: "Inhala al bajar la barra; exhala con fuerza al empujar." },
+                        en: { tecnica: "Retract your shoulder blades and keep your feet flat on the floor. Lower the bar to your sternum with elbows at ~75° from your torso. Full range, no bouncing.", sobrecarga: "Add 2.5 kg once you complete all sets and reps with good form for 2 consecutive sessions.", respiracion: "Inhale as the bar descends; exhale forcefully as you press." },
+                    },
+                    "press de banca inclinado con mancuernas": {
+                        es: { tecnica: "Banco a 30-45°. Empuja las mancuernas hacia arriba y ligeramente hacia adentro. Controla la bajada 2-3 seg; no dejes que los codos caigan por debajo del plano del banco.", sobrecarga: "Sube de peso cuando puedas hacer el rango completo de reps con técnica sólida en 2 sesiones seguidas.", respiracion: "Inhala en la bajada; exhala al empujar las mancuernas." },
+                        en: { tecnica: "Set bench to 30-45°. Press dumbbells up and slightly inward. Control the descent for 2-3 sec; don't let elbows drop below bench level.", sobrecarga: "Increase weight when you can complete the full rep range with solid form for 2 sessions in a row.", respiracion: "Inhale on the way down; exhale as you press the dumbbells up." },
+                    },
+                    "flexiones de brazos (peso corporal)": {
+                        es: { tecnica: "Manos a la anchura de los hombros, cuerpo en línea recta de talones a cabeza. Baja el pecho hasta casi tocar el suelo; codos a ~45° del torso.", sobrecarga: "Aumenta las reps hasta llegar a 20; luego añade dificultad (pies elevados, chaleco con peso o pausa de 2 seg abajo).", respiracion: "Inhala al bajar; exhala al empujar." },
+                        en: { tecnica: "Hands shoulder-width apart, body in a straight line from heels to head. Lower your chest nearly to the floor; elbows at ~45° from your torso.", sobrecarga: "Increase reps until you hit 20; then add difficulty (elevated feet, weighted vest, or 2-sec pause at the bottom).", respiracion: "Inhale as you lower; exhale as you push up." },
+                    },
+                    "aperturas con mancuernas": {
+                        es: { tecnica: "Banco plano o inclinado. Baja las mancuernas en arco con codos ligeramente flexionados hasta sentir estiramiento en el pecho. No exageres el rango para proteger los hombros.", sobrecarga: "Incrementa el peso cuando completes todas las reps sin perder el arco controlado durante 2 sesiones.", respiracion: "Inhala al abrir; exhala al cerrar y contraer el pecho." },
+                        en: { tecnica: "Flat or inclined bench. Lower dumbbells in an arc with slightly bent elbows until you feel a chest stretch. Don't over-extend to protect your shoulders.", sobrecarga: "Increase weight when you complete all reps without losing the controlled arc for 2 sessions.", respiracion: "Inhale as you open; exhale as you close and squeeze the chest." },
+                    },
+                    "fondos en paralelas (pecho bajo/triceps)": {
+                        es: { tecnica: "Para priorizar pecho: inclínate ligeramente hacia adelante, codos hacia afuera. Baja hasta que los hombros queden por debajo de los codos. Sube sin bloquear los codos.", sobrecarga: "Añade peso con cinturón o mochila en cuanto superes 12 reps con buena técnica.", respiracion: "Inhala al bajar; exhala al subir." },
+                        en: { tecnica: "For chest focus: lean slightly forward, flare elbows out. Descend until shoulders are below elbows. Press up without locking out elbows.", sobrecarga: "Add weight with a belt or backpack once you exceed 12 reps with good form.", respiracion: "Inhale on the way down; exhale on the way up." },
+                    },
+                    "cruce de poleas": {
+                        es: { tecnica: "Poleas a la altura de los hombros o por encima. Lleva las manos hacia el centro y cruza ligeramente, apretando el pecho al final del movimiento. Movimiento controlado en todo momento.", sobrecarga: "Sube el peso cuando logres el tope de reps apretando bien en la contracción durante 2 sesiones.", respiracion: "Inhala en la apertura; exhala al hacer el cruce y la contracción." },
+                        en: { tecnica: "Set cables at shoulder height or above. Bring hands to center and slightly cross, squeezing the chest at the end of the movement. Keep control throughout.", sobrecarga: "Increase weight when you hit the top of your rep range with a strong contraction for 2 sessions.", respiracion: "Inhale as you open; exhale on the cross and squeeze." },
+                    },
+                    // ── ESPALDA ──────────────────────────────────────────────────────────
+                    "dominadas (peso corporal)": {
+                        es: { tecnica: "Agarre prono, manos a la anchura de los hombros. Inicia el movimiento retrayendo las escápulas. Sube hasta que la barbilla supere la barra; baja de forma controlada.", sobrecarga: "Añade peso con cinturón cuando hagas 10 reps limpias. Si no llegas a 5, usa banda de asistencia.", respiracion: "Exhala al subir; inhala de forma controlada al bajar." },
+                        en: { tecnica: "Pronated grip, hands shoulder-width apart. Initiate by retracting your scapulae. Pull until your chin clears the bar; lower in a controlled manner.", sobrecarga: "Add weight with a belt once you can do 10 clean reps. If you can't do 5, use a resistance band for assistance.", respiracion: "Exhale as you pull up; inhale in a controlled way as you lower." },
+                    },
+                    "jalon al pecho en polea": {
+                        es: { tecnica: "Agarre prono a la anchura de los hombros. Inclínate ligeramente hacia atrás (10-15°) y lleva la barra hasta la clavícula, apretando los dorsales. Controla la subida.", sobrecarga: "Aumenta el peso cuando completes el rango completo de reps con retracción escapular durante 2 sesiones.", respiracion: "Exhala al tirar hacia abajo; inhala al dejar subir la barra." },
+                        en: { tecnica: "Pronated grip at shoulder width. Lean back slightly (10-15°) and pull the bar to your collarbone, squeezing your lats. Control the return.", sobrecarga: "Increase weight when you complete the full rep range with scapular retraction for 2 sessions.", respiracion: "Exhale as you pull down; inhale as you let the bar rise." },
+                    },
+                    "remo con barra": {
+                        es: { tecnica: "Espalda plana, bisagra de cadera hasta ~45°. Tira la barra hacia el ombligo, codos cerca del cuerpo. Retrae y deprime las escápulas al final. No redondees la zona lumbar.", sobrecarga: "Sube 2,5-5 kg cuando completes todas las series manteniendo espalda plana durante 2 sesiones.", respiracion: "Exhala al tirar; inhala al extender los brazos." },
+                        en: { tecnica: "Flat back, hip hinge to ~45°. Pull the bar toward your navel, keeping elbows close. Retract and depress your scapulae at the top. Never round your lower back.", sobrecarga: "Add 2.5-5 kg when you complete all sets with a flat back for 2 sessions.", respiracion: "Exhale as you pull; inhale as you extend your arms." },
+                    },
+                    "remo unilateral con mancuerna": {
+                        es: { tecnica: "Apoya mano y rodilla en el banco. Espalda paralela al suelo. Tira la mancuerna hacia la cadera, rotando ligeramente el torso. Al bajar, extiende bien la escápula.", sobrecarga: "Sube el peso cuando domines el rango completo en todas las reps con rotación controlada durante 2 sesiones.", respiracion: "Exhala al tirar hacia arriba; inhala al bajar la mancuerna." },
+                        en: { tecnica: "Support one hand and knee on a bench. Back parallel to the floor. Pull the dumbbell toward your hip with slight torso rotation. On the way down, fully extend your scapula.", sobrecarga: "Increase weight when you master the full range across all reps with controlled rotation for 2 sessions.", respiracion: "Exhale as you pull up; inhale as you lower the dumbbell." },
+                    },
+                    "remo sentado en polea": {
+                        es: { tecnica: "Siéntate erguido, agarra el cable con codos cerca del cuerpo. Tira hasta que el mango toque el abdomen, apretando las escápulas. No uses la inercia del torso.", sobrecarga: "Aumenta el peso cuando logres el tope de reps sin balanceo durante 2 sesiones consecutivas.", respiracion: "Exhala al tirar el cable hacia ti; inhala al extender los brazos." },
+                        en: { tecnica: "Sit upright, grip the cable with elbows close to your body. Pull until the handle touches your abdomen, squeezing your scapulae. Don't use torso momentum.", sobrecarga: "Increase weight when you hit the top of your rep range without swinging for 2 consecutive sessions.", respiracion: "Exhale as you pull the cable toward you; inhale as you extend." },
+                    },
+                    "hiperextensiones lumbares": {
+                        es: { tecnica: "Caderas apoyadas en el banco romano. Baja el tronco hasta ~90° y sube hasta que el cuerpo quede en línea recta (no hiperextiendas). Glúteos activos al subir.", sobrecarga: "Cuando domines 15 reps con peso corporal, añade una mancuerna o disco al pecho.", respiracion: "Inhala al bajar; exhala al subir y contraer los glúteos." },
+                        en: { tecnica: "Hips supported on the Roman chair. Lower your torso to ~90° and rise until your body is in a straight line (don't hyper-extend). Squeeze your glutes on the way up.", sobrecarga: "Once you master 15 bodyweight reps, add a dumbbell or plate to your chest.", respiracion: "Inhale as you lower; exhale as you rise and squeeze your glutes." },
+                    },
+                    // ── PIERNAS ──────────────────────────────────────────────────────────
+                    "sentadilla libre": {
+                        es: { tecnica: "Pies a la anchura de los hombros, puntas ligeramente abiertas. Baja manteniendo el torso erguido y las rodillas alineadas con los pies. Profundidad mínima: muslos paralelos al suelo.", sobrecarga: "Sube 2,5 kg cuando completes todas las series con técnica sólida (rodillas sin colapsar) durante 2 sesiones.", respiracion: "Inhala profundamente antes de bajar (maniobra de Valsalva suave); exhala al subir." },
+                        en: { tecnica: "Feet shoulder-width apart, toes slightly turned out. Descend keeping your torso upright and knees tracking over your feet. Minimum depth: thighs parallel to the floor.", sobrecarga: "Add 2.5 kg when you complete all sets with solid form (no knee cave) for 2 sessions.", respiracion: "Take a deep breath before descending (gentle Valsalva); exhale as you rise." },
+                    },
+                    "prensa de piernas": {
+                        es: { tecnica: "Espalda y glúteos pegados al respaldo. Pies en la plataforma a la anchura de los hombros. Baja hasta que las rodillas formen ~90° sin despegar el glúteo del asiento.", sobrecarga: "Incrementa el peso cuando completes el rango de reps sin despegar los glúteos durante 2 sesiones.", respiracion: "Inhala al bajar; exhala al empujar la plataforma." },
+                        en: { tecnica: "Back and glutes flat against the pad. Feet on the platform shoulder-width apart. Lower until your knees reach ~90° without lifting your hips off the seat.", sobrecarga: "Add weight when you complete the full rep range without hips lifting for 2 sessions.", respiracion: "Inhale as you lower; exhale as you push the platform." },
+                    },
+                    "zancadas / estocadas": {
+                        es: { tecnica: "Da un paso amplio hacia adelante. La rodilla trasera casi toca el suelo; la rodilla delantera no debe sobrepasar los dedos del pie. Torso erguido durante todo el movimiento.", sobrecarga: "Añade mancuernas o barra cuando domines 12 reps por pierna con equilibrio estable durante 2 sesiones.", respiracion: "Inhala al bajar; exhala al empujar y volver a la posición inicial." },
+                        en: { tecnica: "Step forward with a long stride. The rear knee almost touches the floor; the front knee should not pass your toes. Keep your torso upright throughout.", sobrecarga: "Add dumbbells or a barbell once you complete 12 reps per leg with stable balance for 2 sessions.", respiracion: "Inhale as you lower; exhale as you drive back to the starting position." },
+                    },
+                    "peso muerto rumano": {
+                        es: { tecnica: "Rodillas ligeramente flexionadas, bisagra de cadera: baja la barra deslizándola por las piernas hasta sentir el estiramiento en isquiotibiales. Espalda neutra en todo momento.", sobrecarga: "Sube 2,5-5 kg cuando mantengas la espalda completamente neutra en todo el rango durante 2 sesiones.", respiracion: "Inhala antes de bajar (bracing); exhala al volver a la posición erguida." },
+                        en: { tecnica: "Knees slightly bent, hip hinge: lower the bar sliding it down your legs until you feel a hamstring stretch. Neutral spine at all times.", sobrecarga: "Add 2.5-5 kg when you maintain a completely neutral back through the full range for 2 sessions.", respiracion: "Inhale before descending (brace your core); exhale as you return to standing." },
+                    },
+                    "hip thrust (empuje de cadera)": {
+                        es: { tecnica: "Hombros apoyados en el banco, barra sobre el pliegue de la cadera. Empuja hasta que caderas, muslos y torso formen una línea recta. Aprieta los glúteos en el punto más alto.", sobrecarga: "Aumenta el peso cuando puedas mantener la contracción máxima 1 seg en todas las reps durante 2 sesiones.", respiracion: "Inhala al bajar; exhala y aprieta los glúteos al subir." },
+                        en: { tecnica: "Shoulders against the bench, bar over your hip crease. Drive until hips, thighs, and torso form a straight line. Squeeze glutes hard at the top.", sobrecarga: "Add weight once you can hold the peak contraction for 1 sec on every rep for 2 sessions.", respiracion: "Inhale as you lower; exhale and squeeze your glutes as you thrust up." },
+                    },
+                    "extension de cuadriceps en maquina": {
+                        es: { tecnica: "Ajusta el asiento para que la articulación de la rodilla quede alineada con el pivote de la máquina. Extiende completamente y mantén 1 seg; baja de forma controlada (2-3 seg).", sobrecarga: "Sube el peso cuando logres la contracción completa y pausa en todas las reps durante 2 sesiones.", respiracion: "Exhala al extender; inhala al bajar." },
+                        en: { tecnica: "Adjust the seat so your knee joint aligns with the machine pivot. Fully extend and hold 1 sec; lower in a controlled manner (2-3 sec).", sobrecarga: "Increase weight when you achieve full extension with a pause on every rep for 2 sessions.", respiracion: "Exhale as you extend; inhale as you lower." },
+                    },
+                    "curl femoral tumbado o sentado": {
+                        es: { tecnica: "Caderas pegadas al banco. Flexiona hasta ~120-130° (máxima contracción del femoral); extiende lentamente sin bloquear la rodilla al final.", sobrecarga: "Incrementa el peso cuando completes el rango completo sin levantar las caderas durante 2 sesiones.", respiracion: "Exhala al flexionar; inhala al extender." },
+                        en: { tecnica: "Hips pressed against the pad. Curl to ~120-130° (peak hamstring contraction); extend slowly without locking out your knee.", sobrecarga: "Increase weight when you complete the full range without lifting your hips for 2 sessions.", respiracion: "Exhale as you curl; inhale as you extend." },
+                    },
+                    "elevacion de talones": {
+                        es: { tecnica: "De pie en el borde de un escalón. Baja el talón por debajo del nivel del escalón para el estiramiento máximo; sube de puntillas lo más alto posible. Pausa arriba 1 seg.", sobrecarga: "Añade peso (mancuerna en mano o mochila) cuando superes 20 reps con pausa completa durante 2 sesiones.", respiracion: "Exhala al subir; inhala al bajar." },
+                        en: { tecnica: "Stand on the edge of a step. Lower your heel below step level for maximum stretch; rise as high as possible on your toes. Pause for 1 sec at top.", sobrecarga: "Add weight (dumbbell in hand or backpack) once you exceed 20 reps with a full pause for 2 sessions.", respiracion: "Exhale as you rise; inhale as you lower." },
+                    },
+                    "sentadilla bulgara": {
+                        es: { tecnica: "Pie trasero apoyado en el banco, pie delantero lo suficientemente adelante para que la rodilla no sobrepase los dedos. Baja de forma controlada hasta que la rodilla trasera roz el suelo.", sobrecarga: "Añade mancuernas o barra cuando domines 10 reps sólidas por pierna durante 2 sesiones consecutivas.", respiracion: "Inhala al bajar; exhala al subir empujando con el talón delantero." },
+                        en: { tecnica: "Rear foot elevated on a bench, front foot far enough forward so your knee doesn't pass your toes. Lower in a controlled way until your rear knee nearly touches the floor.", sobrecarga: "Add dumbbells or a barbell once you complete 10 solid reps per leg for 2 consecutive sessions.", respiracion: "Inhale as you lower; exhale as you drive up through your front heel." },
+                    },
+                    // ── HOMBROS ──────────────────────────────────────────────────────────
+                    "press militar con barra o mancuernas": {
+                        es: { tecnica: "De pie o sentado. Empuja la barra/mancuernas verticalmente por encima de la cabeza hasta que los brazos queden casi extendidos. No arquees la zona lumbar al bloquear.", sobrecarga: "Sube 2,5 kg cuando completes todas las series sin arqueo lumbar durante 2 sesiones.", respiracion: "Inhala antes del empuje; exhala al presionar hacia arriba." },
+                        en: { tecnica: "Standing or seated. Press the bar/dumbbells vertically overhead until your arms are nearly extended. Don't arch your lower back at lockout.", sobrecarga: "Add 2.5 kg when you complete all sets without lower back arch for 2 sessions.", respiracion: "Inhale before the press; exhale as you push overhead." },
+                    },
+                    "elevaciones laterales con mancuernas": {
+                        es: { tecnica: "Codos ligeramente flexionados. Sube hasta que los brazos queden paralelos al suelo (no más). Pequeña rotación externa al final: el meñique ligeramente más alto que el pulgar.", sobrecarga: "Incrementa el peso cuando puedas completar todas las reps con control total (sin trampa) durante 2 sesiones.", respiracion: "Exhala al subir; inhala al bajar de forma controlada." },
+                        en: { tecnica: "Elbows slightly bent. Raise until arms are parallel to the floor (no higher). Slight external rotation at the top: pinky slightly higher than thumb.", sobrecarga: "Increase weight when you can complete all reps with full control (no cheating) for 2 sessions.", respiracion: "Exhale as you raise; inhale as you lower in a controlled way." },
+                    },
+                    "pajaros / vuelos posteriores": {
+                        es: { tecnica: "Torso inclinado ~90°. Sube las mancuernas con codos ligeramente flexionados hasta que queden alineados con los hombros, apretando los deltoides posteriores.", sobrecarga: "Sube el peso cuando logres la alineación correcta en todas las reps durante 2 sesiones.", respiracion: "Exhala al subir; inhala al bajar." },
+                        en: { tecnica: "Torso bent ~90°. Raise dumbbells with slightly bent elbows until aligned with your shoulders, squeezing the rear delts.", sobrecarga: "Increase weight when you achieve correct alignment on every rep for 2 sessions.", respiracion: "Exhale as you raise; inhale as you lower." },
+                    },
+                    "elevaciones frontales": {
+                        es: { tecnica: "De pie, mancuernas al frente con agarre neutro o prono. Sube hasta la altura de los ojos (no más). Evita el balanceo del torso.", sobrecarga: "Incrementa el peso cuando completes todas las reps sin balanceo durante 2 sesiones consecutivas.", respiracion: "Exhala al subir; inhala al bajar de forma controlada." },
+                        en: { tecnica: "Standing, dumbbells in front with neutral or pronated grip. Raise to eye level (no higher). Avoid torso swinging.", sobrecarga: "Increase weight when you complete all reps without swinging for 2 consecutive sessions.", respiracion: "Exhale as you raise; inhale as you lower in a controlled manner." },
+                    },
+                    "face pull (salud del hombro)": {
+                        es: { tecnica: "Polea alta con cuerda. Tira hacia la cara separando la cuerda y rotando externamente los hombros. Codos por encima del agarre. Foco en deltoides posterior y manguito rotador.", sobrecarga: "Sube el peso solo cuando mantengas la rotación external completa en todas las reps durante 2 sesiones.", respiracion: "Exhala al tirar hacia la cara; inhala al extender los brazos." },
+                        en: { tecnica: "High cable with rope. Pull toward your face splitting the rope and rotating your shoulders externally. Elbows above the handles. Focus on rear delt and rotator cuff.", sobrecarga: "Increase weight only when you maintain full external rotation on every rep for 2 sessions.", respiracion: "Exhale as you pull toward your face; inhale as you extend your arms." },
+                    },
+                    // ── BRAZOS / BÍCEPS ──────────────────────────────────────────────────
+                    "curl de biceps con barra": {
+                        es: { tecnica: "Codos pegados a los costados. Sube la barra en arco controlado hasta la contracción máxima; baja despacio (2-3 seg). No uses la inercia del torso.", sobrecarga: "Sube 2,5 kg cuando puedas completar todas las reps sin balanceo durante 2 sesiones.", respiracion: "Exhala al subir; inhala al bajar." },
+                        en: { tecnica: "Keep elbows pinned to your sides. Curl in a controlled arc to peak contraction; lower slowly (2-3 sec). Don't use torso momentum.", sobrecarga: "Add 2.5 kg when you can complete all reps without swinging for 2 sessions.", respiracion: "Exhale as you curl up; inhale as you lower." },
+                    },
+                    "curl martillo con mancuernas": {
+                        es: { tecnica: "Agarre neutro (pulgares arriba). Codos fijos a los lados. Sube hasta la contracción y baja controlado. Trabaja braquial y braquiorradial además del bíceps.", sobrecarga: "Incrementa el peso cuando completes todas las reps con codos fijos durante 2 sesiones.", respiracion: "Exhala al subir; inhala al bajar." },
+                        en: { tecnica: "Neutral grip (thumbs up). Elbows fixed at your sides. Curl to peak contraction and lower in control. Targets brachialis and brachioradialis in addition to the bicep.", sobrecarga: "Increase weight when you complete all reps with fixed elbows for 2 sessions.", respiracion: "Exhale as you curl; inhale as you lower." },
+                    },
+                    "curl predicador": {
+                        es: { tecnica: "Brazos apoyados en el soporte inclinado. Evita el balanceo y el bloqueo completo al bajar para mantener tensión. Foco en la parte baja del bíceps.", sobrecarga: "Sube el peso cuando domines el rango completo sin balanceo durante 2 sesiones consecutivas.", respiracion: "Exhala al subir; inhala al bajar de forma controlada." },
+                        en: { tecnica: "Arms rested on the inclined pad. Avoid swinging and full lockout at the bottom to keep tension. Targets the lower portion of the bicep.", sobrecarga: "Increase weight when you master the full range without swinging for 2 consecutive sessions.", respiracion: "Exhale as you curl; inhale as you lower in a controlled way." },
+                    },
+                    // ── TRÍCEPS ──────────────────────────────────────────────────────────
+                    "press frances": {
+                        es: { tecnica: "Barra EZ tumbado. Codos apuntando al techo, fijos. Baja la barra hasta la frente o detrás de la cabeza (mayor estiramiento). Extiende sin bloquear completamente.", sobrecarga: "Sube 2,5 kg cuando completes todas las reps con codos fijos y sin dolor en el codo durante 2 sesiones.", respiracion: "Inhala al bajar; exhala al extender." },
+                        en: { tecnica: "EZ-bar lying down. Elbows pointing toward the ceiling, fixed. Lower the bar toward your forehead or behind your head (greater stretch). Extend without fully locking out.", sobrecarga: "Add 2.5 kg when you complete all reps with fixed elbows and no elbow pain for 2 sessions.", respiracion: "Inhale as you lower; exhale as you extend." },
+                    },
+                    "extension de triceps en polea alta": {
+                        es: { tecnica: "Cuerda o barra en polea alta. Codos fijos a los lados del cuerpo. Extiende hasta la máxima contracción del tríceps; sube de forma controlada.", sobrecarga: "Incrementa el peso cuando logres la contracción máxima en todas las reps sin mover los codos durante 2 sesiones.", respiracion: "Exhala al extender; inhala al subir." },
+                        en: { tecnica: "Rope or bar on high cable. Elbows fixed at your sides. Extend to maximum tricep contraction; return in a controlled way.", sobrecarga: "Add weight when you achieve peak contraction on every rep without moving your elbows for 2 sessions.", respiracion: "Exhale as you extend; inhale as you return." },
+                    },
+                    "fondos entre bancos": {
+                        es: { tecnica: "Manos en el banco trasero, pies en el banco delantero o en el suelo. Baja hasta que los codos formen 90°; sube sin bloquear por completo. Torso erguido para foco en tríceps.", sobrecarga: "Añade un disco sobre los muslos cuando superes 15 reps con buena técnica durante 2 sesiones.", respiracion: "Inhala al bajar; exhala al subir." },
+                        en: { tecnica: "Hands on the rear bench, feet on the front bench or floor. Lower until elbows reach 90°; press up without fully locking out. Upright torso for tricep focus.", sobrecarga: "Add a plate on your thighs once you exceed 15 reps with good form for 2 sessions.", respiracion: "Inhale as you lower; exhale as you press up." },
+                    },
+                    "extension de triceps con mancuerna sobre la cabeza": {
+                        es: { tecnica: "Siéntate o de pie. Mancuerna con ambas manos sobre la cabeza. Codos cerca de las orejas; baja la mancuerna detrás de la cabeza controlando el estiramiento del tríceps largo.", sobrecarga: "Sube el peso cuando manejes el rango completo con codos estables durante 2 sesiones.", respiracion: "Inhala al bajar; exhala al extender." },
+                        en: { tecnica: "Seated or standing. Hold a dumbbell with both hands overhead. Keep elbows near your ears; lower the dumbbell behind your head controlling the long head stretch.", sobrecarga: "Increase weight when you handle the full range with stable elbows for 2 sessions.", respiracion: "Inhale as you lower; exhale as you extend." },
+                    },
+                    "patada de triceps con mancuerna": {
+                        es: { tecnica: "Torso paralelo al suelo, codo elevado a la altura de la cadera. Extiende el antebrazo hacia atrás hasta la máxima contracción; vuelve de forma controlada. Codo fijo.", sobrecarga: "Incrementa el peso cuando logres la extensión completa y contracción máxima en todas las reps durante 2 sesiones.", respiracion: "Exhala al extender; inhala al regresar." },
+                        en: { tecnica: "Torso parallel to the floor, elbow raised to hip height. Extend your forearm back to peak contraction; return in a controlled way. Keep elbow fixed.", sobrecarga: "Add weight when you achieve full extension and peak contraction on every rep for 2 sessions.", respiracion: "Exhale as you extend; inhale as you return." },
+                    },
+                    // ── ANTEBRAZOS ───────────────────────────────────────────────────────
+                    "curl de muneca con barra": {
+                        es: { tecnica: "Antebrazos apoyados en el banco o muslos. Flexiona la muñeca con rango completo; baja con control. Peso ligero, altas repeticiones.", sobrecarga: "Sube el peso poco a poco (1-2 kg) cuando domines 20 reps por sesión durante 2 semanas.", respiracion: "Exhala al flexionar; inhala al bajar." },
+                        en: { tecnica: "Forearms resting on a bench or your thighs. Flex your wrist through the full range; lower in control. Use light weight and high reps.", sobrecarga: "Increase weight gradually (1-2 kg) once you master 20 reps per session for 2 weeks.", respiracion: "Exhale as you flex; inhale as you lower." },
+                    },
+                    "curl de muneca con mancuerna": {
+                        es: { tecnica: "Igual que con barra, pero permite mayor rango de movimiento individual por muñeca. Trabaja un brazo a la vez para corregir desequilibrios.", sobrecarga: "Sube el peso cuando completes 20 reps limpias con rango completo durante 2 sesiones.", respiracion: "Exhala al flexionar; inhala al extender." },
+                        en: { tecnica: "Same as barbell but allows a greater individual range per wrist. Work one arm at a time to address imbalances.", sobrecarga: "Increase weight when you complete 20 clean reps with full range for 2 sessions.", respiracion: "Exhale as you flex; inhale as you extend." },
+                    },
+                    "curl invertido con barra": {
+                        es: { tecnica: "Agarre prono (dorso de la mano arriba). Codos fijos a los lados. Trabaja extensores del antebrazo y braquiorradial. Mantén la muñeca neutra al subir.", sobrecarga: "Incrementa el peso cuando completes todas las reps con muñeca neutra y sin balanceo durante 2 sesiones.", respiracion: "Exhala al subir; inhala al bajar." },
+                        en: { tecnica: "Pronated grip (back of hand facing up). Elbows fixed at sides. Targets forearm extensors and brachioradialis. Keep wrist neutral at the top.", sobrecarga: "Increase weight when you complete all reps with a neutral wrist and no swinging for 2 sessions.", respiracion: "Exhale as you curl; inhale as you lower." },
+                    },
+                    "farmer's walk (caminata del granjero)": {
+                        es: { tecnica: "Carga pesada en ambas manos. Espalda recta, hombros hacia atrás y abajo. Camina con pasos medianos y firmes. Foco en el agarre y la estabilidad del core.", sobrecarga: "Aumenta el peso o la distancia cuando puedas mantener la técnica perfecta durante toda la distancia en 2 sesiones.", respiracion: "Respira de forma continua y controlada; no aguantes la respiración." },
+                        en: { tecnica: "Heavy load in both hands. Straight back, shoulders back and down. Walk with medium, firm steps. Focus on grip and core stability.", sobrecarga: "Increase weight or distance when you can maintain perfect form throughout the entire distance for 2 sessions.", respiracion: "Breathe continuously and in control; don't hold your breath." },
+                    },
+                    // ── ABDOMEN / CORE ───────────────────────────────────────────────────
+                    "plancha abdominal": {
+                        es: { tecnica: "Antebrazos y pies apoyados. Activa el core (empuja el ombligo hacia la columna). Cuerpo en línea recta; no elevar las caderas ni dejarlas caer.", sobrecarga: "Aumenta el tiempo de mantenimiento (objetivo: 60-90 seg) antes de agregar variantes con peso o movimiento.", respiracion: "Respira de forma continua y controlada; no aguantes la respiración." },
+                        en: { tecnica: "Resting on forearms and feet. Engage your core (draw navel toward your spine). Body in a straight line; don't raise or drop your hips.", sobrecarga: "Increase hold time (target: 60-90 sec) before adding weighted or dynamic variations.", respiracion: "Breathe continuously and in control; never hold your breath." },
+                    },
+                    "crunch abdominal clasico": {
+                        es: { tecnica: "Tumbado, rodillas flexionadas. Eleva solo los hombros del suelo curvando la columna (no la cadera). Aprieta el abdomen en la cima; baja de forma controlada.", sobrecarga: "Añade resistencia (disco en el pecho) cuando superes 20 reps limpias durante 2 sesiones.", respiracion: "Exhala al subir y apretar; inhala al bajar." },
+                        en: { tecnica: "Lying down, knees bent. Raise your shoulders off the floor by curling your spine (not your hips). Squeeze your abs at the top; lower in control.", sobrecarga: "Add resistance (plate on chest) once you exceed 20 clean reps for 2 sessions.", respiracion: "Exhale as you crunch; inhale as you lower." },
+                    },
+                    "elevacion de piernas colgado o en suelo": {
+                        es: { tecnica: "Colgado en barra: pelvis ligeramente retrovertida. Eleva las piernas rectas (o flexionadas) hasta la horizontal o más. Evita el balanceo.", sobrecarga: "Avanza de piernas flexionadas a rectas; luego añade tobilleras con peso cuando domines 12 reps limpias.", respiracion: "Exhala al elevar; inhala al bajar de forma controlada." },
+                        en: { tecnica: "Hanging from a bar: posterior pelvic tilt. Raise straight (or bent) legs to horizontal or higher. Avoid swinging.", sobrecarga: "Progress from bent legs to straight legs; then add ankle weights once you master 12 clean reps.", respiracion: "Exhale as you raise; inhale as you lower in a controlled way." },
+                    },
+                    "giros rusos": {
+                        es: { tecnica: "Sentado con el torso a ~45°, pies elevados (opcional). Gira el torso de lado a lado con control; no solo los brazos. Usa un disco o mancuerna para añadir resistencia.", sobrecarga: "Incrementa el peso cuando puedas hacer 20 reps por lado con rotación real del torso durante 2 sesiones.", respiracion: "Exhala en cada giro; inhala al centro." },
+                        en: { tecnica: "Seated with torso at ~45°, feet elevated (optional). Rotate your torso side to side in control; don't just move your arms. Use a plate or dumbbell for resistance.", sobrecarga: "Add weight when you can do 20 reps per side with real torso rotation for 2 sessions.", respiracion: "Exhale on each twist; inhale as you return to center." },
+                    },
+                    "rueda abdominal": {
+                        es: { tecnica: "Rodillas en el suelo. Rueda hacia adelante extendiendo la cadera y columna casi hasta el suelo; regresa activando el core sin impulso. Es un ejercicio muy exigente.", sobrecarga: "Avanza de rodillas al suelo a de pie (rueda completa) cuando domines 10 reps limpias desde rodillas.", respiracion: "Inhala al extenderte; exhala al contraer el core y volver." },
+                        en: { tecnica: "Knees on the floor. Roll forward extending your hips and spine nearly to the floor; return using your core without momentum. A very demanding exercise.", sobrecarga: "Progress from kneeling to standing (full rollout) once you master 10 clean kneeling reps.", respiracion: "Inhale as you extend; exhale as you contract your core and return." },
+                    },
+                    // ── CARDIO ───────────────────────────────────────────────────────────
+                    "burpees": {
+                        es: { tecnica: "De pie → flexión → plancha → flexión de pecho (opcional) → salta con los brazos arriba. Mantén el core activo durante toda la secuencia.", sobrecarga: "Aumenta el número de reps por bloque o reduce el descanso entre series; luego agrega la flexión de pecho en cada rep.", respiracion: "Exhala en el salto; inhala al volver a la posición de plancha." },
+                        en: { tecnica: "Standing → squat → plank → push-up (optional) → jump with arms overhead. Keep your core active throughout the sequence.", sobrecarga: "Increase reps per block or reduce rest between sets; then add a push-up to each rep.", respiracion: "Exhale on the jump; inhale as you return to plank position." },
+                    },
+                    "saltos de tijera": {
+                        es: { tecnica: "Pies juntos al inicio. Salta abriendo piernas y brazos simultáneamente; aterriza suave sobre la parte delantera del pie con rodillas ligeramente flexionadas.", sobrecarga: "Aumenta la velocidad, el número de reps o añade el ejercicio en circuito con descanso mínimo.", respiracion: "Respira de forma continua y rítmica; no aguantes el aire." },
+                        en: { tecnica: "Feet together at start. Jump spreading legs and arms simultaneously; land softly on the balls of your feet with knees slightly bent.", sobrecarga: "Increase speed, reps, or incorporate into a circuit with minimal rest.", respiracion: "Breathe continuously and rhythmically; never hold your breath." },
+                    },
+                    "salto a la cuerda": {
+                        es: { tecnica: "Pies juntos o alternados, rodillas ligeramente flexionadas. Muñecas rotan la cuerda (no los hombros). Aterriza en el antepié suavemente.", sobrecarga: "Aumenta la duración del intervalo o la velocidad; luego incorpora saltos dobles (double-unders).", respiracion: "Respira de forma continua y controlada al ritmo del salto." },
+                        en: { tecnica: "Feet together or alternating, knees slightly bent. Wrists rotate the rope (not shoulders). Land softly on the balls of your feet.", sobrecarga: "Increase interval duration or speed; then incorporate double-unders.", respiracion: "Breathe continuously and in control with the rhythm of your jumps." },
+                    },
+                };
 
-                    const cleanupPrefix = (value, prefixes) => {
-                        let out = String(value || "").trim();
-                        for (const p of prefixes) {
-                            const re = new RegExp(`^\\s*${p}\\s*:\\s*`, "i");
-                            out = out.replace(re, "");
-                        }
-                        return out;
-                    };
+                const buildDetailedHtml = (nombreEjercicio) => {
+                    const lang = tLang("es", "en");
+                    const key = _stripKey(nombreEjercicio);
+                    const detalle = EJERCICIOS_DETALLE[key];
 
-                    const findSentence = (keywords) => {
-                        const low = text.toLowerCase();
-                        for (const s of sentences) {
-                            for (const k of keywords) {
-                                if (s.toLowerCase().includes(k)) return s.replace(/[.?!]$/,'').trim();
-                            }
-                        }
-                        return null;
-                    };
-
-                    const tecnicaRaw =
-                        findSentence(["técnic", "tecnica", "postura", "mantener la espalda", "posición", "mantener", "technique", "form", "posture", "position"]) ||
-                        sentences[0] ||
-                        tLang(
-                            "Ejecutar con técnica correcta: mantener postura y rango adecuado.",
-                            "Use proper technique: maintain posture and a controlled range of motion."
-                        );
-                    const tecnica = cleanupPrefix(tecnicaRaw, ["técnica", "tecnica", "technique"]);
-                    const sobrecargaRaw =
-                        findSentence(["sobrecarga", "progres", "aument", "carga", "progresión", "progresiva", "overload", "progress", "increase", "load", "progressive"]) ||
-                        tLang(
-                            "Incrementar progresivamente la carga (p.ej. +2-5% de carga o +1-2 repeticiones cuando completes el rango objetivo durante 1-2 sesiones).",
-                            "Progressively increase the load (e.g., +2-5% weight or +1-2 reps once you hit the target range for 1-2 sessions)."
-                        );
-                    const sobrecarga = cleanupPrefix(sobrecargaRaw, ["sobrecarga", "progression", "overload"]);
-                    const respiracionRaw =
-                        findSentence(["respir", "inhal", "exhal", "inspir", "exhalar", "breath", "breathe", "inhale", "exhale"]) ||
-                        tLang("Inhalar al bajar, exhalar al subir.", "Inhale on the way down, exhale on the way up.");
-                    const respiracion = cleanupPrefix(respiracionRaw, ["respiración", "respiracion", "breathing"]);
+                    let tecnica, sobrecarga, respiracion;
+                    if (detalle && detalle[lang]) {
+                        tecnica    = detalle[lang].tecnica;
+                        sobrecarga = detalle[lang].sobrecarga;
+                        respiracion = detalle[lang].respiracion;
+                    } else {
+                        // Fallback genérico
+                        tecnica    = tLang("Mantener postura neutra, rango completo y control en la fase excéntrica.", "Maintain neutral posture, full range of motion, and control the eccentric phase.");
+                        sobrecarga = tLang("Aumentar 2-5% de carga o 1-2 reps cuando completes el rango objetivo durante 1-2 sesiones.", "Add 2-5% weight or 1-2 reps once you hit the target range for 1-2 sessions.");
+                        respiracion = tLang("Inhala en la fase excéntrica; exhala en la fase concéntrica.", "Inhale on the eccentric phase; exhale on the concentric phase.");
+                    }
 
                     return `
                         <ul class="plan-detailed-list pt-detail-list">
@@ -2054,11 +2226,10 @@ function initDetallePorDiaPlan() {
                 const nombreEs = escapeHtml(ex.nombre);
                 const nombreEn = escapeHtml(ex.nombre_en ?? ex.nombre);
                 const descripcion = escapeHtml(ex.descripcion || "");
-                const descripcionDet = String(ex.descripcion_detallada ?? "").trim();
                 const series = escapeHtml(ex.series);
                 const reps = escapeHtml(formatReps(ex.repeticiones));
                 const descanso = escapeHtml(ex.descanso_segundos);
-                        const detailedHtml = buildDetailedHtml(descripcionDet, descripcion);
+                        const detailedHtml = buildDetailedHtml(ex.nombre);
                         return `
                             <article class="plan-card pt-detail-card">
                                 <div class="pt-detail-card-inner">
