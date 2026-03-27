@@ -2,11 +2,13 @@ import { GoogleGenAI } from "https://esm.sh/@google/genai@1.38.0";
 
 
 
-const fetchGeminiApiKeyFromEdge = async () => {
+const fetchGeminiApiKeyFromEdge = async (request) => {
+	const url = new URL(request.url);
+	const apiKeyUrl = `${url.origin}/obtener_gemini_api_key`;
 	let res;
 	let txt = "";
 	try {
-		res = await fetch("/obtener_gemini_api_key", { method: "POST" });
+		res = await fetch(apiKeyUrl, { method: "POST" });
 		txt = await res.text();
 	} catch (e) {
 		throw new Error(`No se pudo contactar el servidor para la API key: ${e?.message || String(e)}`);
@@ -449,7 +451,7 @@ const normalizePlanWithSelectedDays = ({ planObj, idiomaNorm, lugar, objetivo, i
 	return planObj;
 };
 
-export const generatePlanEntreno = async (payload) => {
+const generatePlanEntreno = async (payload, request) => {
 
 	const idiomaNorm = String(payload?.idioma ?? "").trim().toLowerCase() === "en" ? "en" : "es";
 	const idiomaLabel = idiomaNorm === "en" ? "English" : "Español";
@@ -511,7 +513,7 @@ Entorno: ${entornoValue} | Objetivo: ${objetivoValue} | Edad: ${payload?.Edad} |
 
 ${ejerciciosContexto}`;
 
-	const ai = new GoogleGenAI({ apiKey: await fetchGeminiApiKeyFromEdge() });
+	const ai = new GoogleGenAI({ apiKey: await fetchGeminiApiKeyFromEdge(request) });
 	const response = await ai.models.generateContent({
 		model: "gemini-3-flash-preview",
 		contents: prompt,
@@ -559,3 +561,45 @@ ${ejerciciosContexto}`;
 	};
 };
 
+const corsHeaders = {
+	"Access-Control-Allow-Origin": "*",
+	"Access-Control-Allow-Methods": "POST, OPTIONS",
+	"Access-Control-Allow-Headers": "content-type",
+};
+
+export default async function handler(request, _context) {
+	if (request.method === "OPTIONS") {
+		return new Response(null, { status: 204, headers: corsHeaders });
+	}
+
+	if (request.method !== "POST") {
+		return new Response(JSON.stringify({ error: "Method Not Allowed" }), {
+			status: 405,
+			headers: { ...corsHeaders, "Content-Type": "application/json" },
+		});
+	}
+
+	let payload;
+	try {
+		payload = await request.json();
+	} catch {
+		return new Response(JSON.stringify({ error: "Invalid JSON body" }), {
+			status: 400,
+			headers: { ...corsHeaders, "Content-Type": "application/json" },
+		});
+	}
+
+	try {
+		const result = await generatePlanEntreno(payload, request);
+		return new Response(JSON.stringify(result), {
+			status: 200,
+			headers: { ...corsHeaders, "Content-Type": "application/json" },
+		});
+	} catch (error) {
+		console.error(error);
+		return new Response(JSON.stringify({ error: error?.message || String(error) }), {
+			status: 500,
+			headers: { ...corsHeaders, "Content-Type": "application/json" },
+		});
+	}
+}
