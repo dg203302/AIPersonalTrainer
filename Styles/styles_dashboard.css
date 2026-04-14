@@ -978,8 +978,8 @@ main {
 	-webkit-overflow-scrolling: touch;
 	overscroll-behavior-x: contain;
 	gap: 0;
+	width: 100%;
 	max-width: 100%;
-
 	/* ocultar scrollbar */
 	scrollbar-width: none;
 }
