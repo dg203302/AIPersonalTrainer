@@ -824,7 +824,7 @@ footer.liquid-wrap {
     0 0 0.05em 0.1em inset rgba(255, 255, 255, 0.5),
     0 0 0 0 rgba(255, 255, 255, 1);
 }
-
+/*
 .liquid-highlight {
   position: absolute;
   z-index: 1;
@@ -852,7 +852,7 @@ footer.liquid-wrap {
   background-position: 50% 15%;
   --angle-2: -15deg;
 }
-
+*/
 @media (hover: none) and (pointer: coarse) {
   .liquid-highlight,
   .liquid-bar:has(a:active) .liquid-highlight {
