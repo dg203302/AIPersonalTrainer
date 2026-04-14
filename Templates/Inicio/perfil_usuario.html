@@ -1,24 +1,455 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <script src="/Scripts/ui_transparencia_apply.js"></script>
     <script src="/Scripts/ui_idioma.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&display=swap"
+        rel="stylesheet">
     <link rel="stylesheet" href="/Styles/styles_perfil.css">
-    <meta name="theme-color" content="#0A1226">
+    <meta name="theme-color" content="#0c0d0f">
     <title data-i18n-en="Profile">Perfil</title>
     <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7232324434042202"
-     crossorigin="anonymous"></script>
+        crossorigin="anonymous"></script>
+
+    <style>
+        /* ── Material You overlay (perfil only) ────────────────────── */
+        :root {
+            --my-primary: #bce4ff;
+            --my-primary-dim: rgba(208, 188, 255, 0.14);
+            --my-primary-rim: rgba(208, 188, 255, 0.22);
+            --my-danger: #f2b8b5;
+            --my-danger-dim: rgba(242, 184, 181, 0.10);
+            --my-danger-rim: rgba(242, 184, 181, 0.22);
+            --my-glass: rgba(255, 255, 255, 0.05);
+            --my-glass-rim: rgba(255, 255, 255, 0.10);
+            --my-glass-hover: rgba(255, 255, 255, 0.08);
+            --my-radius-card: 26px;
+            --my-radius-sm: 16px;
+            --my-radius-pill: 999px;
+        }
+
+        body {
+            font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+            background: linear-gradient(135deg, #1a1c1e 0%, #0c0d0f 100%);
+        }
+
+        /* ── HEADER ─────────────────────────────────────────────────── */
+        body>header {
+            background: linear-gradient(180deg, rgba(0, 0, 0, 0.28) 0%, rgba(255, 255, 255, 0.04) 100%);
+            backdrop-filter: blur(24px) saturate(160%);
+            -webkit-backdrop-filter: blur(24px) saturate(160%);
+            border-bottom: 1px solid var(--my-glass-rim);
+            box-shadow: 0 1px 0 rgba(255, 255, 255, 0.06);
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: calc(14px + env(safe-area-inset-top)) 16px 14px;
+        }
+
+        /* Avatar + username slot */
+        .header-profile-slot {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex: 1;
+            min-width: 0;
+        }
+
+        .header-avatar-wrap {
+            position: relative;
+            flex-shrink: 0;
+        }
+
+        #icono_usuario {
+            width: 46px;
+            height: 46px;
+            border-radius: var(--my-radius-pill);
+            border: 1.5px solid rgba(255, 255, 255, 0.18);
+            object-fit: cover;
+            background: rgba(255, 255, 255, 0.10);
+            display: block;
+        }
+
+        .header-profile-info {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+            min-width: 0;
+        }
+
+        .header-profile-label {
+            font-size: 11px;
+            font-weight: 500;
+            color: rgba(255, 255, 255, .50);
+            line-height: 1;
+            letter-spacing: .3px;
+        }
+
+        #username {
+            margin: 0;
+            font-size: 18px;
+            font-weight: 800;
+            letter-spacing: -.2px;
+            color: rgba(255, 255, 255, .92);
+            line-height: 1;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 50vw;
+        }
+
+        /* Logout button */
+        #logout_button {
+            flex-shrink: 0;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 40px;
+            height: 40px;
+            border-radius: var(--my-radius-sm);
+            border: 1px solid var(--my-glass-rim);
+            background: var(--my-glass);
+            color: rgba(255, 255, 255, .80);
+            cursor: pointer;
+            transition: background .18s ease, transform .12s ease;
+        }
+
+        #logout_button:hover {
+            background: var(--my-glass-hover);
+        }
+
+        #logout_button:active {
+            transform: scale(0.96);
+        }
+
+        /* ── MAIN ── */
+        main {
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+
+        /* Section cards */
+        section,
+        #creditos {
+            border-radius: var(--my-radius-card);
+            border: 1px solid var(--my-glass-rim);
+            background: var(--my-glass);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            padding: 20px;
+        }
+
+        section h2,
+        #creditos summary span:first-child {
+            font-size: 12px;
+            font-weight: 700;
+            letter-spacing: .6px;
+            text-transform: uppercase;
+            color: rgba(255, 255, 255, .45);
+            margin: 0 0 16px;
+            display: block;
+        }
+
+        /* Data rows */
+        #datos_usuario>div {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 13px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, .07);
+            gap: 12px;
+        }
+
+        #datos_usuario>div:last-child {
+            border-bottom: none;
+            padding-bottom: 0;
+        }
+
+        #datos_usuario>div:first-child {
+            padding-top: 0;
+        }
+
+        #datos_usuario p {
+            margin: 0;
+            font-size: 14px;
+            font-weight: 500;
+            color: rgba(255, 255, 255, .85);
+            line-height: 1.2;
+        }
+
+        #datos_usuario p span:first-child {
+            color: rgba(255, 255, 255, .50);
+            font-size: 13px;
+            margin-right: 4px;
+        }
+
+        /* Edit button */
+        .btn-icon {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 36px;
+            height: 36px;
+            border-radius: var(--my-radius-sm);
+            border: 1px solid var(--my-glass-rim);
+            background: var(--my-glass);
+            cursor: pointer;
+            transition: background .18s ease, transform .12s ease;
+            flex-shrink: 0;
+        }
+
+        .btn-icon:hover {
+            background: var(--my-glass-hover);
+        }
+
+        .btn-icon:active {
+            transform: scale(0.96);
+        }
+
+        .btn-icon img {
+            width: 16px;
+            height: 16px;
+            opacity: .80;
+        }
+
+        /* Config items */
+        .config-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            padding: 13px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, .07);
+        }
+
+        .config-item:first-of-type {
+            padding-top: 0;
+        }
+
+        .config-item:last-of-type {
+            border-bottom: none;
+            padding-bottom: 0;
+        }
+
+        .config-title {
+            margin: 0 0 2px;
+            font-size: 14px;
+            font-weight: 600;
+            color: rgba(255, 255, 255, .88);
+        }
+
+        .config-desc {
+            margin: 0;
+            font-size: 12px;
+            color: rgba(255, 255, 255, .45);
+            line-height: 1.4;
+        }
+
+        /* Delete account section */
+        .advertencia_eliminacion {
+            font-size: 13px;
+            color: rgba(255, 255, 255, .55);
+            line-height: 1.55;
+            margin: 0 0 16px;
+        }
+
+        #eliminar_cuenta {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            height: 40px;
+            padding: 0 18px;
+            border-radius: var(--my-radius-sm);
+            border: 1px solid var(--my-danger-rim);
+            background: var(--my-danger-dim);
+            color: var(--my-danger);
+            font-family: inherit;
+            font-size: 13px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: background .18s ease, transform .12s ease;
+        }
+
+        #eliminar_cuenta:hover {
+            background: rgba(242, 184, 181, .18);
+        }
+
+        #eliminar_cuenta:active {
+            transform: scale(0.97);
+        }
+
+        /* Credits collapsible */
+        #creditos {
+            padding: 0;
+            overflow: hidden;
+        }
+
+        #creditos summary {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 18px 20px;
+            cursor: pointer;
+            list-style: none;
+            user-select: none;
+        }
+
+        #creditos summary::-webkit-details-marker {
+            display: none;
+        }
+
+        .creditos-summary-right {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .creditos-chip {
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: .4px;
+            text-transform: uppercase;
+            color: rgba(255, 255, 255, .45);
+            border: 1px solid rgba(255, 255, 255, .12);
+            border-radius: var(--my-radius-pill);
+            padding: 3px 8px;
+        }
+
+        .creditos-chevron {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-right: 1.5px solid rgba(255, 255, 255, .35);
+            border-bottom: 1.5px solid rgba(255, 255, 255, .35);
+            transform: rotate(45deg);
+            transition: transform .2s ease;
+        }
+
+        #creditos[open] .creditos-chevron {
+            transform: rotate(-135deg);
+        }
+
+        .creditos-content {
+            padding: 0 20px 20px;
+            border-top: 1px solid rgba(255, 255, 255, .07);
+        }
+
+        .creditos-content p {
+            margin: 12px 0 0;
+            font-size: 13px;
+            color: rgba(255, 255, 255, .60);
+            line-height: 1.55;
+        }
+
+        .creditos-content a {
+            color: rgba(255, 255, 255, .80);
+            text-decoration: underline;
+            text-underline-offset: 2px;
+        }
+
+        .creditos-note {
+            color: rgba(255, 255, 255, .40) !important;
+            font-size: 12px !important;
+        }
+
+        /* ── FOOTER NAV ─────────────────────────────────────────────── */
+        footer {
+            background: rgba(0, 0, 0, 0.45);
+            backdrop-filter: blur(20px) saturate(140%);
+            -webkit-backdrop-filter: blur(20px) saturate(140%);
+            border-top: 1px solid var(--my-glass-rim);
+        }
+
+        .footer-nav {
+            display: flex;
+            align-items: center;
+            justify-content: space-around;
+            padding: 10px 8px calc(10px + env(safe-area-inset-bottom));
+        }
+
+        .footer-btn {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            padding: 0;
+            border: none;
+            background: transparent;
+            text-decoration: none;
+            cursor: pointer;
+            flex: 1;
+            max-width: 90px;
+            transition: opacity .15s ease;
+        }
+
+        .footer-btn:active {
+            opacity: .72;
+            transform: scale(0.96);
+        }
+
+        .footer-btn-icon {
+            width: 48px;
+            height: 42px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: var(--my-radius-sm);
+            transition: background .18s ease;
+        }
+
+        .footer-btn-icon img {
+            width: 22px;
+            height: 22px;
+            opacity: .55;
+            display: block;
+        }
+
+        .footer-btn-label {
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: .3px;
+            color: rgba(255, 255, 255, .45);
+            line-height: 1;
+        }
+
+        .footer-btn.is-active .footer-btn-icon {
+            background: rgba(255, 255, 255, 0.10);
+        }
+
+        .footer-btn.is-active .footer-btn-icon img {
+            opacity: 1;
+            filter: none;
+        }
+
+        .footer-btn.is-active .footer-btn-label {
+            color: rgba(255, 255, 255, .90);
+        }
+    </style>
 </head>
+
 <body>
     <header>
-        <div style="display: flex;flex-direction: column;gap: 0;margin-right: auto;">
-            <img src="https://www.gravatar.com/avatar/00000000000000000000000000000000?d=mp&f=y" alt="avatar" id="icono_usuario">
-            <h1 id="username">...</h1>
+        <div class="header-profile-slot">
+            <div class="header-avatar-wrap">
+                <img src="https://www.gravatar.com/avatar/00000000000000000000000000000000?d=mp&f=y" alt="avatar"
+                    id="icono_usuario">
+            </div>
+            <div class="header-profile-info">
+                <span class="header-profile-label" data-i18n-en="Your profile">Tu perfil</span>
+                <h1 id="username">...</h1>
+            </div>
         </div>
         <button id="logout_button" type="button" aria-label="Desloguear" data-i18n-en-aria-label="Log out">
-            <svg class="logout-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+            <svg class="logout-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
+                fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                aria-hidden="true" focusable="false">
                 <path d="m16 17 5-5-5-5" />
                 <path d="M21 12H9" />
                 <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
@@ -30,41 +461,56 @@
         <section id="datos_usuario">
             <h2 data-i18n-en="Your data">Tus Datos</h2>
             <div>
-                <p><span data-i18n-en="Height:">Altura:</span> <span id="altura_usuario">...</span> <span data-i18n-en="cm">cm</span></p>
-                <button id="editar_altura" class="btn-icon" type="button" aria-label="Cambiar altura" data-i18n-en-aria-label="Change height">
-                    <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiNmZmZmZmYiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIiBjbGFzcz0ibHVjaWRlIGx1Y2lkZS1wZW5jaWwtaWNvbiBsdWNpZGUtcGVuY2lsIj48cGF0aCBkPSJNMjEuMTc0IDYuODEyYTEgMSAwIDAgMC0zLjk4Ni0zLjk4N0wzLjg0MiAxNi4xNzRhMiAyIDAgMCAwLS41LjgzbC0xLjMyMSA0LjM1MmEuNS41IDAgMCAwIC42MjMuNjIybDQuMzUzLTEuMzJhMiAyIDAgMCAwIC44My0uNDk3eiIvPjxwYXRoIGQ9Im0xNSA1IDQgNCIvPjwvc3ZnPg==" alt="" aria-hidden="true">
+                <p><span data-i18n-en="Height:">Altura:</span> <span id="altura_usuario">...</span> <span
+                        data-i18n-en="cm">cm</span></p>
+                <button id="editar_altura" class="btn-icon" type="button" aria-label="Cambiar altura"
+                    data-i18n-en-aria-label="Change height">
+                    <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiNmZmZmZmYiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIiBjbGFzcz0ibHVjaWRlIGx1Y2lkZS1wZW5jaWwtaWNvbiBsdWNpZGUtcGVuY2lsIj48cGF0aCBkPSJNMjEuMTc0IDYuODEyYTEgMSAwIDAgMC0zLjk4Ni0zLjk4N0wzLjg0MiAxNi4xNzRhMiAyIDAgMCAwLS41LjgzbC0xLjMyMSA0LjM1MmEuNS41IDAgMCAwIC42MjMuNjIybDQuMzUzLTEuMzJhMiAyIDAgMCAwIC44My0uNDk3eiIvPjxwYXRoIGQ9Im0xNSA1IDQgNCIvPjwvc3ZnPg=="
+                        alt="" aria-hidden="true">
                 </button>
             </div>
             <div>
-                <p><span data-i18n-en="Age:">Edad:</span> <span id="edad_usuario">...</span> <span data-i18n-en="years">años</span></p>
-                <button id="editar_edad" class="btn-icon" type="button" aria-label="Cambiar edad" data-i18n-en-aria-label="Change age">
-                    <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiNmZmZmZmYiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIiBjbGFzcz0ibHVjaWRlIGx1Y2lkZS1wZW5jaWwtaWNvbiBsdWNpZGUtcGVuY2lsIj48cGF0aCBkPSJNMjEuMTc0IDYuODEyYTEgMSAwIDAgMC0zLjk4Ni0zLjk4N0wzLjg0MiAxNi4xNzRhMiAyIDAgMCAwLS41LjgzbC0xLjMyMSA0LjM1MmEuNS41IDAgMCAwIC42MjMuNjIybDQuMzUzLTEuMzJhMiAyIDAgMCAwIC44My0uNDk3eiIvPjxwYXRoIGQ9Im0xNSA1IDQgNCIvPjwvc3ZnPg==" alt="" aria-hidden="true">
+                <p><span data-i18n-en="Age:">Edad:</span> <span id="edad_usuario">...</span> <span
+                        data-i18n-en="years">años</span></p>
+                <button id="editar_edad" class="btn-icon" type="button" aria-label="Cambiar edad"
+                    data-i18n-en-aria-label="Change age">
+                    <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiNmZmZmZmYiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIiBjbGFzcz0ibHVjaWRlIGx1Y2lkZS1wZW5jaWwtaWNvbiBsdWNpZGUtcGVuY2lsIj48cGF0aCBkPSJNMjEuMTc0IDYuODEyYTEgMSAwIDAgMC0zLjk4Ni0zLjk4N0wzLjg0MiAxNi4xNzRhMiAyIDAgMCAwLS41LjgzbC0xLjMyMSA0LjM1MmEuNS41IDAgMCAwIC42MjMuNjIybDQuMzUzLTEuMzJhMiAyIDAgMCAwIC44My0uNDk3eiIvPjxwYXRoIGQ9Im0xNSA1IDQgNCIvPjwvc3ZnPg=="
+                        alt="" aria-hidden="true">
                 </button>
             </div>
             <div>
-                <p><span data-i18n-en="Current weight:">Peso Actual:</span> <span id="peso_usuario">...</span> <span data-i18n-en="kg">kg</span></p>
-                <button id="editar_peso" class="btn-icon" type="button" aria-label="Cambiar peso actual" data-i18n-en-aria-label="Change current weight">
-                    <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiNmZmZmZmYiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIiBjbGFzcz0ibHVjaWRlIGx1Y2lkZS1wZW5jaWwtaWNvbiBsdWNpZGUtcGVuY2lsIj48cGF0aCBkPSJNMjEuMTc0IDYuODEyYTEgMSAwIDAgMC0zLjk4Ni0zLjk4N0wzLjg0MiAxNi4xNzRhMiAyIDAgMCAwLS41LjgzbC0xLjMyMSA0LjM1MmEuNS41IDAgMCAwIC42MjMuNjIybDQuMzUzLTEuMzJhMiAyIDAgMCAwIC44My0uNDk3eiIvPjxwYXRoIGQ9Im0xNSA1IDQgNCIvPjwvc3ZnPg==" alt="" aria-hidden="true">
+                <p><span data-i18n-en="Current weight:">Peso Actual:</span> <span id="peso_usuario">...</span> <span
+                        data-i18n-en="kg">kg</span></p>
+                <button id="editar_peso" class="btn-icon" type="button" aria-label="Cambiar peso actual"
+                    data-i18n-en-aria-label="Change current weight">
+                    <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiNmZmZmZmYiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIiBjbGFzcz0ibHVjaWRlIGx1Y2lkZS1wZW5jaWwtaWNvbiBsdWNpZGUtcGVuY2lsIj48cGF0aCBkPSJNMjEuMTc0IDYuODEyYTEgMSAwIDAgMC0zLjk4Ni0zLjk4N0wzLjg0MiAxNi4xNzRhMiAyIDAgMCAwLS41LjgzbC0xLjMyMSA0LjM1MmEuNS41IDAgMCAwIC42MjMuNjIybDQuMzUzLTEuMzJhMiAyIDAgMCAwIC44My0uNDk3eiIvPjxwYXRoIGQ9Im0xNSA1IDQgNCIvPjwvc3ZnPg=="
+                        alt="" aria-hidden="true">
                 </button>
             </div>
             <div>
-                <p><span data-i18n-en="Target weight:">Peso Objetivo:</span> <span id="peso_objetivo_usuario">...</span> <span data-i18n-en="kg">kg</span></p>
-                <button id="editar_peso_objetivo" class="btn-icon" type="button" aria-label="Cambiar peso objetivo" data-i18n-en-aria-label="Change target weight">
-                    <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiNmZmZmZmYiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIiBjbGFzcz0ibHVjaWRlIGx1Y2lkZS1wZW5jaWwtaWNvbiBsdWNpZGUtcGVuY2lsIj48cGF0aCBkPSJNMjEuMTc0IDYuODEyYTEgMSAwIDAgMC0zLjk4Ni0zLjk4N0wzLjg0MiAxNi4xNzRhMiAyIDAgMCAwLS41LjgzbC0xLjMyMSA0LjM1MmEuNS41IDAgMCAwIC42MjMuNjIybDQuMzUzLTEuMzJhMiAyIDAgMCAwIC44My0uNDk3eiIvPjxwYXRoIGQ9Im0xNSA1IDQgNCIvPjwvc3ZnPg==" alt="" aria-hidden="true">
+                <p><span data-i18n-en="Target weight:">Peso Objetivo:</span> <span id="peso_objetivo_usuario">...</span>
+                    <span data-i18n-en="kg">kg</span>
+                </p>
+                <button id="editar_peso_objetivo" class="btn-icon" type="button" aria-label="Cambiar peso objetivo"
+                    data-i18n-en-aria-label="Change target weight">
+                    <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiNmZmZmZmYiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIiBjbGFzcz0ibHVjaWRlIGx1Y2lkZS1wZW5jaWwtaWNvbiBsdWNpZGUtcGVuY2lsIj48cGF0aCBkPSJNMjEuMTc0IDYuODEyYTEgMSAwIDAgMC0zLjk4Ni0zLjk4N0wzLjg0MiAxNi4xNzRhMiAyIDAgMCAwLS41LjgzbC0xLjMyMSA0LjM1MmEuNS41IDAgMCAwIC42MjMuNjIybDQuMzUzLTEuMzJhMiAyIDAgMCAwIC44My0uNDk3eiIvPjxwYXRoIGQ9Im0xNSA1IDQgNCIvPjwvc3ZnPg=="
+                        alt="" aria-hidden="true">
                 </button>
             </div>
         </section>
-        
+
         <section id="configuracion">
             <h2 data-i18n-en="Settings">Configuración</h2>
 
             <div class="config-item">
                 <div class="config-text">
                     <h4 class="config-title" data-i18n-en="App language">Idioma de la app</h4>
-                    <p class="config-desc" data-i18n-en="Switch the interface language.">Cambiá el idioma de la interfaz.</p>
+                    <p class="config-desc" data-i18n-en="Switch the interface language.">Cambiá el idioma de la
+                        interfaz.</p>
                 </div>
                 <label class="switch" for="toggle_idioma">
-                    <input id="toggle_idioma" type="checkbox" role="switch" aria-label="Cambiar idioma" data-i18n-en-aria-label="Change language" />
+                    <input id="toggle_idioma" type="checkbox" role="switch" aria-label="Cambiar idioma"
+                        data-i18n-en-aria-label="Change language" />
                     <span class="switch-ui switch-ui--lang" aria-hidden="true"><span class="switch-thumb"></span></span>
                 </label>
             </div>
@@ -72,10 +518,12 @@
             <div class="config-item">
                 <div class="config-text">
                     <h4 class="config-title" data-i18n-en="Transparency">Transparencia</h4>
-                    <p class="config-desc" data-i18n-en="Enable a translucent style on cards and panels.">Activá un estilo translúcido en tarjetas y paneles.</p>
+                    <p class="config-desc" data-i18n-en="Enable a translucent style on cards and panels.">Activá un
+                        estilo translúcido en tarjetas y paneles.</p>
                 </div>
                 <label class="switch" for="toggle_transparencia">
-                    <input id="toggle_transparencia" type="checkbox" role="switch" aria-label="Activar transparencia" data-i18n-en-aria-label="Enable transparency" />
+                    <input id="toggle_transparencia" type="checkbox" role="switch" aria-label="Activar transparencia"
+                        data-i18n-en-aria-label="Enable transparency" />
                     <span class="switch-ui" aria-hidden="true"><span class="switch-thumb"></span></span>
                 </label>
             </div>
@@ -84,15 +532,16 @@
         <section>
             <h2 data-i18n-en="Delete account">Eliminar Cuenta</h2>
             <p class="advertencia_eliminacion">
-                <span data-i18n-en="If you delete your account, all your personal data, training history, and progress will be permanently removed.">
+                <span
+                    data-i18n-en="If you delete your account, all your personal data, training history, and progress will be permanently removed.">
                     Al eliminar tu cuenta, se borrarán permanentemente todos tus datos personales,
                     historial de entrenamientos y progreso.
                 </span>
-                <span data-i18n-en="This action can’t be undone.">Esta acción no se puede deshacer.</span>
+                <span data-i18n-en="This action can't be undone.">Esta acción no se puede deshacer.</span>
             </p>
             <button id="eliminar_cuenta" data-i18n-en="Delete account">Eliminar</button>
         </section>
-        
+
         <details id="creditos" class="creditos-box">
             <summary>
                 <span data-i18n-en="Credits">Créditos</span>
@@ -104,7 +553,8 @@
             <div class="creditos-content">
                 <p>
                     <strong>TrAIner</strong>
-                    <span data-i18n-en="is an app designed to help you organize your training: it generates weekly plans and lets you view day-by-day details in a simple way.">
+                    <span
+                        data-i18n-en="is an app designed to help you organize your training: it generates weekly plans and lets you view day-by-day details in a simple way.">
                         es una app pensada para ayudarte a organizar tu entrenamiento:
                         genera planes semanales y te permite ver el detalle de cada día y ejercicio de forma simple.
                     </span>
@@ -117,29 +567,37 @@
                     <span>2026 &copy;</span>
                 </p>
                 <p class="creditos-note">
-                    <span data-i18n-en="Tip: if something doesn’t look right, restart the app and check your connection.">Tip: si algo no se ve bien, relanza la app y revisá tu conexión.</span>
+                    <span
+                        data-i18n-en="Tip: if something doesn't look right, restart the app and check your connection.">Tip:
+                        si algo no se ve bien, relanza la app y revisá tu conexión.</span>
                 </p>
             </div>
         </details>
     </main>
-    <footer>
-        <nav class="footer-nav" aria-label="Navegación inferior" data-i18n-en-aria-label="Bottom navigation">
-            
-            <a class="footer-btn footer-btn--small" href="/Templates/Inicio/Dashboard.html" aria-label="Plan de Entreno" data-i18n-en-aria-label="Training plan">
-                <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiNmZmZmZmYiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIiBjbGFzcz0ibHVjaWRlIGx1Y2lkZS1ob3VzZS1pY29uIGx1Y2lkZS1ob3VzZSI+PHBhdGggZD0iTTE1IDIxdi04YTEgMSAwIDAgMC0xLTFoLTRhMSAxIDAgMCAwLTEgMXY4Ii8+PHBhdGggZD0iTTMgMTBhMiAyIDAgMCAxIC43MDktMS41MjhsNy02YTIgMiAwIDAgMSAyLjU4MiAwbDcgNkEyIDIgMCAwIDEgMjEgMTB2OWEyIDIgMCAwIDEtMiAySDVhMiAyIDAgMCAxLTItMnoiLz48L3N2Zz4=" alt="" aria-hidden="true">
-                <span class="sr-only" data-i18n-en="Training plan">Plan de Entreno</span>
+
+    <footer class="liquid-wrap">
+        <div class="liquid-shadow"></div>
+        <nav class="footer-nav liquid-bar" aria-label="Navegación inferior" data-i18n-en-aria-label="Bottom navigation">
+
+            <!-- Entreno -->
+            <a class="footer-btn" href="/Templates/Inicio/Dashboard.html" aria-label="Plan de Entreno"
+                data-i18n-en-aria-label="Training plan">
+                <div class="footer-btn-icon">
+                    <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiNmZmZmZmYiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIiBjbGFzcz0ibHVjaWRlIGx1Y2lkZS1ob3VzZS1pY29uIGx1Y2lkZS1ob3VzZSI+PHBhdGggZD0iTTE1IDIxdi04YTEgMSAwIDAgMC0xLTFoLTRhMSAxIDAgMCAwLTEgMXY4Ii8+PHBhdGggZD0iTTMgMTBhMiAyIDAgMCAxIC43MDktMS41MjhsNy02YTIgMiAwIDAgMSAyLjU4MiAwbDcgNkEyIDIgMCAwIDEgMjEgMTB2OWEyIDIgMCAwIDEtMiAySDVhMiAyIDAgMCAxLTItMnoiLz48L3N2Zz4="
+                        alt="" aria-hidden="true">
+                </div>
             </a>
 
-            <a class="footer-btn footer-btn--small" href="/Templates/Inicio/Ayuda.html" aria-label="Ayuda" data-i18n-en-aria-label="Help">
-                <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiNmZmZmZmYiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIiBjbGFzcz0ibHVjaWRlIGx1Y2lkZS1pbmZvLWljb24gbHVjaWRlLWluZm8iPjxjaXJjbGUgY3g9IjEyIiBjeT0iMTIiIHI9IjEwIi8+PHBhdGggZD0iTTEyIDE2di00Ii8+PHBhdGggZD0iTTEyIDhoLjAxIi8+PC9zdmc+" alt="" aria-hidden="true">
-                <span class="sr-only" data-i18n-en="Help">Ayuda</span>
+            <!-- Ajustes (active) -->
+            <a class="footer-btn is-active" href="/Templates/Inicio/perfil_usuario.html" aria-label="Ajustes"
+                data-i18n-en-aria-label="Settings">
+                <div class="footer-btn-icon">
+                    <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiNmZmZmZmYiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIiBjbGFzcz0ibHVjaWRlIGx1Y2lkZS1jb2ctaWNvbiBsdWNpZGUtY29nIj48cGF0aCBkPSJNMTEgMTAuMjcgNyAzLjM0Ii8+PHBhdGggZD0ibTExIDEzLjczLTQgNi45MyIvPjxwYXRoIGQ9Ik0xMiAyMnYtMiIvPjxwYXRoIGQ9Ik0xMiAydjIiLz48cGF0aCBkPSJNMTQgMTJoOCIvPjxwYXRoIGQ9Im0xNyAyMC42Ni0xLTEuNzMiLz48cGF0aCBkPSJtMTcgMy4zNC0xIDEuNzMiLz48cGF0aCBkPSJNMiAxMmgyIi8+PHBhdGggZD0ibTIwLjY2IDE3LTEuNzMtMSIvPjxwYXRoIGQ9Im0yMC42NiA3LTEuNzMgMSIvPjxwYXRoIGQ9Im0zLjM0IDE3IDEuNzMtMSIvPjxwYXRoIGQ9Im0zLjM0IDcgMS43MyAxIi8+PGNpcmNsZSBjeD0iMTIiIGN5PSIxMiIgcj0iMiIvPjxjaXJjbGUgY3g9IjEyIiBjeT0iMTIiIHI9IjgiLz48L3N2Zz4="
+                        alt="" aria-hidden="true">
+                </div>
             </a>
 
-            <a class="footer-btn is-active footer-btn--small" href="/Templates/Inicio/perfil_usuario.html" aria-label="Perfil" data-i18n-en-aria-label="Profile">
-                <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiNmZmZmZmYiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIiBjbGFzcz0ibHVjaWRlIGx1Y2lkZS1jb2ctaWNvbiBsdWNpZGUtY29nIj48cGF0aCBkPSJNMTEgMTAuMjcgNyAzLjM0Ii8+PHBhdGggZD0ibTExIDEzLjczLTQgNi45MyIvPjxwYXRoIGQ9Ik0xMiAyMnYtMiIvPjxwYXRoIGQ9Ik0xMiAydjIiLz48cGF0aCBkPSJNMTQgMTJoOCIvPjxwYXRoIGQ9Im0xNyAyMC42Ni0xLTEuNzMiLz48cGF0aCBkPSJtMTcgMy4zNC0xIDEuNzMiLz48cGF0aCBkPSJNMiAxMmgyIi8+PHBhdGggZD0ibTIwLjY2IDE3LTEuNzMtMSIvPjxwYXRoIGQ9Im0yMC42NiA3LTEuNzMgMSIvPjxwYXRoIGQ9Im0zLjM0IDE3IDEuNzMtMSIvPjxwYXRoIGQ9Im0zLjM0IDcgMS43MyAxIi8+PGNpcmNsZSBjeD0iMTIiIGN5PSIxMiIgcj0iMiIvPjxjaXJjbGUgY3g9IjEyIiBjeT0iMTIiIHI9IjgiLz48L3N2Zz4=" alt="" aria-hidden="true">
-                <span class="sr-only" data-i18n-en="Profile">Perfil</span>
-            </a>
-        
+            <div class="liquid-highlight"></div>
         </nav>
     </footer>
 
@@ -148,4 +606,5 @@
     <script src="/Scripts/perfil_usuario.js" type="module"></script>
     <script src="/Scripts/logout.js" type="module"></script>
 </body>
+
 </html>

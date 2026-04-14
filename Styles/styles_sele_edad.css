@@ -141,7 +141,7 @@ header h1 {
 	top: 50%;
 	transform: translateY(-50%);
 	z-index: 2;
-	display: none;
+	display: none !important;
 	align-items: center;
 	justify-content: center;
 	width: 42px;
@@ -406,7 +406,7 @@ button[type="submit"]:active {
 	}
 
 	.header-home {
-		display: inline-flex;
+		display: inline-flex !important;
 	}
 
 	footer {

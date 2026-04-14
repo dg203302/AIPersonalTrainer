@@ -1,57 +1,315 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <script src="/Scripts/ui_transparencia_apply.js"></script>
     <script src="/Scripts/ui_idioma.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&display=swap"
+        rel="stylesheet">
     <link rel="stylesheet" href="/Styles/styles_sele_edad.css">
-    <meta name="theme-color" content="#0A1226">
+    <meta name="theme-color" content="#0c0d0f">
     <title data-i18n-en="Age">Edad</title>
     <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7232324434042202"
-     crossorigin="anonymous"></script>
+        crossorigin="anonymous"></script>
+
+    <style>
+        :root {
+            --my-primary: #d0bcff;
+            --my-primary-dim: rgba(208, 188, 255, 0.14);
+            --my-primary-rim: rgba(208, 188, 255, 0.22);
+            --my-glass: rgba(255, 255, 255, 0.05);
+            --my-glass-rim: rgba(255, 255, 255, 0.10);
+            --my-glass-hover: rgba(255, 255, 255, 0.08);
+            --my-radius-card: 26px;
+            --my-radius-sm: 16px;
+            --my-radius-pill: 999px;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+            background: linear-gradient(135deg, #1a1c1e 0%, #0c0d0f 100%);
+            color: rgba(255, 255, 255, .88);
+            margin: 0;
+            min-height: 100svh;
+        }
+
+        /* ── HEADER ── */
+        body>header {
+            position: fixed;
+            inset: 0 0 auto;
+            z-index: 50;
+            padding: calc(14px + env(safe-area-inset-top)) 20px 14px;
+            background: linear-gradient(180deg, rgba(0, 0, 0, 0.28) 0%, rgba(255, 255, 255, 0.04) 100%);
+            backdrop-filter: blur(24px) saturate(160%);
+            -webkit-backdrop-filter: blur(24px) saturate(160%);
+            border-bottom: 1px solid var(--my-glass-rim);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+        }
+
+        body>header h1 {
+            margin: 0;
+            font-size: 18px;
+            font-weight: 800;
+            letter-spacing: -.2px;
+            color: rgba(255, 255, 255, .92);
+            flex: 1;
+        }
+
+        .header-home {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 40px;
+            height: 40px;
+            border-radius: var(--my-radius-sm);
+            border: 1px solid var(--my-glass-rim);
+            background: var(--my-glass);
+            -webkit-tap-highlight-color: transparent;
+            transition: background .18s;
+            flex-shrink: 0;
+        }
+
+        @media (hover: hover) {
+            .header-home:hover {
+                background: var(--my-glass-hover);
+            }
+        }
+
+        .header-home img {
+            width: 20px;
+            height: 20px;
+            opacity: .75;
+            display: block;
+        }
+
+        /* ── MAIN ── */
+        main {
+            max-width: 520px;
+            margin: 0 auto;
+            padding: calc(88px + env(safe-area-inset-top)) 20px calc(40px + env(safe-area-inset-bottom));
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        form {
+            border-radius: var(--my-radius-card);
+            border: 1px solid var(--my-glass-rim);
+            background: var(--my-glass);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        #selector_edad>label {
+            display: block;
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: .6px;
+            text-transform: uppercase;
+            color: rgba(255, 255, 255, .40);
+            margin-bottom: 4px;
+        }
+
+        .helper {
+            margin: 0;
+            font-size: 13px;
+            line-height: 1.6;
+            color: rgba(255, 255, 255, .50);
+        }
+
+        /* Wheel row */
+        .wheel-row {
+            display: flex;
+            gap: 8px;
+            justify-content: center;
+        }
+
+        /* Submit button */
+        form button[type="submit"] {
+            width: 100%;
+            height: 50px;
+            border-radius: var(--my-radius-sm);
+            border: 1px solid var(--my-primary-rim);
+            background: var(--my-primary-dim);
+            color: var(--my-primary);
+            font-family: inherit;
+            font-size: 15px;
+            font-weight: 700;
+            cursor: pointer;
+            -webkit-tap-highlight-color: transparent;
+            transition: background .18s ease, transform .12s ease;
+        }
+
+        @media (hover: hover) {
+            form button[type="submit"]:hover {
+                background: rgba(208, 188, 255, .22);
+            }
+        }
+
+        form button[type="submit"]:active {
+            transform: scale(0.98);
+        }
+
+        /* Page copy */
+        .page-copy {
+            border-radius: var(--my-radius-sm);
+            border: 1px solid var(--my-glass-rim);
+            background: rgba(255, 255, 255, .03);
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-bottom: 40px;
+        }
+
+        .page-copy h2 {
+            margin: 0;
+            font-size: 14px;
+            font-weight: 700;
+            color: rgba(255, 255, 255, .80);
+        }
+
+        .page-copy p {
+            margin: 0;
+            font-size: 13px;
+            line-height: 1.6;
+            color: rgba(255, 255, 255, .50);
+        }
+
+        .note {
+            border-radius: var(--my-radius-sm);
+            border: 1px solid var(--my-glass-rim);
+            background: rgba(255, 255, 255, .04);
+            padding: 14px 16px;
+        }
+
+        .note h3 {
+            margin: 0 0 6px;
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: .5px;
+            text-transform: uppercase;
+            color: rgba(255, 255, 255, .35);
+        }
+
+        .note p {
+            margin: 0;
+            font-size: 12.5px;
+            color: rgba(255, 255, 255, .45);
+            line-height: 1.5;
+        }
+
+        /* Footer */
+        footer {
+            margin-top: 40px;
+            background: rgba(0, 0, 0, 0.40);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-top: 1px solid var(--my-glass-rim);
+            padding: 12px 20px calc(12px + env(safe-area-inset-bottom));
+            text-align: center;
+        }
+
+        footer a {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 38px;
+            height: 38px;
+            border-radius: var(--my-radius-sm);
+            border: 1px solid var(--my-glass-rim);
+            background: var(--my-glass);
+            -webkit-tap-highlight-color: transparent;
+            transition: background .18s;
+        }
+
+        footer a img {
+            width: 20px;
+            height: 20px;
+            opacity: .60;
+            display: block;
+        }
+    </style>
 </head>
+
 <body>
     <header>
-        <h1 data-i18n-en="Let’s get started">Comencemos</h1>
-		<a class="header-home" href="/index.html" aria-label="Inicio" data-i18n-en-aria-label="Home">
-			<img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9ImN1cnJlbnRDb2xvciIgc3Ryb2tlLXdpZHRoPSIyIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiIGNsYXNzPSJsdWNpZGUgbHVjaWRlLWhvdXNlLWljb24gbHVjaWRlLWhvdXNlIj48cGF0aCBkPSJNMTUgMjF2LThhMSAxIDAgMCAwLTEtMWgtNGExIDEgMCAwIDAtMSAxdjgiLz48cGF0aCBkPSJNMyAxMGEyIDIgMCAwIDEgLjcwOS0xLjUyOGw3LTZhMiAyIDAgMCAxIDIuNTgyIDBsNyA2QTIgMiAwIDAgMSAyMSAxMHY5YTIgMiAwIDAgMS0yIDJINWEyIDIgMCAwIDEtMi0yeiIvPjwvc3ZnPg==" alt="home">
-		</a>
+        <h1 data-i18n-en="Let's get started">Comencemos</h1>
+        <a class="header-home" href="/index.html" aria-label="Inicio" data-i18n-en-aria-label="Home">
+            <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9ImN1cnJlbnRDb2xvciIgc3Ryb2tlLXdpZHRoPSIyIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiIGNsYXNzPSJsdWNpZGUgbHVjaWRlLWhvdXNlLWljb24gbHVjaWRlLWhvdXNlIj48cGF0aCBkPSJNMTUgMjF2LThhMSAxIDAgMCAwLTEtMWgtNGExIDEgMCAwIDAtMSAxdjgiLz48cGF0aCBkPSJNMyAxMGEyIDIgMCAwIDEgLjcwOS0xLjUyOGw3LTZhMiAyIDAgMCAxIDIuNTgyIDBsNyA2QTIgMiAwIDAgMSAyMSAxMHY5YTIgMiAwIDAgMS0yIDJINWEyIDIgMCAwIDEtMi0yeiIvPjwvc3ZnPg=="
+                alt="home">
+        </a>
     </header>
+
     <main>
         <form id="form_ingreso_edad">
             <div id="selector_edad">
                 <label data-i18n-en="Date of birth">Fecha de nacimiento</label>
-
-                <p class="helper" data-i18n-en="We use your date of birth to better tailor recommendations: intensity, volume, and progression pace. The goal is a plan that’s challenging, but realistic and safe.">Usamos tu fecha de nacimiento para ajustar mejor las recomendaciones: intensidad, volumen y ritmo de progreso. La idea es que el plan sea exigente, pero realista y seguro.</p>
-
-                <div class="wheel-row" role="group" aria-label="Fecha de nacimiento" data-i18n-en-aria-label="Date of birth">
-                    <div class="wheel" data-field="dia" aria-label="Día" data-i18n-en-aria-label="Day" tabindex="0"></div>
-                    <div class="wheel" data-field="mes" aria-label="Mes" data-i18n-en-aria-label="Month" tabindex="0"></div>
-                    <div class="wheel" data-field="ano" aria-label="Año" data-i18n-en-aria-label="Year" tabindex="0"></div>
+                <p class="helper"
+                    data-i18n-en="We use your date of birth to better tailor recommendations: intensity, volume, and progression pace. The goal is a plan that's challenging, but realistic and safe.">
+                    Usamos tu fecha de nacimiento para ajustar mejor las recomendaciones: intensidad, volumen y ritmo
+                    de progreso. La idea es que el plan sea exigente, pero realista y seguro.</p>
+                <div class="wheel-row" role="group" aria-label="Fecha de nacimiento"
+                    data-i18n-en-aria-label="Date of birth">
+                    <div class="wheel" data-field="dia" aria-label="Día" data-i18n-en-aria-label="Day" tabindex="0">
+                    </div>
+                    <div class="wheel" data-field="mes" aria-label="Mes" data-i18n-en-aria-label="Month" tabindex="0">
+                    </div>
+                    <div class="wheel" data-field="ano" aria-label="Año" data-i18n-en-aria-label="Year" tabindex="0">
+                    </div>
                 </div>
-
                 <!-- Hidden inputs used by submit handler -->
                 <input type="hidden" id="dia" name="dia" required>
                 <input type="hidden" id="mes" name="mes" required>
                 <input type="hidden" id="ano" name="ano" required>
             </div>
-
             <button type="submit" data-i18n-en="Next">Siguiente</button>
         </form>
 
         <section class="page-copy" aria-label="Información adicional" data-i18n-en-aria-label="Additional information">
             <h2 data-i18n-en="Why do we ask for it?">¿Por qué te lo pedimos?</h2>
-            <p data-i18n-en="A training plan becomes much more useful when it has context. Starting from scratch isn’t the same as coming back after a break, and training “to move better” isn’t the same as training “to get stronger”. This app aims for balance: simple to use, but structured.">Un plan de entrenamiento se vuelve mucho más útil cuando tiene contexto. No es lo mismo empezar de cero que retomar después de un tiempo, y no es lo mismo entrenar “para moverse mejor” que entrenar “para progresar fuerte”. Esta app intenta encontrar un equilibrio: simple de usar, pero con estructura.</p>
-            <p data-i18n-en="We also want exercise choices to make sense: main movements to build a base, complementary work to add volume, and accessories to reinforce weak points. No endless routines, no unnecessary complexity.">Además, buscamos que las elecciones de ejercicios tengan sentido: movimientos principales para construir base, complementarios para sumar trabajo y accesorios para reforzar puntos débiles. Sin rutinas eternas, sin vueltas.</p>
+            <p
+                data-i18n-en="A training plan becomes much more useful when it has context. Starting from scratch isn't the same as coming back after a break, and training 'to move better' isn't the same as training 'to get stronger'. This app aims for balance: simple to use, but structured.">
+                Un plan de entrenamiento se vuelve mucho más útil cuando tiene contexto. No es lo mismo empezar de
+                cero que retomar después de un tiempo, y no es lo mismo entrenar "para moverse mejor" que entrenar
+                "para progresar fuerte". Esta app intenta encontrar un equilibrio: simple de usar, pero con
+                estructura.</p>
+            <p
+                data-i18n-en="We also want exercise choices to make sense: main movements to build a base, complementary work to add volume, and accessories to reinforce weak points. No endless routines, no unnecessary complexity.">
+                Además, buscamos que las elecciones de ejercicios tengan sentido: movimientos principales para
+                construir base, complementarios para sumar trabajo y accesorios para reforzar puntos débiles. Sin
+                rutinas eternas, sin vueltas.</p>
             <div class="note">
                 <h3 data-i18n-en="Privacy">Privacidad</h3>
-                <p data-i18n-en="Your information is used only to run the experience. The priority is to keep everything transparent and avoid unnecessary data.">Tu información se usa solo para el funcionamiento de la experiencia. La prioridad es mantener todo transparente y evitar datos innecesarios.</p>
+                <p
+                    data-i18n-en="Your information is used only to run the experience. The priority is to keep everything transparent and avoid unnecessary data.">
+                    Tu información se usa solo para el funcionamiento de la experiencia. La prioridad es mantener todo
+                    transparente y evitar datos innecesarios.</p>
             </div>
         </section>
     </main>
+
     <footer>
-        <a href="/index.html"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiNmZmZmZmYiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIiBjbGFzcz0ibHVjaWRlIGx1Y2lkZS1ob3VzZS1pY29uIGx1Y2lkZS1ob3VzZSI+PHBhdGggZD0iTTE1IDIxdi04YTEgMSAwIDAgMC0xLTFoLTRhMSAxIDAgMCAwLTEgMXY4Ii8+PHBhdGggZD0iTTMgMTBhMiAyIDAgMCAxIC43MDktMS41MjhsNy02YTIgMiAwIDAgMSAyLjU4MiAwbDcgNkEyIDIgMCAwIDEgMjEgMTB2OWEyIDIgMCAwIDEtMiAySDVhMiAyIDAgMCAxLTItMnoiLz48L3N2Zz4=" alt="home"></a>
+        <a href="/index.html">
+            <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiNmZmZmZmYiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIiBjbGFzcz0ibHVjaWRlIGx1Y2lkZS1ob3VzZS1pY29uIGx1Y2lkZS1ob3VzZSI+PHBhdGggZD0iTTE1IDIxdi04YTEgMSAwIDAgMC0xLTFoLTRhMSAxIDAgMCAwLTEgMXY4Ii8+PHBhdGggZD0iTTMgMTBhMiAyIDAgMCAxIC43MDktMS41MjhsNy02YTIgMiAwIDAgMSAyLjU4MiAwbDcgNkEyIDIgMCAwIDEgMjEgMTB2OWEyIDIgMCAwIDEtMiAySDVhMiAyIDAgMCAxLTItMnoiLz48L3N2Zz4="
+                alt="home">
+        </a>
     </footer>
 
     <script type="module">
@@ -61,14 +319,12 @@
             const header = document.querySelector("header");
             const footer = document.querySelector("footer");
             const root = document.documentElement;
-
             if (header) root.style.setProperty("--header-fixed", `${header.offsetHeight}px`);
             if (footer) root.style.setProperty("--footer-fixed", `${footer.offsetHeight}px`);
         };
 
         const initFixedChromeObservers = () => {
             updateFixedChromeHeights();
-
             if ("ResizeObserver" in window) {
                 const ro = new ResizeObserver(() => updateFixedChromeHeights());
                 const header = document.querySelector("header");
@@ -139,7 +395,6 @@
                 wheelEl.scrollTo({ top: Number(wheelEl.dataset.index) * WHEEL_ITEM_HEIGHT, behavior: "smooth" });
             });
 
-            // Initialize
             setActive(0);
             wheelEl.scrollTop = 0;
         };
@@ -160,27 +415,16 @@
             buildWheel({ field: "mes", values: Array.from({ length: 12 }, (_, i) => i + 1), format: pad2 });
             buildWheel({ field: "ano", values: years, format: (y) => String(y) });
 
-            // sensible defaults (01/01/2000)
             const dayWheel = document.querySelector('.wheel[data-field="dia"]');
             const monthWheel = document.querySelector('.wheel[data-field="mes"]');
             const yearWheel = document.querySelector('.wheel[data-field="ano"]');
             const yearsLen = yearWheel ? Number(yearWheel.dataset.length || "0") : 0;
             const index2000 = Math.max(0, Math.min(yearsLen - 1, (2032 - 2000)));
 
-            if (dayWheel) {
-                dayWheel.scrollTo({ top: 0, behavior: "auto" });
-                dayWheel.dispatchEvent(new Event("scroll"));
-            }
-            if (monthWheel) {
-                monthWheel.scrollTo({ top: 0, behavior: "auto" });
-                monthWheel.dispatchEvent(new Event("scroll"));
-            }
-            if (yearWheel) {
-                yearWheel.scrollTo({ top: index2000 * WHEEL_ITEM_HEIGHT, behavior: "auto" });
-                yearWheel.dispatchEvent(new Event("scroll"));
-            }
+            if (dayWheel) { dayWheel.scrollTo({ top: 0, behavior: "auto" }); dayWheel.dispatchEvent(new Event("scroll")); }
+            if (monthWheel) { monthWheel.scrollTo({ top: 0, behavior: "auto" }); monthWheel.dispatchEvent(new Event("scroll")); }
+            if (yearWheel) { yearWheel.scrollTo({ top: index2000 * WHEEL_ITEM_HEIGHT, behavior: "auto" }); yearWheel.dispatchEvent(new Event("scroll")); }
 
-            // Ensure hidden inputs are set even if scroll events are blocked
             document.getElementById("dia").value ||= "1";
             document.getElementById("mes").value ||= "1";
             document.getElementById("ano").value ||= "2000";
@@ -196,23 +440,17 @@
 
         document.getElementById("form_ingreso_edad").addEventListener("submit", function (event) {
             event.preventDefault();
-
             const dia = parseInt(document.getElementById("dia").value, 10);
             const mes = parseInt(document.getElementById("mes").value, 10);
             const ano = parseInt(document.getElementById("ano").value, 10);
-
-            if (!isValidYMD(ano, mes, dia)) {
-                alert("Fecha de nacimiento inválida");
-                return;
-            }
-
+            if (!isValidYMD(ano, mes, dia)) { alert("Fecha de nacimiento inválida"); return; }
             const nacimiento = dayjs(`${ano}-${mes}-${dia}`);
             const hoy = dayjs();
-
             const edad = hoy.diff(nacimiento, "year");
             sessionStorage.setItem("edad_temp", String(edad));
             return window.location.href = "/Templates/Creacion_cuenta/Seleccion_Altura.html";
         });
     </script>
 </body>
+
 </html>
