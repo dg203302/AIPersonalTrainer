@@ -13,6 +13,6 @@ export async function logout() {
         window.location.href = "/"; 
     }
 }
-document.getElementById("logout_button").addEventListener("click", async () => {
+document.querySelector("button[aria-label='Desloguear']").addEventListener("click", async () => {
     await logout();
 });

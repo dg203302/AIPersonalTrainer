@@ -795,46 +795,27 @@ a:focus-visible {
 
 /* Menos "aire" vertical dentro del snap */
 .pt-detail-viewport .plan-snap-panel {
-	padding: 10px 0 12px !important;
+	padding: 10px 0 12px;
 }
 
-body>header {
+body>header , body>header>div{
 	position: fixed;
-	top: 0;
+	top: 4%;
 	left: 0;
-	right: 0;
-	z-index: 50;
-	padding: calc(14px + env(safe-area-inset-top)) var(--pad) 12px;
-	background:
-		linear-gradient(180deg, color-mix(in srgb, #FFFFFF 12%, transparent), color-mix(in srgb, #FFFFFF 6%, transparent));
-	backdrop-filter: blur(18px) saturate(155%);
-	-webkit-backdrop-filter: blur(18px) saturate(155%);
-	border-bottom: 1px solid var(--stroke);
-	box-shadow: 0 10px 30px rgba(0, 0, 0, .22);
-	overflow: hidden;
-
+	right: 2%;
 	display: flex;
-	align-items: center;
-	justify-content: space-between;
+	flex-direction: column;
+	align-items:end;
 	gap: 12px;
-}
-
-body>header::before {
-	content: "";
-	position: absolute;
-	inset: 0;
+	padding: 0px;
+	border-radius: 999px;
+	z-index: 10;
 	pointer-events: none;
-	background:
-		radial-gradient(900px 140px at 10% 0%, color-mix(in srgb, var(--accent) 18%, transparent) 0%, transparent 60%),
-		radial-gradient(900px 140px at 90% 20%, color-mix(in srgb, var(--accent2) 16%, transparent) 0%, transparent 65%);
-	opacity: .85;
 }
-
-body>header>* {
-	position: relative;
-	z-index: 1;
+body>header > * {
+    /* 2. Reactiva la interacción para los botones/links dentro del header */
+    pointer-events: auto; 
 }
-
 #textos {
 	flex: 1;
 	min-width: 0;
@@ -958,9 +939,7 @@ body>header>* {
 
 main {
 	max-width: var(--content-max);
-	margin:
-		calc(var(--header-fixed, 72px) + env(safe-area-inset-top)) auto 0;
-	padding: 18px var(--pad) calc(24px + var(--footer-fixed, 0px));
+	padding: 0;
 	display: grid;
 	gap: 14px;
 	position: relative;
@@ -971,13 +950,9 @@ main {
 .pt-plan-swipe {
 	display: flex;
 	flex-direction: row;
-	align-items: flex-start;
+	align-items:start;
 	overflow-x: auto;
 	scroll-snap-type: x mandatory;
-	scroll-snap-stop: always;
-	-webkit-overflow-scrolling: touch;
-	overscroll-behavior-x: contain;
-	gap: 0;
 	width: 100%;
 	max-width: 100%;
 	/* ocultar scrollbar */
@@ -990,8 +965,9 @@ main {
 
 .pt-plan-page {
 	flex: 0 0 100%;
-	scroll-snap-align: start;
+	scroll-snap-align: center;
 	min-width: 100%;
+	margin: 0;
 }
 
 section {
@@ -1072,8 +1048,7 @@ button:active {
 /* Cabecera del plan (título izquierda, acciones derecha) */
 .plan-topbar {
 	display: flex;
-	align-items: center;
-	justify-content: space-between;
+	flex-direction: column;
 	gap: 12px;
 	flex-wrap: wrap;
 	flex: 1 1 100%;
@@ -2088,45 +2063,6 @@ html.no-transparency .liquid-shadow {
 
 	main>#anuncios:nth-of-type(2) {
 		grid-column: 2;
-	}
-
-	/* Sidebar derecha: reutiliza el footer */
-	footer {
-		left: auto;
-		transform: none;
-		right: 0;
-		top: 0;
-		bottom: 0;
-		width: calc(var(--sidebar-w) + env(safe-area-inset-right));
-		padding: calc(14px + env(safe-area-inset-top)) var(--pad) calc(14px + env(safe-area-inset-bottom));
-		border-top: 0;
-		border-left: 1px solid var(--stroke);
-		border-radius: 0;
-		box-shadow: -10px 0 30px rgba(0, 0, 0, .22);
-	}
-
-	footer::before {
-		background:
-			radial-gradient(900px 140px at 0% 20%, color-mix(in srgb, var(--accent) 18%, transparent) 0%, transparent 60%),
-			radial-gradient(900px 140px at 10% 80%, color-mix(in srgb, var(--accent2) 16%, transparent) 0%, transparent 65%);
-	}
-
-	.footer-nav {
-		width: 100%;
-		margin: 0;
-		flex-direction: column;
-		align-items: flex-start;
-		justify-content: flex-start;
-		gap: 10px;
-	}
-
-	.footer-btn {
-		flex: 0 0 auto;
-		width: auto;
-	}
-
-	.footer-btn--profile {
-		display: none;
 	}
 
 	/* En escritorio mantenemos el saludo/usuario en el header */

@@ -40,30 +40,13 @@
         }
 
         /* ── HEADER ─────────────────────────────────────────────────── */
-        body>header {
-            background-color: rgba(255, 255, 255, 0.05);
-            backdrop-filter: blur(3px) saturate(100%);
-            -webkit-backdrop-filter: blur(3px) saturate(100%);
-            border: 1px solid rgba(255, 255, 255, 0.15);
-            box-shadow:
-                inset 0 1px 0 rgba(255, 255, 255, 0.45),
-                inset 0 0 12px rgba(255, 255, 255, 0.1),
-                0 0 20px 2px rgba(130, 180, 255, 0.25),
-                0 0 5px 0px rgba(255, 255, 255, 0.3);
-            display: flex;
-            align-items: center;
-            gap: 14px;
-            padding: calc(14px + env(safe-area-inset-top)) 16px 14px;
-            border-radius: 0 0 12px 12px;
-        }
 
         /* Avatar + username slot */
         .header-profile-slot {
             display: flex;
-            align-items: center;
-            gap: 12px;
-            flex: 1;
-            min-width: 0;
+            flex-direction: column;
+                align-items: flex-end;
+                gap: 6px;
         }
 
         .header-avatar-wrap {
@@ -107,30 +90,6 @@
             overflow: hidden;
             text-overflow: ellipsis;
             max-width: 50vw;
-        }
-
-        /* Logout button */
-        #logout_button {
-            flex-shrink: 0;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            width: 40px;
-            height: 40px;
-            border-radius: var(--my-radius-sm);
-            border: 1px solid var(--my-glass-rim);
-            background: var(--my-glass);
-            color: rgba(255, 255, 255, .80);
-            cursor: pointer;
-            transition: background .18s ease, transform .12s ease;
-        }
-
-        #logout_button:hover {
-            background: var(--my-glass-hover);
-        }
-
-        #logout_button:active {
-            transform: scale(0.96);
         }
 
         /* ── MAIN ── */
@@ -441,17 +400,7 @@
 
 <body>
     <header>
-        <div class="header-profile-slot">
-            <div class="header-avatar-wrap">
-                <img src="https://www.gravatar.com/avatar/00000000000000000000000000000000?d=mp&f=y" alt="avatar"
-                    id="icono_usuario">
-            </div>
-            <div class="header-profile-info">
-                <span class="header-profile-label" data-i18n-en="Your profile">Tu perfil</span>
-                <h1 id="username">...</h1>
-            </div>
-        </div>
-        <button id="logout_button" type="button" aria-label="Desloguear" data-i18n-en-aria-label="Log out">
+        <button class="footer-nav liquid-bar" type="button" aria-label="Desloguear" data-i18n-en-aria-label="Log out" style="width: 60px; height: 60px;">
             <svg class="logout-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
                 fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
                 aria-hidden="true" focusable="false">
@@ -463,6 +412,16 @@
     </header>
 
     <main>
+        <div class="titulos_head">
+            <h1>
+                <span>Tr<span style="color: var(--my-primary);">AI</span>ner</span>
+            </h1>
+            <div class="header-profile-slot">
+                <img src="https://www.gravatar.com/avatar/00000000000000000000000000000000?d=mp&f=y" alt="avatar" id="icono_usuario">
+                <h1 id="username">...</h1>
+            </div>
+        </div>
+
         <section id="datos_usuario">
             <h2 data-i18n-en="Your data">Tus Datos</h2>
             <div>

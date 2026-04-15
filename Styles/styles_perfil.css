@@ -208,39 +208,19 @@ a:focus-visible {
 
 header {
 	position: fixed;
-	top: 0;
-	left: 0;
-	right: 0;
-	z-index: 50;
-	padding: calc(14px + env(safe-area-inset-top)) var(--pad) 12px;
-	background:
-		linear-gradient(180deg, color-mix(in srgb, #FFFFFF 12%, transparent), color-mix(in srgb, #FFFFFF 6%, transparent));
-	backdrop-filter: blur(18px) saturate(155%);
-	-webkit-backdrop-filter: blur(18px) saturate(155%);
-	border-bottom: 1px solid var(--stroke);
-	box-shadow: 0 10px 30px rgba(0, 0, 0, .22);
-	overflow: hidden;
+	top: 2%;
+	left: 80%;
 
-	display: flex;
-	align-items: center;
-	justify-content: space-between;
-	gap: 12px;
+	z-index: 10;
+
+	background: transparent;
+	gap: 14px;
+	border-radius: 100%;
 }
 
-header::before {
-	content: "";
-	position: absolute;
-	inset: 0;
-	pointer-events: none;
-	background:
-		radial-gradient(900px 140px at 10% 0%, color-mix(in srgb, var(--accent) 18%, transparent) 0%, transparent 60%),
-		radial-gradient(900px 140px at 90% 20%, color-mix(in srgb, var(--accent2) 16%, transparent) 0%, transparent 65%);
-	opacity: .85;
-}
-
-header>* {
-	position: relative;
-	z-index: 1;
+body>header > * {
+    /* 2. Reactiva la interacción para los botones/links dentro del header */
+    pointer-events: auto; 
 }
 
 header #username {
@@ -262,55 +242,10 @@ header #username {
 	background: color-mix(in srgb, #fff 10%, transparent);
 	box-shadow: var(--shadow-soft);
 }
-
-#logout_button {
-	appearance: none;
-	border: 1px solid color-mix(in srgb, #FF9A3D 60%, transparent);
-	background: color-mix(in srgb, #FF9A3D 20%, transparent);
-	color: color-mix(in srgb, var(--text) 96%, white 4%);
-	border-radius: 999px;
-	min-height: 44px;
-	padding: 10px 12px;
-	display: inline-flex;
-	align-items: center;
-	justify-content: center;
-	gap: 10px;
-	box-shadow: var(--shadow-soft);
-	cursor: pointer;
-	white-space: nowrap;
-}
-
-#logout_button:hover {
-	background: color-mix(in srgb, #FF9A3D 26%, transparent);
-	border-color: color-mix(in srgb, #FF9A3D 72%, transparent);
-}
-
-#logout_button:active {
-	transform: translateY(1px);
-	background: color-mix(in srgb, #FF9A3D 30%, transparent);
-}
-
-#logout_button:focus-visible {
-	outline: 3px solid color-mix(in srgb, var(--accent) 70%, transparent);
-	outline-offset: 3px;
-}
-
-#logout_button .logout-icon {
-	width: 18px;
-	height: 18px;
-	opacity: .92;
-}
-
-#logout_button .logout-text {
-	font-weight: 650;
-	letter-spacing: .15px;
-}
-
 main {
 	max-width: var(--content-max);
-	margin:
-		calc(var(--header-fixed, 72px) + env(safe-area-inset-top)) auto 0;
-	padding: 18px var(--pad) calc(24px + var(--footer-fixed, 0px) + env(safe-area-inset-bottom));
+	margin: 0;
+	padding: 0px var(--pad) calc(24px + var(--footer-fixed, 0px) + env(safe-area-inset-bottom));
 	min-height: calc(100svh - var(--header-fixed, 72px) - var(--footer-fixed, 0px) - env(safe-area-inset-top) - env(safe-area-inset-bottom));
 	display: grid;
 	gap: 14px;
@@ -699,7 +634,7 @@ html.no-transparency #datos_usuario .btn-icon {
   initial-value: -15deg;
 }
 
-footer.liquid-wrap {
+footer.liquid-wrap{
   --anim--hover-time: 300ms;
   --anim--hover-ease: ease;
   --border-width: clamp(1px, 0.0625em, 4px);
@@ -789,9 +724,19 @@ footer.liquid-wrap {
   top: calc(var(--shadow-cuttoff-fix) - 0.5em);
   opacity: 0.75;
 }
+.titulos_head{
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.titulos_head>h1{
+	font-size: 60px;
+	font-weight: 750;
+	letter-spacing: .15px;
+}
 
 /* ──────── Liquid Bar ──────── */
-.liquid-bar {
+.liquid-bar{
   position: relative;
   pointer-events: auto;
   z-index: 3;
@@ -814,7 +759,7 @@ footer.liquid-wrap {
   margin: 0;
 }
 
-.liquid-bar:hover {
+.liquid-bar:hover{
   transform: scale(0.975);
   backdrop-filter: blur(0.01em);
   -webkit-backdrop-filter: blur(0.01em);
@@ -824,35 +769,7 @@ footer.liquid-wrap {
     0 0 0.05em 0.1em inset rgba(255, 255, 255, 0.5),
     0 0 0 0 rgba(255, 255, 255, 1);
 }
-/*
-.liquid-highlight {
-  position: absolute;
-  z-index: 1;
-  width: calc(100% - var(--border-width));
-  height: calc(100% - var(--border-width));
-  top: calc(0% + var(--border-width) / 2);
-  left: calc(0% + var(--border-width) / 2);
-  box-sizing: border-box;
-  border-radius: 999vw;
-  overflow: clip;
-  background: linear-gradient(var(--angle-2), rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, 0.5) 40% 50%, rgba(255, 255, 255, 0) 55%);
-  mix-blend-mode: screen;
-  pointer-events: none;
-  background-size: 200% 200%;
-  background-position: 0% 50%;
-  background-repeat: no-repeat;
-  transition: background-position calc(var(--anim--hover-time) * 1.25) var(--anim--hover-ease),
-    --angle-2 calc(var(--anim--hover-time) * 1.25) var(--anim--hover-ease);
-}
 
-.liquid-bar:hover .liquid-highlight {
-  background-position: 25% 50%;
-}
-.liquid-bar:has(a:active) .liquid-highlight {
-  background-position: 50% 15%;
-  --angle-2: -15deg;
-}
-*/
 @media (hover: none) and (pointer: coarse) {
   .liquid-highlight,
   .liquid-bar:has(a:active) .liquid-highlight {
@@ -860,7 +777,7 @@ footer.liquid-wrap {
   }
 }
 
-.liquid-bar::after {
+.liquid-bar::after{
   content: "";
   position: absolute;
   z-index: 0;
@@ -883,7 +800,7 @@ footer.liquid-wrap {
   pointer-events: none;
 }
 
-.liquid-bar:hover::after {
+.liquid-bar:hover::after{
   --angle-1: -125deg;
 }
 .liquid-bar:has(a:active)::after {
@@ -1025,55 +942,10 @@ html.no-transparency .liquid-shadow {
 		padding-right: calc(var(--sidebar-w) + env(safe-area-inset-right));
 	}
 
-	/* Header fijo: que no quede debajo de la sidebar */
-	body > header {
-		right: calc(var(--sidebar-w) + env(safe-area-inset-right));
-	}
-
 	main {
 		max-width: none;
 		margin: calc(var(--header-fixed, 72px) + env(safe-area-inset-top)) 0 0;
 		min-height: calc(100svh - var(--header-fixed, 72px) - env(safe-area-inset-top));
-	}
-
-	/* Sidebar derecha: reutiliza el footer */
-	footer {
-		left: auto;
-		transform: none;
-		right: 0;
-		top: 0;
-		bottom: 0;
-		width: calc(var(--sidebar-w) + env(safe-area-inset-right));
-		padding: calc(14px + env(safe-area-inset-top)) var(--pad) calc(14px + env(safe-area-inset-bottom));
-		border-top: 0;
-		border-left: 1px solid var(--stroke);
-		border-radius: 0;
-		box-shadow: -10px 0 30px rgba(0, 0, 0, .22);
-		justify-content: flex-start;
-		align-items: stretch;
-		flex-direction: column;
-		gap: 10px;
-	}
-
-	.footer-nav {
-		width: 100%;
-		margin: 0;
-		flex-direction: column;
-		align-items: flex-start;
-		justify-content: flex-start;
-		gap: 10px;
-	}
-
-	.footer-btn {
-		flex: 0 0 auto;
-		width: auto;
-	}
-
-	/* Logout dentro de la sidebar: ocupar ancho y empujar al fondo */
-	footer > #logout_button {
-		width: 100%;
-		min-height: 48px;
-		margin-top: auto;
 	}
 }
 

@@ -146,75 +146,12 @@ const initWakeLockForPlanViews = () => {
     planEl.addEventListener("keydown", tryAcquireOnGesture);
 };
 
-const prefersReducedMotion = () => {
-    try {
-        return window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    } catch {
-        return false;
-    }
-};
-
-const getFixedHeaderOffset = () => {
-    const header = document.querySelector("header");
-    const headerH = header ? header.offsetHeight : 0;
-    return Math.max(0, headerH + 12);
-};
-
-const scrollToWithFixedHeader = (el, { behavior = "auto" } = {}) => {
-    if (!el) return;
-    const rect = el.getBoundingClientRect();
-    const top = rect.top + window.scrollY - getFixedHeaderOffset();
-    window.scrollTo({ top: Math.max(0, top), behavior });
-};
-
-const ensureSwipePageVisible = (pageEl, { behavior = "auto" } = {}) => {
-    try {
-        const swipe = document.getElementById("pt-plan-swipe");
-        if (!swipe || !pageEl) return;
-        if (!swipe.contains(pageEl)) return;
-        swipe.scrollTo({ left: pageEl.offsetLeft, behavior });
-    } catch {
-        // ignore
-    }
-};
-
-const focusPlanEntrenoContainer = ({ behavior = "auto" } = {}) => {
-    const plan = document.getElementById("Plan_ejercicio");
-    const section = document.getElementById("Ejercicios");
-    const visiblePlan = plan && plan.style.display !== "none";
-
-    const target = visiblePlan ? plan : (section || plan);
-    if (!target) return;
-
-    // Si el dashboard está en modo swipe horizontal, asegurar que se vea Entreno.
-    ensureSwipePageVisible(section, { behavior });
-
-    scrollToWithFixedHeader(target, { behavior });
-    if (typeof target.focus === "function") {
-        target.focus({ preventScroll: true });
-    }
-};
-
-const autofocusPlanEntrenoOncePerSession = () => {
-    const behavior = prefersReducedMotion() ? "auto" : "smooth";
-    try {
-        const key = "autofocus_plan_entreno_done";
-        if (sessionStorage.getItem(key) === "1") return;
-        sessionStorage.setItem(key, "1");
-        focusPlanEntrenoContainer({ behavior });
-    } catch {
-        focusPlanEntrenoContainer({ behavior });
-    }
-};
 
 if (document.readyState === "loading") {
     document.addEventListener("DOMContentLoaded", initFixedChromeObservers, { once: true });
 } else {
     initFixedChromeObservers();
 }
-
-
-const sweetalert = window.swal;
 
 const canUseBottomSheet = () => {
     try {
@@ -1238,14 +1175,6 @@ const openGenerarPlanModal = async (planPrevioRaw = null) => {
     });
 };
 window.onload = async () => {
-   /*sweetalert.fire({
-        title: isEnglish() ? `Welcome back, ${username}!` : `Bienvenido de nuevo, ${username}!`,
-        icon: 'success',
-        toast: true,
-        position: 'top-end',
-        showConfirmButton: false,
-        timer: 3000
-    });*/
 
     await recuperar_planes();
 
@@ -1267,9 +1196,6 @@ window.onload = async () => {
         skipRecuperarPlanes: true,
         autofocus: false,
     });
-
-    // Al cargar: llevar el foco al contenedor del plan de entreno.
-    autofocusPlanEntrenoOncePerSession();
 
     initWakeLockForPlanViews();
 
