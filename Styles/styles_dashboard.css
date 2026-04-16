@@ -168,7 +168,7 @@ html.no-transparency section,
 html.no-transparency #Plan_ejercicio,
 html.no-transparency #Plan_alimentacion,
 html.no-transparency .dashboard-swal {
-	background: var(--bg1) !important;
+	background: transparent !important;
 }
 
 html.no-transparency .header-user-link,
@@ -957,6 +957,7 @@ main {
 	max-width: 100%;
 	/* ocultar scrollbar */
 	scrollbar-width: none;
+	padding: 0%;
 }
 
 .pt-plan-swipe::-webkit-scrollbar {
@@ -968,15 +969,10 @@ main {
 	scroll-snap-align: center;
 	min-width: 100%;
 	margin: 0;
+	padding: 10px 0px;
 }
 
 section {
-	border-radius: var(--radius-xl);
-	border: 1px solid var(--stroke2);
-	background: color-mix(in srgb, #fff 7%, transparent);
-	box-shadow: var(--shadow);
-	backdrop-filter: blur(12px) saturate(140%);
-	-webkit-backdrop-filter: blur(12px) saturate(140%);
 	padding: 16px;
 }
 
@@ -1652,7 +1648,7 @@ footer.liquid-wrap {
   transition: all var(--anim--hover-time) var(--anim--hover-ease);
   left: 50%;
   transform: translateX(-50%);
-  bottom: calc(12px + env(safe-area-inset-bottom));
+  bottom: calc(20px + env(safe-area-inset-bottom));
   display: flex;
   justify-content: center;
   padding: 0;
@@ -1738,7 +1734,7 @@ footer.liquid-wrap {
   z-index: 3;
   display: flex;
   align-items: center;
-  justify-content: center;
+  justify-content: space-evenly;
   gap: 12px;
   padding: 8px 10px;
   background: linear-gradient(-75deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0.05));
@@ -1765,42 +1761,6 @@ footer.liquid-wrap {
     0 0 0.05em 0.1em inset rgba(255, 255, 255, 0.5),
     0 0 0 0 rgba(255, 255, 255, 1);
 }
-/*
-.liquid-highlight {
-  position: absolute;
-  z-index: 1;
-  width: calc(100% - var(--border-width));
-  height: calc(100% - var(--border-width));
-  top: calc(0% + var(--border-width) / 2);
-  left: calc(0% + var(--border-width) / 2);
-  box-sizing: border-box;
-  border-radius: 999vw;
-  overflow: clip;
-  background: linear-gradient(var(--angle-2), rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, 0.5) 40% 50%, rgba(255, 255, 255, 0) 55%);
-  mix-blend-mode: screen;
-  pointer-events: none;
-  background-size: 200% 200%;
-  background-position: 0% 50%;
-  background-repeat: no-repeat;
-  transition: background-position calc(var(--anim--hover-time) * 1.25) var(--anim--hover-ease),
-    --angle-2 calc(var(--anim--hover-time) * 1.25) var(--anim--hover-ease);
-}
-
-.liquid-bar:hover .liquid-highlight {
-  background-position: 25% 50%;
-}
-.liquid-bar:has(a:active) .liquid-highlight {
-  background-position: 50% 15%;
-  --angle-2: -15deg;
-}
-
-@media (hover: none) and (pointer: coarse) {
-  .liquid-highlight,
-  .liquid-bar:has(a:active) .liquid-highlight {
-    --angle-2: -45deg;
-  }
-}
-*/
 .liquid-bar::after {
   content: "";
   position: absolute;
@@ -1858,15 +1818,6 @@ html.no-transparency .liquid-shadow {
   display: none !important;
 }
 
-/* Footer nav (botones inferiores) */
-.footer-nav {
-	width: min(var(--content-max), 100%);
-	margin: 0 auto;
-	display: flex;
-	align-items: center;
-	justify-content: space-between;
-	gap: 12px;
-}
 
 .footer-btn {
 	flex: 0 0 auto;
@@ -1875,7 +1826,6 @@ html.no-transparency .liquid-shadow {
 	align-items: center;
 	justify-content: center;
 	gap: 10px;
-
 	appearance: none;
 	border: 1px solid transparent;
 	background: transparent;

@@ -19,6 +19,9 @@
         crossorigin="anonymous"></script>
 
     <style>
+        section{
+            background: transparent !important;
+        }
         * {
             -webkit-tap-highlight-color: transparent !important;
             -webkit-tap-highlight-color: rgba(0,0,0,0) !important;
@@ -174,7 +177,6 @@
             gap: 8px;
             flex-shrink: 0;
         }
-
         /* ── MAIN / sections ────────────────────────────────────────── */
         .pt-plan-page {
             background: transparent;
@@ -334,15 +336,6 @@
             -webkit-backdrop-filter: blur(20px) saturate(140%);
             border-top: 1px solid var(--my-glass-rim);
         }
-
-        .footer-nav {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 12px;
-            padding: 10px 12px calc(10px + env(safe-area-inset-bottom));
-        }
-
         /* Generic footer button reset */
         .footer-btn {
             display: flex;
@@ -492,9 +485,9 @@
 
             <!-- ── Entreno ─────────────────────────────────────────── -->
             <section id="Ejercicios" class="pt-plan-page" tabindex="-1">
-                <div id="botones_accion">
+                <div id="botones_accion" style="margin: 10px;">
                     <div class="plan-topbar">
-                        <h1 class="plan-title" data-i18n-en="Training plan">Plan de Entreno</h1>
+                        <h1 class="plan-title" data-i18n-en="Training plan" style="margin: 10px;">Plan de Entreno</h1>
                         <div role="group" aria-label="Acciones del plan"
                             data-i18n-en-aria-label="Plan actions" class="liquid-bar">
                             <button id="boton_ejercicios">...</button>
@@ -523,9 +516,9 @@
 
             <!-- ── Alimentación ───────────────────────────────────── -->
             <section id="Alimentacion" class="pt-plan-page" tabindex="-1">
-                <div id="botones_accion_alim">
+                <div id="botones_accion_alim" style="margin: 10px;">
                     <div class="plan-topbar">
-                        <h1 class="plan-title" data-i18n-en="Meal plan">Plan de Alimentación</h1>
+                        <h1 class="plan-title" data-i18n-en="Meal plan" style="margin: 10px;">Plan de Alimentación</h1>
                         <div class="plan-actions-pill" role="group" aria-label="Acciones del plan"
                             data-i18n-en-aria-label="Plan actions">
                             <button id="boton_alimentacion">...</button>
