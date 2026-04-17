@@ -756,7 +756,7 @@ document.getElementById("eliminar_cuenta").addEventListener("click", async () =>
 	await EliminarPerfil()
 })
 
-async function EliminarPerfil(){
+async function EliminarPerfil() {
 	const ok = await openConfirmSheet({
 		title: "¿Estás seguro?",
 		message: "Esta acción no se puede deshacer. Se eliminará toda tu información.",
@@ -820,7 +820,7 @@ async function EliminarPerfil(){
 	}
 }
 
-async function subirCambiosPerfil(){
+async function subirCambiosPerfil() {
 	let response;
 	try {
 		response = await fetch('/cargar_cambios_perfil', {

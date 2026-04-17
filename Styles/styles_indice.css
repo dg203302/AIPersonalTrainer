@@ -99,21 +99,15 @@ body::after {
 
 body::before {
 	background:
-		radial-gradient(
-			circle at 30% 35%,
+		radial-gradient(circle at 30% 35%,
 			color-mix(in srgb, var(--accent) 42%, transparent) 0%,
-			transparent 58%
-		),
-		radial-gradient(
-			circle at 78% 22%,
+			transparent 58%),
+		radial-gradient(circle at 78% 22%,
 			color-mix(in srgb, var(--accent2) 26%, transparent) 0%,
-			transparent 55%
-		),
-		radial-gradient(
-			circle at 70% 65%,
+			transparent 55%),
+		radial-gradient(circle at 70% 65%,
 			color-mix(in srgb, var(--accent) 28%, transparent) 0%,
-			transparent 62%
-		);
+			transparent 62%);
 	opacity: 0.34;
 	filter: blur(32px) saturate(115%);
 	transform: scale(1);
@@ -122,11 +116,9 @@ body::before {
 
 body::after {
 	background:
-		radial-gradient(
-			circle at 50% 45%,
+		radial-gradient(circle at 50% 45%,
 			color-mix(in srgb, var(--accent) 18%, transparent) 0%,
-			transparent 60%
-		),
+			transparent 60%),
 		linear-gradient(180deg, color-mix(in srgb, var(--bg0) 88%, transparent), transparent 55%);
 	opacity: 0.22;
 	filter: blur(46px) saturate(105%);
@@ -140,11 +132,13 @@ body::after {
 		transform: scale(1);
 		filter: blur(30px) saturate(110%);
 	}
+
 	50% {
 		opacity: 0.46;
 		transform: scale(1.08);
 		filter: blur(36px) saturate(125%);
 	}
+
 	100% {
 		opacity: 0.30;
 		transform: scale(1);
@@ -157,10 +151,12 @@ body::after {
 		opacity: 0.18;
 		transform: scale(1);
 	}
+
 	50% {
 		opacity: 0.28;
 		transform: scale(1.05);
 	}
+
 	100% {
 		opacity: 0.18;
 		transform: scale(1);
@@ -168,6 +164,7 @@ body::after {
 }
 
 @media (prefers-reduced-motion: reduce) {
+
 	body::before,
 	body::after {
 		animation: none !important;
@@ -185,10 +182,6 @@ html.no-transparency #secciones,
 html.no-transparency #botones>a {
 	backdrop-filter: none !important;
 	-webkit-backdrop-filter: none !important;
-}
-
-html.no-transparency header {
-	background: linear-gradient(rgba(11,13,16,0.6), rgba(11,13,16,0.34)), url("/Icons/2.png") center/cover no-repeat, var(--bg1) !important;
 }
 
 html.no-transparency footer {
@@ -234,49 +227,31 @@ a:focus-visible {
 	border-radius: 10px;
 }
 
-/* --- Fixed header/footer (glass) --- */
-header {
-	position: fixed;
-	top: 0;
-	left: 0;
-	right: 0;
-	z-index: 50;
-	min-height: calc(var(--header-h) + env(safe-area-inset-top));
-	padding:
-		calc(12px + env(safe-area-inset-top)) var(--pad) 12px;
+/* --- Pantalla Principal --- */
+#presentacion {
+	position: relative;
 	overflow: hidden;
-
-	/* Liquid glass */
-	background: linear-gradient(180deg,
-		color-mix(in srgb, #FFFFFF 12%, transparent),
-		color-mix(in srgb, #FFFFFF 6%, transparent));
-	backdrop-filter: blur(18px) saturate(155%);
-	-webkit-backdrop-filter: blur(18px) saturate(155%);
-	border-bottom: 1px solid var(--stroke);
-	box-shadow: 0 10px 30px rgba(0, 0, 0, .22);
+	background: color-mix(in srgb, #fff 7%, transparent) !important;
 }
 
-header::before {
+#presentacion::before {
 	content: "";
 	position: absolute;
 	inset: 0;
+	background: linear-gradient(rgba(11, 13, 16, 0.45), rgba(11, 13, 16, 0.15)), url("/Icons/2.png") center/cover no-repeat;
+	/* Opacidad de la imagen para que transluzca el aura animada */
+	opacity: 0.6;
 	pointer-events: none;
-	background:
-		radial-gradient(1000px 140px at 10% 0%, color-mix(in srgb, var(--accent) 18%, transparent) 0%, transparent 60%),
-		radial-gradient(900px 140px at 90% 20%, color-mix(in srgb, var(--accent2) 16%, transparent) 0%, transparent 65%);
-	opacity: .85;
+	z-index: -1;
 }
 
-/* Imagen de fondo translúcida (estilo iOS) colocada detrás del contenido */
-header::after {
-	content: "";
-	position: absolute;
-	inset: 0;
-	pointer-events: none;
-	background: url("/Icons/2.png") center/cover no-repeat;
-	opacity: 0.12;
-	filter: saturate(0.85) contrast(0.95) brightness(0.9);
-	z-index: 0;
+html.no-transparency #presentacion {
+	background: transparent !important;
+}
+
+html.no-transparency #presentacion::before {
+	background: linear-gradient(rgba(11, 13, 16, 0.6), rgba(11, 13, 16, 0.34)), url("/Icons/2.png") center/cover no-repeat;
+	opacity: 1;
 }
 
 footer {
@@ -434,7 +409,7 @@ main>section {
 	gap: 10px;
 }
 
-[id="configuración"] > h2 {
+[id="configuración"]>h2 {
 	margin: 0 0 6px;
 	font-size: 18px;
 	letter-spacing: .1px;
@@ -550,24 +525,24 @@ main>section {
 	z-index: 1;
 }
 
-.switch input:checked + .switch-ui {
+.switch input:checked+.switch-ui {
 	border-color: color-mix(in srgb, #fff 28%, transparent);
 	background: color-mix(in srgb, #fff 10%, transparent);
 }
 
-.switch input:checked + .switch-ui .switch-thumb {
+.switch input:checked+.switch-ui .switch-thumb {
 	transform: translate(22px, -50%);
 	background: color-mix(in srgb, #fff 28%, transparent);
 }
 
 /* Estado: apagado -> ES resaltado */
-.switch input:not(:checked) + .switch-ui--lang::before {
+.switch input:not(:checked)+.switch-ui--lang::before {
 	color: color-mix(in srgb, var(--text) 92%, transparent);
 	opacity: .95;
 }
 
 /* Estado: encendido -> EN resaltado */
-.switch input:checked + .switch-ui--lang::after {
+.switch input:checked+.switch-ui--lang::after {
 	color: color-mix(in srgb, var(--text) 92%, transparent);
 	opacity: .95;
 }
@@ -580,7 +555,7 @@ main>section {
 	transform: translateY(1px);
 }
 
-.switch input:focus-visible + .switch-ui {
+.switch input:focus-visible+.switch-ui {
 	outline: 3px solid color-mix(in srgb, var(--accent) 70%, transparent);
 	outline-offset: 3px;
 }
@@ -605,7 +580,7 @@ main>section {
 }
 
 /* --- Sección: Ejercicios (mejor tipografía + contenedores) --- */
-#ejercicios > h1 {
+#ejercicios>h1 {
 	font-size: clamp(22px, 2.2vw, 30px);
 	letter-spacing: .2px;
 	line-height: 1.12;

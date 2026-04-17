@@ -206,7 +206,7 @@ a:focus-visible {
 	border: 0;
 }
 
-header {
+body > header {
 	position: fixed;
 	top: 2%;
 	left: 80%;

@@ -1646,14 +1646,14 @@ function mapear_plan(plan_entrenamiento_json) {
     const weekdayKeys = Object.keys(root || {}).filter((k) => diasOrden.includes(String(k).toLowerCase()));
     const hasWeekdayObject = weekdayKeys.length > 0;
 
-    const renderExerciseCard = (exNorm, idx) => {
+    const renderExerciseCard = (exNorm, idx, dayIdx) => {
         const nombreEs = escapeHtml(exNorm.nombre);
         const nombreEn = escapeHtml(exNorm.nombre_en ?? exNorm.nombre);
         const descripcion = escapeHtml(exNorm.descripcion || "");
         const series = escapeHtml(exNorm.series);
         const reps = escapeHtml(formatReps(exNorm.repeticiones));
         return `
-            <article class="plan-card" data-idx="${idx}">
+            <article class="plan-card" data-idx="${idx}" data-day-idx="${escapeHtml(dayIdx)}" role="button" tabindex="0">
                 <h3 class="plan-nombre" data-i18n-en="${nombreEn}">${nombreEs}</h3>
                 ${descripcion ? `<p class="plan-desc">${descripcion}</p>` : ""}
                 <div class="plan-meta">
@@ -1673,12 +1673,12 @@ function mapear_plan(plan_entrenamiento_json) {
         if (!normalized.length) return "";
 
         const cards = normalized.length
-            ? normalized.map(renderExerciseCard).join("")
+            ? normalized.map((ex, idx) => renderExerciseCard(ex, idx, dayIdx)).join("")
             : `<div class="plan-vacio" data-i18n-en="No exercises for this day.">No hay ejercicios para este día.</div>`;
 
         return `
             <section class="plan-dia">
-                <div class="plan-dia-header" role="button" tabindex="0" data-day-idx="${escapeHtml(dayIdx)}" aria-label="Ver detalle de ${escapeHtml(diaLabel)}" data-i18n-en-aria-label="View details for ${escapeHtml(diaLabel)}">
+                <div class="plan-dia-header" data-day-idx="${escapeHtml(dayIdx)}">
                     <div class="plan-dia-titulos">
                         <h2 class="plan-dia-titulo">${escapeHtml(diaLabel)}</h2>
                         ${enfoque ? `<div class="plan-dia-subtitle">${escapeHtml(enfoque)}</div>` : ""}
@@ -1741,7 +1741,7 @@ function mapear_plan(plan_entrenamiento_json) {
             .map(normalizeExercise)
             .filter(Boolean);
         const cards = normalized.length
-            ? normalized.map(renderExerciseCard).join("")
+            ? normalized.map((ex, idx) => renderExerciseCard(ex, idx, 0)).join("")
             : `<div class="plan-vacio" data-i18n-en="Couldn't find exercises in the JSON.">No pude encontrar ejercicios en el JSON.</div>`;
         html = `<div class="plan-grid">${cards}</div>`;
     }
@@ -1874,54 +1874,22 @@ function initDetallePorDiaPlan() {
     contenedor.dataset.detalleDiaInit = "1";
 
     const fitDetalleTipografia = (rootEl) => {
-        if (!rootEl || !(rootEl instanceof HTMLElement)) return;
-
-        const panels = Array.from(rootEl.querySelectorAll(".plan-snap-panel"));
-        for (const panel of panels) {
-            if (!(panel instanceof HTMLElement)) continue;
-
-            const card = panel.querySelector(".plan-card");
-            if (!(card instanceof HTMLElement)) continue;
-
-            const detailed = card.querySelector(".plan-detailed-list");
-            if (!(detailed instanceof HTMLElement)) continue;
-
-            // Reset (por si abrimos varias veces o recalculamos)
-            detailed.style.fontSize = "";
-
-            // Si no hay overflow, no tocar
-            const overflowNow = panel.scrollHeight - panel.clientHeight;
-            if (overflowNow <= 1) continue;
-
-            const computed = window.getComputedStyle(detailed);
-            const basePx = Number.parseFloat(computed.fontSize) || 0;
-            if (!basePx) continue;
-
-            const minPx = 11;
-            const maxSteps = 14;
-            let currentPx = basePx;
-            let steps = 0;
-
-            while (steps < maxSteps && currentPx > minPx) {
-                const overflow = panel.scrollHeight - panel.clientHeight;
-                if (overflow <= 1) break;
-                currentPx -= 1;
-                detailed.style.fontSize = `${currentPx}px`;
-                steps += 1;
-            }
-        }
+        // No longer needed for single exercise view
     };
 
-    const openDetalle = async (headerEl) => {
-        const idx = Number(headerEl?.getAttribute?.("data-day-idx"));
-        if (!Number.isFinite(idx)) return;
+    const openDetalle = async (cardEl) => {
+        const dayIdx = Number(cardEl?.getAttribute?.("data-day-idx"));
+        const exIdx = Number(cardEl?.getAttribute?.("data-idx"));
+        if (!Number.isFinite(dayIdx) || !Number.isFinite(exIdx)) return;
 
         const planRaw = localStorage.getItem("plan_entreno_usuario");
         const dias = parsePlanDiasDetallados(planRaw);
-        if (!Array.isArray(dias) || !dias[idx]) return;
+        if (!Array.isArray(dias) || !dias[dayIdx]) return;
 
-        const diaInfo = dias[idx];
+        const diaInfo = dias[dayIdx];
         const ejercicios = Array.isArray(diaInfo.ejercicios) ? diaInfo.ejercicios : [];
+        const ex = ejercicios[exIdx];
+        if (!ex) return;
 
                 // ── Mapa estático de descripciones detalladas por ejercicio ──────────────
                 const _stripKey = (s) => String(s ?? "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, " ").trim().toLowerCase();
@@ -2147,58 +2115,30 @@ function initDetallePorDiaPlan() {
                     `;
                 };
 
-                const cardHtmls = ejercicios.length
-            ? ejercicios.map((ex) => {
-                const nombreEs = escapeHtml(ex.nombre);
-                const nombreEn = escapeHtml(ex.nombre_en ?? ex.nombre);
-                const descripcion = escapeHtml(ex.descripcion || "");
-                const series = escapeHtml(ex.series);
-                const reps = escapeHtml(formatReps(ex.repeticiones));
-                const descanso = escapeHtml(ex.descanso_segundos);
-                        const detailedHtml = buildDetailedHtml(ex.nombre);
-                        return `
-                            <article class="plan-card pt-detail-card">
-                                <div class="pt-detail-card-inner">
-                                    <div class="pt-detail-header">
-                                        <h3 class="plan-nombre pt-detail-ex" data-i18n-en="${nombreEn}">${nombreEs}</h3>
-                                        ${descripcion ? `<p class="plan-desc pt-detail-desc">${descripcion}</p>` : ""}
-                                    </div>
-                                    <div class="plan-meta pt-detail-meta">
-                                        <span class="plan-chip">${escapeHtml(tLang("Series", "Sets"))}: <strong>${series}</strong></span>
-                                        <span class="plan-chip">${escapeHtml(tLang("Reps", "Reps"))}: <strong>${reps}</strong></span>
-                                        <span class="plan-chip plan-chip--vertical"><span class="plan-chip-label">${escapeHtml(tLang("Descanso", "Rest"))}</span><span class="plan-chip-value">${descanso}</span></span>
-                                    </div>
-                                    ${detailedHtml}
-                                </div>
-                            </article>
-                        `;
-            })
-            : [];
-
-        // Build a vertical snap viewport so each exercise occupies the modal viewport
-        const viewportStyle = "overflow-y:auto;scroll-snap-type:y mandatory;scroll-behavior:smooth;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;touch-action:pan-y;flex:1;";
-        const panelStyle = "scroll-snap-align:start;scroll-snap-stop:always;width:100%;box-sizing:border-box;display:flex;flex-direction:column;padding:12px 0 16px;";
-
-        const snapPanels = cardHtmls.length
-            ? cardHtmls.map((htmlCard) => `<div class="plan-snap-panel" style="${panelStyle}">${htmlCard}</div>`).join("")
-            : `<div class="plan-vacio">${escapeHtml(tLang("No hay ejercicios cargados para este día.", "No exercises loaded for this day."))}</div>`;
-
-        const headerHtml = `
-            <div class="pt-detail-hero">
-                <div class="pt-detail-hero-row">
-                    <div class="pt-detail-hero-title">${escapeHtml(String(diaInfo.dia ?? tLang("Día", "Day")))}</div>
-                    <div class="pt-detail-hero-count"><strong>${escapeHtml(String(ejercicios.length))}</strong> ${escapeHtml(tLang("ejercicios", "exercises"))}</div>
-                </div>
-                ${diaInfo.enfoque ? `<div class="pt-detail-hero-sub pt-detail-hero-focus">${escapeHtml(String(diaInfo.enfoque))}</div>` : ""}
-            </div>
-        `;
+        const nombreEs = escapeHtml(ex.nombre);
+        const nombreEn = escapeHtml(ex.nombre_en ?? ex.nombre);
+        const descripcion = escapeHtml(ex.descripcion || "");
+        const series = escapeHtml(ex.series);
+        const reps = escapeHtml(formatReps(ex.repeticiones));
+        const descanso = escapeHtml(ex.descanso_segundos);
+        const detailedHtml = buildDetailedHtml(ex.nombre);
 
         const html = `
             <div class="pt-detail">
-                ${headerHtml}
+                <div class="pt-detail-hero">
+                    <div class="pt-detail-hero-row" style="margin-bottom:8px;">
+                        <div class="pt-detail-hero-title pt-detail-ex" data-i18n-en="${nombreEn}">${nombreEs}</div>
+                    </div>
+                    ${descripcion ? `<div class="pt-detail-hero-sub pt-detail-desc" style="white-space:normal;margin-bottom:12px;">${descripcion}</div>` : ""}
+                    <div class="plan-meta pt-detail-meta" style="flex-wrap:wrap;gap:8px;margin-bottom:4px;">
+                        <span class="plan-chip">${escapeHtml(tLang("Series", "Sets"))}: <strong>${series}</strong></span>
+                        <span class="plan-chip">${escapeHtml(tLang("Reps", "Reps"))}: <strong>${reps}</strong></span>
+                        <span class="plan-chip plan-chip--vertical"><span class="plan-chip-label">${escapeHtml(tLang("Descanso", "Rest"))}</span><span class="plan-chip-value">${descanso}</span></span>
+                    </div>
+                </div>
                 <div class="pt-detail-body">
-                    <div class="plan-detalle-viewport pt-detail-viewport" style="${viewportStyle};flex:1;">
-                        ${snapPanels}
+                    <div class="plan-detalle-viewport pt-detail-viewport" style="overflow-y:auto;-webkit-overflow-scrolling:touch;flex:1;padding:16px 0;">
+                        ${detailedHtml}
                     </div>
                 </div>
             </div>
@@ -2221,7 +2161,7 @@ function initDetallePorDiaPlan() {
 
         await globalThis.PTBottomSheet.open({
             title: "",
-            ariaLabel: `${tLang("Detalle", "Details")}: ${String(diaInfo.dia ?? tLang("Día", "Day"))}`,
+            ariaLabel: `${tLang("Detalle", "Details")}: ${nombreEs}`,
             html,
             closeText,
             didOpen: (sheet) => {
@@ -2253,19 +2193,19 @@ function initDetallePorDiaPlan() {
     contenedor.addEventListener("click", async (ev) => {
         const target = ev.target;
         if (!(target instanceof HTMLElement)) return;
-        const headerEl = target.closest(".plan-dia-header");
-        if (!(headerEl instanceof HTMLElement)) return;
-        await openDetalle(headerEl);
+        const cardEl = target.closest(".plan-card");
+        if (!(cardEl instanceof HTMLElement)) return;
+        await openDetalle(cardEl);
     });
 
     contenedor.addEventListener("keydown", async (ev) => {
         const target = ev.target;
         if (!(target instanceof HTMLElement)) return;
         if (ev.key !== "Enter" && ev.key !== " ") return;
-        const headerEl = target.closest(".plan-dia-header");
-        if (!(headerEl instanceof HTMLElement)) return;
+        const cardEl = target.closest(".plan-card");
+        if (!(cardEl instanceof HTMLElement)) return;
         ev.preventDefault();
-        await openDetalle(headerEl);
+        await openDetalle(cardEl);
     });
 }
 
