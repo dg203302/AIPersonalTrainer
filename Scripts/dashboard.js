@@ -2123,12 +2123,51 @@ function initDetallePorDiaPlan() {
         const descanso = escapeHtml(ex.descanso_segundos);
         const detailedHtml = buildDetailedHtml(ex.nombre);
 
+        let gifsDict = window.__gifs_cache;
+        if (!gifsDict) {
+            try {
+                const res = await fetch("/Datos/correspondencia_gifs.json");
+                if (res.ok) {
+                    gifsDict = await res.json();
+                    window.__gifs_cache = gifsDict;
+                } else {
+                    gifsDict = {};
+                }
+            } catch (e) {
+                gifsDict = {};
+            }
+        }
+
+        let gifUrl = null;
+        const _normGif = (s) => String(s ?? "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, " ").trim().toLowerCase();
+        const searchName = _normGif(ex.nombre);
+        
+        for (const [esKey, url] of Object.entries(gifsDict)) {
+            const esNorm = _normGif(esKey);
+            const enNorm = _normGif(translateExerciseNameToEnglish(esKey));
+            if (searchName === esNorm || searchName === enNorm) {
+                gifUrl = url;
+                break;
+            }
+        }
+        if (!gifUrl) {
+            for (const [esKey, url] of Object.entries(gifsDict)) {
+                const esNorm = _normGif(esKey);
+                const enNorm = _normGif(translateExerciseNameToEnglish(esKey));
+                if (searchName.includes(esNorm) || searchName.includes(enNorm) || (esNorm.length > 5 && esNorm.includes(searchName))) {
+                    gifUrl = url;
+                    break;
+                }
+            }
+        }
+
         const html = `
             <div class="pt-detail">
                 <div class="pt-detail-hero">
                     <div class="pt-detail-hero-row" style="margin-bottom:8px;">
                         <div class="pt-detail-hero-title pt-detail-ex" data-i18n-en="${nombreEn}">${nombreEs}</div>
                     </div>
+                    ${gifUrl ? `<img src="${gifUrl}" alt="${nombreEs}" style="width:100%; border-radius:12px; margin-bottom:12px; display:block; background-color:#fff;" loading="lazy" />` : ""}
                     ${descripcion ? `<div class="pt-detail-hero-sub pt-detail-desc" style="white-space:normal;margin-bottom:12px;">${descripcion}</div>` : ""}
                     <div class="plan-meta pt-detail-meta" style="flex-wrap:wrap;gap:8px;margin-bottom:4px;">
                         <span class="plan-chip">${escapeHtml(tLang("Series", "Sets"))}: <strong>${series}</strong></span>
