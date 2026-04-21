@@ -303,12 +303,28 @@ a:focus-visible {
 }
 .pt-sheet-close.is-hidden{display:none;}
 
-.pt-sheet-content{
-	padding:10px 12px 16px;
-	flex:1;
-	min-height:0;
-	display:flex;
-	overflow:hidden;
+.pt-sheet-content {
+	padding: 10px 12px 16px;
+	flex: 1;
+	min-height: 0;
+	display: flex;
+	flex-direction: column;
+	overflow-y: auto;
+	-webkit-overflow-scrolling: touch;
+	overscroll-behavior: contain;
+}
+
+.pt-detail-viewport {
+	max-height: min(58vh, 520px);
+	overflow-y: auto;
+	-webkit-overflow-scrolling: touch;
+	overscroll-behavior: contain;
+}
+
+.pt-sheet .pt-detail-viewport,
+.pt-sheet .plan-detalle-viewport {
+	max-height: none;
+	overflow: visible;
 }
 
 /* Utilities to match screenshot-style sections */
@@ -362,7 +378,6 @@ a:focus-visible {
 .pt-detail-hero{
 	text-align:center;
 	padding:6px 10px 2px;
-	touch-action:none;
 }
 .pt-detail-hero-title{
 	font-size:22px;

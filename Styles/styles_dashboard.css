@@ -370,7 +370,9 @@ a:focus-visible {
 	min-height: 0;
 	display: flex;
 	flex-direction: column;
-	overflow: hidden;
+	overflow-y: auto;
+	-webkit-overflow-scrolling: touch;
+	overscroll-behavior: contain;
 }
 
 /* Bottom sheet: estados (loading/success/error) */
@@ -631,11 +633,11 @@ a:focus-visible {
 
 /* Scrollbar más sutil en el viewport de ejercicios */
 .pt-sheet .plan-detalle-viewport {
-	scrollbar-width: thin;
-	scrollbar-color: rgba(255, 255, 255, .22) transparent;
 	padding: 0;
-	overscroll-behavior: contain;
-	touch-action: pan-y;
+	overscroll-behavior: auto;
+	touch-action: auto;
+	max-height: none;
+	overflow: visible;
 }
 
 .pt-sheet .plan-detalle-viewport::-webkit-scrollbar {
@@ -662,7 +664,6 @@ a:focus-visible {
 .pt-detail-hero {
 	text-align: left;
 	padding: 2px 2px 0;
-	touch-action: none;
 }
 
 .pt-detail-hero-row {
@@ -713,6 +714,11 @@ a:focus-visible {
 	-webkit-overflow-scrolling: touch;
 	overscroll-behavior: contain;
 	touch-action: pan-y;
+}
+
+.pt-sheet .pt-detail-viewport {
+	max-height: none;
+	overflow: visible;
 }
 
 .no-transparency .pt-detail-viewport {
@@ -1478,7 +1484,7 @@ html.no-transparency .plan-actions-pill.is-pill {
 .plan-dia-header[role="button"] {
 	cursor: pointer;
 	user-select: none;
-	transition: background .15s ease, border-color .15s ease;
+	transition: background .2s ease;
 }
 
 .plan-dia-header[role="button"]:hover {

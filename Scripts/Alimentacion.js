@@ -493,17 +493,17 @@ const renderDaySection = (dia, dayIdx) => {
     const comidasCount = dia.comidas?.length ?? 0;
     const subtitleEs = `${kcal} · ${comidasCount} comida${comidasCount === 1 ? "" : "s"}`;
     const subtitleEn = `${kcal} · ${comidasCount} meal${comidasCount === 1 ? "" : "s"}`;
-
+    const meals = dia.comidas || [];
     const mealsHtml =
-        (dia.comidas || []).map((meal, idx) => renderMealCard(meal, idx, dayIdx)).join("\n") ||
+        meals.map((meal, idx) => renderMealCard(meal, idx, dayIdx)).join("\n") ||
         `<div class="plan-aviso" data-i18n-en="No meals defined.">No hay comidas definidas.</div>`;
 
     return `
         <section class="plan-dia" data-day-index="${dayIdx}">
-            <header class="plan-dia-header" data-day-idx="${escapeHtml(dayIdx)}">
+            <header class="plan-dia-header" data-day-idx="${escapeHtml(dayIdx)}" role="button" tabindex="0" aria-label="${escapeHtml(tLang("Detalle del día", "Day detail"))} ${dayIdx + 1}">
                 <div class="plan-dia-titulos">
                     <h2 class="plan-dia-titulo">${escapeHtml(dia.dia)}</h2>
-                    <div class="plan-dia-subtitle" data-i18n-en="${escapeHtml(subtitleEn)}">${escapeHtml(subtitleEs)}</div>
+                    <div class="plan-dia-subtitle">${escapeHtml(dia.calorias_objetivo ?? 0)} kcal · ${meals.length} ${escapeHtml(tLang("comida(s)", "meal(s)"))}</div>
                 </div>
             </header>
             <div class="plan-grid">${mealsHtml}</div>
@@ -532,6 +532,102 @@ const initDetallePorDiaPlanAliment = (contenedor) => {
     if (!contenedor) return;
     if (contenedor.dataset.detalleDiaInit === "1") return;
     contenedor.dataset.detalleDiaInit = "1";
+
+    const openDetalleDia = async (headerEl) => {
+        const dayIdx = Number(headerEl.getAttribute("data-day-idx"));
+        if (!Number.isFinite(dayIdx)) return;
+
+        const planRaw = localStorage.getItem("plan_dieta_usuario");
+        const dias = parsePlanDiasDetalladosAliment(planRaw);
+        const diaInfo = dias[dayIdx];
+        if (!diaInfo) return;
+
+        const macros = diaInfo.macros || {};
+        const recoms = Array.isArray(diaInfo.recomendaciones) ? diaInfo.recomendaciones : [];
+        const tips = Array.isArray(diaInfo.tips) ? diaInfo.tips : [];
+
+        const html = `
+            <div class="pt-detail">
+                <div class="pt-detail-hero">
+                    <div class="pt-detail-hero-title">${escapeHtml(diaInfo.dia)}</div>
+                    <div class="pt-detail-hero-sub">${escapeHtml(tLang("Resumen del día y recomendaciones", "Day summary and recommendations"))}</div>
+                </div>
+
+                <div class="pt-detail-viewport">
+                    <div style="padding:16px;">
+                        <section style="margin-bottom:20px;">
+                            <h3 class="pt-sheet-section-title">${escapeHtml(tLang("Objetivo Diario", "Daily Goal"))}</h3>
+                            <div class="pt-sheet-item">
+                                <div class="pt-sheet-item-left">
+                                    <div class="pt-sheet-item-title">${escapeHtml(tLang("Calorías Totales", "Total Calories"))}</div>
+                                    <div class="pt-sheet-item-sub">${escapeHtml(tLang("Meta para hoy", "Goal for today"))}</div>
+                                </div>
+                                <div class="pt-sheet-item-right">${escapeHtml(diaInfo.calorias_objetivo)} kcal</div>
+                            </div>
+                        </section>
+
+                        ${(macros.carbohidratos || macros.proteinas || macros.grasas) ? `
+                        <section style="margin-bottom:20px;">
+                            <h3 class="pt-sheet-section-title">${escapeHtml(tLang("Distribución de Macros", "Macro Distribution"))}</h3>
+                            <div class="pt-sheet-list">
+                                <div class="pt-sheet-item">
+                                    <div class="pt-sheet-item-title">${escapeHtml(tLang("Carbohidratos", "Carbs"))}</div>
+                                    <div class="pt-sheet-item-right">${macros.carbohidratos}%</div>
+                                </div>
+                                <div class="pt-sheet-item">
+                                    <div class="pt-sheet-item-title">${escapeHtml(tLang("Proteínas", "Proteins"))}</div>
+                                    <div class="pt-sheet-item-right">${macros.proteinas}%</div>
+                                </div>
+                                <div class="pt-sheet-item">
+                                    <div class="pt-sheet-item-title">${escapeHtml(tLang("Grasas", "Fats"))}</div>
+                                    <div class="pt-sheet-item-right">${macros.grasas}%</div>
+                                </div>
+                            </div>
+                        </section>
+                        ` : ""}
+
+                        ${recoms.length ? `
+                        <section style="margin-bottom:20px;">
+                            <h3 class="pt-sheet-section-title">${escapeHtml(tLang("Recomendaciones", "Recommendations"))}</h3>
+                            <ul class="pt-detail-list">
+                                ${recoms.map(r => `
+                                    <li>
+                                        <span class="pt-detail-tag">${escapeHtml(tLang("Tip", "Tip"))}</span>
+                                        <div class="pt-detail-text">${escapeHtml(r)}</div>
+                                    </li>
+                                `).join("")}
+                            </ul>
+                        </section>
+                        ` : ""}
+
+                        ${tips.length ? `
+                        <section>
+                            <h3 class="pt-sheet-section-title">${escapeHtml(tLang("Tips del Día", "Daily Tips"))}</h3>
+                            <ul class="pt-detail-list">
+                                ${tips.map(t => `
+                                    <li>
+                                        <span class="pt-detail-tag" style="background:rgba(182, 168, 255, 0.15); border-color:rgba(182, 168, 255, 0.3); color:#B6A8FF;">IDE</span>
+                                        <div class="pt-detail-text">${escapeHtml(t)}</div>
+                                    </li>
+                                `).join("")}
+                            </ul>
+                        </section>
+                        ` : ""}
+                    </div>
+                </div>
+            </div>
+        `;
+
+        await globalThis.PTBottomSheet.open({
+            title: "",
+            ariaLabel: `${tLang("Detalle del día", "Day detail")}: ${diaInfo.dia}`,
+            html,
+            closeText: tLang("Cerrar", "Close"),
+            didOpen: (sheet) => {
+                try { globalThis.UIIdioma?.translatePage?.(sheet); } catch {}
+            },
+        });
+    };
 
     const openDetalle = async (cardEl) => {
         const dayIdx = Number(cardEl?.getAttribute?.("data-day-idx"));
@@ -589,17 +685,38 @@ const initDetallePorDiaPlanAliment = (contenedor) => {
     };
 
     contenedor.addEventListener("click", async (ev) => {
-        const cardEl = ev.target && ev.target.closest ? ev.target.closest(".plan-card") : null;
-        if (!cardEl) return;
-        await openDetalle(cardEl);
+        const target = ev.target;
+        if (!(target instanceof HTMLElement)) return;
+
+        const cardEl = target.closest(".plan-card");
+        if (cardEl instanceof HTMLElement) {
+            await openDetalle(cardEl);
+            return;
+        }
+
+        const headerEl = target.closest(".plan-dia-header");
+        if (headerEl instanceof HTMLElement) {
+            await openDetalleDia(headerEl);
+        }
     });
 
     contenedor.addEventListener("keydown", async (ev) => {
         if (ev.key !== "Enter" && ev.key !== " ") return;
-        const cardEl = ev.target && ev.target.closest ? ev.target.closest(".plan-card") : null;
-        if (!cardEl) return;
-        ev.preventDefault();
-        await openDetalle(cardEl);
+        const target = ev.target;
+        if (!(target instanceof HTMLElement)) return;
+
+        const cardEl = target.closest(".plan-card");
+        if (cardEl instanceof HTMLElement) {
+            ev.preventDefault();
+            await openDetalle(cardEl);
+            return;
+        }
+
+        const headerEl = target.closest(".plan-dia-header");
+        if (headerEl instanceof HTMLElement) {
+            ev.preventDefault();
+            await openDetalleDia(headerEl);
+        }
     });
 };
 

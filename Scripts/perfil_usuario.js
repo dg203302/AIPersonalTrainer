@@ -16,6 +16,22 @@ const escapeHtml = (value) => String(value)
 	.replaceAll('"', "&quot;")
 	.replaceAll("'", "&#39;");
 
+const renderBMI = () => {
+	const p = parseFloat(localStorage.getItem("peso_usuario"));
+	const a = parseFloat(localStorage.getItem("altura_usuario"));
+	const badge = document.getElementById("bmi_badge");
+	if (!badge) return;
+
+	if (p > 0 && a > 0) {
+		const heightMeters = a / 100;
+		const bmi = (p / (heightMeters * heightMeters)).toFixed(1);
+		badge.textContent = `BMI: ${bmi}`;
+		badge.style.display = "inline-flex";
+	} else {
+		badge.style.display = "none";
+	}
+};
+
 const isNetlifyEdgeUncaughtInvocation = (text) =>
 	String(text ?? "")
 		.toLowerCase()
@@ -597,6 +613,7 @@ window.onload = async () => {
 
 	initIdiomaToggle();
 	initTransparenciaToggle();
+	renderBMI();
 }
 
 document.getElementById("editar_altura").addEventListener("click", async () => {
@@ -630,6 +647,7 @@ document.getElementById("editar_altura").addEventListener("click", async () => {
 	localStorage.setItem("altura_usuario", String(nuevaAltura));
 	const alturaSpan = document.getElementById("altura_usuario");
 	if (alturaSpan) alturaSpan.textContent = String(nuevaAltura);
+	renderBMI();
 	await subirCambiosPerfil();
 })
 
@@ -740,6 +758,7 @@ const openPesoModal = async ({ mode = "act" } = {}) => {
 		localStorage.setItem("peso_usuario", String(newValue));
 		const pesoSpan = document.getElementById("peso_usuario");
 		if (pesoSpan) pesoSpan.textContent = String(newValue);
+		renderBMI();
 	}
 	await subirCambiosPerfil();
 };

@@ -278,8 +278,7 @@
 			if (!(target instanceof HTMLElement)) return false;
 			return (
 				!!target.closest(".pt-sheet-handle") ||
-				!!target.closest(".pt-sheet-header") ||
-				!!target.closest(".pt-detail-hero")
+				!!target.closest(".pt-sheet-header")
 			);
 		};
 
