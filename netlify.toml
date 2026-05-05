@@ -47,3 +47,8 @@
   function = "actualizar_cambios_plan_aliment"
   path = "/actualizar_cambios_plan_alimentacion"
   method = "POST"
+
+[[edge_functions]]
+  function = "guardar_registro_entreno"
+  path = "/guardar_registro_entreno"
+  method = "POST"

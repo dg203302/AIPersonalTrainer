@@ -1,6 +1,5 @@
 <!DOCTYPE html>
-<html lang="es">
-
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -14,7 +13,7 @@
     <link rel="stylesheet" href="/Styles/styles_dashboard.css">
     <link rel="stylesheet" href="/Styles/styles_ayuda.css">
     <meta name="theme-color" content="#0c0d0f">
-    <title data-i18n-en="Home">Inicio</title>
+    <title data-i18n-en="Calendar">Calendario</title>
     <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7232324434042202"
         crossorigin="anonymous"></script>
 
@@ -46,7 +45,51 @@
             --my-radius-sm: 16px;
             --my-radius-pill: 999px;
         }
+        main{
+            margin: 0px;
+            padding: 24px 16px;
+        }
 
+        /* Hacer que el calendario ocupe el alto disponible (móvil y escritorio) */
+        html, body { height: 100%; }
+
+        /* Desktop / tablet: dar al calendario una altura mínima que llene la ventana
+           restando header/footer (ajustable por variables CSS). */
+        #calendario {
+            min-height: calc(100vh - var(--header-fixed, 56px) - var(--footer-fixed, 56px) - 48px);
+            height: auto;
+            overflow: auto;
+            border-radius: var(--my-radius-sm);
+            border: 1px solid var(--my-glass-rim);
+            background: var(--my-glass);
+            padding: 8px;
+        }
+
+        @media (max-width: 900px) {
+            main {
+                padding: 12px 12px;
+                min-height: calc(100vh - var(--header-fixed, 56px) - var(--footer-fixed, 56px));
+                display: flex;
+                flex-direction: column;
+            }
+
+            #calendario {
+                flex: 1 1 auto;
+                height: 100%;
+                min-height: 0;
+                overflow: auto;
+                border-radius: var(--my-radius-sm);
+                border: 1px solid var(--my-glass-rim);
+                background: var(--my-glass);
+                padding: 8px;
+            }
+
+            /* Asegurar que FullCalendar y sus contenedores internos se estiren */
+            .fc, .fc .fc-view-harness, .fc-scroller {
+                height: 100% !important;
+                min-height: 0 !important;
+            }
+        }
         /* Font */
         body {
             font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
@@ -455,146 +498,63 @@
             color: rgba(255, 255, 255, .45);
         }
     </style>
+    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.js"></script>
 </head>
-
 <body>
     <header>
         <div>
-            <!-- Help bottom-sheet trigger -->
-            <!-- User profile pill -->
-            <a id="usuario" href="/Templates/Inicio/perfil_usuario.html" aria-label="Ir a Perfil"
-            data-i18n-en-aria-label="Go to profile" class="liquid-bar">
-            <img src="https://www.gravatar.com/avatar/00000000000000000000000000000000?d=mp&f=y" alt="avatar"
-            id="icono_usuario">
-            <div class="header-user-text">
-                <h2 id="welcome_msg">...</h2>
-                <span id="username">...</span>
-            </div>
-            </a>
-            <a id="btn-ayuda-sheet" aria-label="Ayuda"
-            data-i18n-en-aria-label="Help" class="liquid-bar">
-                <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiNmZmZmZmYiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIiBjbGFzcz0ibHVjaWRlIGx1Y2lkZS1jaXJjbGUtcXVlc3Rpb24tbWFyay1pY29uIGx1Y2lkZS1jaXJjbGUtcXVlc3Rpb24tbWFyayI+PGNpcmNsZSBjeD0iMTIiIGN5PSIxMiIgcj0iMTAiLz48cGF0aCBkPSJNOS4wOSA5YTMgMyAwIDAgMSA1LjgzIDFjMCAyLTMgMy0zIDMiLz48cGF0aCBkPSJNMTIgMTdoLjAxIi8+PC9zdmc+"
-                alt="" aria-hidden="true">
-                <span class="sr-only" data-i18n-en="Help">Ayuda</span>
-            </a>
+        <!-- Help bottom-sheet trigger -->
+        <!-- User profile pill -->
+        <a id="usuario" href="/Templates/Inicio/perfil_usuario.html" aria-label="Ir a Perfil"
+        data-i18n-en-aria-label="Go to profile" class="liquid-bar">
+        <img src="https://www.gravatar.com/avatar/00000000000000000000000000000000?d=mp&f=y" alt="avatar"
+        id="icono_usuario">
+        <div class="header-user-text">
+            <h2 id="welcome_msg">...</h2>
+            <span id="username">...</span>
+        </div>
+        </a>
+        <a id="btn-ayuda-sheet" aria-label="Ayuda"
+        data-i18n-en-aria-label="Help" class="liquid-bar">
+            <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiNmZmZmZmYiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIiBjbGFzcz0ibHVjaWRlIGx1Y2lkZS1jaXJjbGUtcXVlc3Rpb24tbWFyay1pY29uIGx1Y2lkZS1jaXJjbGUtcXVlc3Rpb24tbWFyayI+PGNpcmNsZSBjeD0iMTIiIGN5PSIxMiIgcj0iMTAiLz48cGF0aCBkPSJNOS4wOSA5YTMgMyAwIDAgMSA1LjgzIDFjMCAyLTMgMy0zIDMiLz48cGF0aCBkPSJNMTIgMTdoLjAxIi8+PC9zdmc+"
+            alt="" aria-hidden="true">
+            <span class="sr-only" data-i18n-en="Help">Ayuda</span>
+        </a>
     </div>
     </header>
 
     <main>
-        <div id="pt-plan-swipe" class="pt-plan-swipe" aria-label="Planes" data-i18n-en-aria-label="Plans">
-
-            <!-- ── Entreno ─────────────────────────────────────────── -->
-            <section id="Ejercicios" class="pt-plan-page" tabindex="-1">
-                <div id="botones_accion" style="margin: 10px;">
-                    <div class="plan-topbar">
-                        <h1 class="plan-title" data-i18n-en="Training plan" style="margin: 10px;">Plan de Entreno</h1>
-                        <div role="group" aria-label="Acciones del plan"
-                            data-i18n-en-aria-label="Plan actions" class="liquid-bar">
-                            <button id="boton_ejercicios">...</button>
-                            <button id="boton_regenerar" class="btn-icon-sm" style="display: none;">
-                                <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiNmZmZmZmYiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIiBjbGFzcz0ibHVjaWRlIGx1Y2lkZS1yZWRvLWljb24gbHVjaWRlLXJlZG8iPjxwYXRoIGQ9Ik0yMSA3djZoLTYiLz48cGF0aCBkPSJNMyAxN2E5IDkgMCAwIDEgOS05IDkgOSAwIDAgMSA2IDIuM2wzIDIuNyIvPjwvc3ZnPg=="
-                                    alt="rehacer" data-i18n-en-alt="redo">
-                            </button>
-                            <button id="boton_eliminar" class="btn-icon-sm" style="display: none;">
-                                <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiNmZmZmZmYiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIiBjbGFzcz0ibHVjaWRlIGx1Y2lkZS10cmFzaDItaWNvbiBsdWNpZGUtdHJhc2gtMiI+PHBhdGggZD0iTTEwIDExdjYiLz48cGF0aCBkPSJNMTQgMTF2NiIvPjxwYXRoIGQ9Ik0xOSA2djE0YTIgMiAwIDAgMS0yIDJIN2EyIDIgMCAwIDEtMi0yVjYiLz48cGF0aCBkPSJNMyA2aDE4Ii8+PHBhdGggZD0iTTggNlY0YTIgMiAwIDAgMSAyLTJoNGEyIDIgMCAwIDEgMiAydjIiLz48L3N2Zz4="
-                                    alt="eliminar" data-i18n-en-alt="delete">
-                            </button>
-                        </div>
-                    </div>
-
-                    <p id="descripcion_previa" class="descripcion_previa" style="display: none;"
-                        data-i18n-en="Here you can generate a personalized workout plan (weekly routine) with exercises, sets/reps, rest times, and suggested progression. To build it, we consider where you train (home or gym), your main goal (fat loss or muscle gain), and your basic data (age, height, current weight, and target weight).">
-                        Acá vas a poder generar un plan de entrenamiento personalizado (rutina semanal) con ejercicios,
-                        series/repeticiones, descansos y una progresión sugerida.
-                        Para armarlo se tiene en cuenta dónde entrenás (en casa o en gimnasio), tu objetivo principal
-                        (priorizar pérdida de grasa o ganancia muscular) y tus datos básicos (edad, altura, peso actual
-                        y peso objetivo).
-                    </p>
-                </div>
-                <div id="Plan_ejercicio" tabindex="-1" style="display: none;"></div>
-            </section>
-
-            <!-- ── Alimentación ───────────────────────────────────── -->
-            <section id="Alimentacion" class="pt-plan-page" tabindex="-1">
-                <div id="botones_accion_alim" style="margin: 10px;">
-                    <div class="plan-topbar">
-                        <h1 class="plan-title" data-i18n-en="Meal plan" style="margin: 10px;">Plan de Alimentación</h1>
-                        <div class="plan-actions-pill" role="group" aria-label="Acciones del plan"
-                            data-i18n-en-aria-label="Plan actions">
-                            <button id="boton_alimentacion">...</button>
-                            <button id="boton_regenerar_alim" class="btn-icon-sm" style="display: none;">
-                                <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiNmZmZmZmYiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIiBjbGFzcz0ibHVjaWRlIGx1Y2lkZS1yZWRvLWljb24gbHVjaWRlLXJlZG8iPjxwYXRoIGQ9Ik0yMSA3djZoLTYiLz48cGF0aCBkPSJNMyAxN2E5IDkgMCAwIDEgOS05IDkgOSAwIDAgMSA2IDIuM2wzIDIuNyIvPjwvc3ZnPg=="
-                                    alt="rehacer" data-i18n-en-alt="redo">
-                            </button>
-                            <button id="boton_eliminar_alim" class="btn-icon-sm" style="display: none;">
-                                <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiNmZmZmZmYiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIiBjbGFzcz0ibHVjaWRlIGx1Y2lkZS10cmFzaDItaWNvbiBsdWNpZGUtdHJhc2gtMiI+PHBhdGggZD0iTTEwIDExdjYiLz48cGF0aCBkPSJNMTQgMTF2NiIvPjxwYXRoIGQ9Ik0xOSA2djE0YTIgMiAwIDAgMS0yIDJIN2EyIDIgMCAwIDEtMi0yVjYiLz48cGF0aCBkPSJNMyA2aDE4Ii8+PHBhdGggZD0iTTggNlY0YTIgMiAwIDAgMSAyLTJoNGEyIDIgMCAwIDEgMiAydjIiLz48L3N2Zz4="
-                                    alt="eliminar" data-i18n-en-alt="delete">
-                            </button>
-                        </div>
-                    </div>
-
-                    <p id="descripcion_previa_alim" class="descripcion_previa" style="display: none;"
-                        data-i18n-en="Generate a personalized weekly meal plan using your profile data (age, height, current weight, and goal). The result includes, for each day, the recommended calorie intake and suggested meals; and when you tap a day you'll see details: calorie breakdown, macronutrient distribution (% carbs, protein, fats), food recommendations adjusted to the number of meals that day, and practical tips to manage daily nutrition.">
-                        Generá un plan de alimentación semanal personalizado usando los datos de tu perfil (edad,
-                        altura, peso actual y objetivo).
-                        El resultado ofrece, por día, la ingesta calórica recomendada y las comidas sugeridas; y al
-                        tocar cada día verás el detalle: desglose de calorías, distribución de macronutrientes (%
-                        carbohidratos, proteínas, grasas), recomendaciones de alimentos ajustadas al número de comidas
-                        del día, y tips prácticos para manejar la alimentación diaria.
-                    </p>
-                </div>
-                <div id="Plan_alimentacion" tabindex="-1" style="display: none;"></div>
-            </section>
-        </div>
+        <h1 data-i18n-en="Calendar">Calendario</h1>
+        <div id="calendario"></div>
     </main>
 
     <footer id="footer_dashboard" class="liquid-wrap">
-        <nav class="footer-nav liquid-bar" aria-label="Navegación inferior" data-i18n-en-aria-label="Bottom navigation">
+    <div class="liquid-shadow"></div>
+    <nav class="footer-nav liquid-bar" aria-label="Navegación inferior" data-i18n-en-aria-label="Bottom navigation">
 
-            <!-- Entreno (active) -->
-            <a class="footer-btn is-active" href="/Templates/Inicio/Dashboard.html" aria-label="Plan de Entreno"
-                data-i18n-en-aria-label="Training plan">
-                <div class="footer-btn-icon">
-                    <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiNmZmZmZmYiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIiBjbGFzcz0ibHVjaWRlIGx1Y2lkZS1ob3VzZS1pY29uIGx1Y2lkZS1ob3VzZSI+PHBhdGggZD0iTTE1IDIxdi04YTEgMSAwIDAgMC0xLTFoLTRhMSAxIDAgMCAwLTEgMXY4Ii8+PHBhdGggZD0iTTMgMTBhMiAyIDAgMCAxIC43MDktMS41MjhsNy02YTIgMiAwIDAgMSAyLjU4MiAwbDcgNkEyIDIgMCAwIDEgMjEgMTB2OWEyIDIgMCAwIDEtMiAySDVhMiAyIDAgMCAxLTItMnoiLz48L3N2Zz4="
-                        alt="" aria-hidden="true">
-                </div>
-            </a>
+        <!-- Entreno -->
+        <a class="footer-btn" href="/Templates/Inicio/Dashboard.html" aria-label="Plan de Entreno"
+            data-i18n-en-aria-label="Training plan">
+            <div class="footer-btn-icon">
+                <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiNmZmZmZmYiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIiBjbGFzcz0ibHVjaWRlIGx1Y2lkZS1ob3VzZS1pY29uIGx1Y2lkZS1ob3VzZSI+PHBhdGggZD0iTTE1IDIxdi04YTEgMSAwIDAgMC0xLTFoLTRhMSAxIDAgMCAwLTEgMXY4Ii8+PHBhdGggZD0iTTMgMTBhMiAyIDAgMCAxIC43MDktMS41MjhsNy02YTIgMiAwIDAgMSAyLjU4MiAwbDcgNkEyIDIgMCAwIDEgMjEgMTB2OWEyIDIgMCAwIDEtMiAySDVhMiAyIDAgMCAxLTItMnoiLz48L3N2Zz4="
+                    alt="" aria-hidden="true">
+            </div>
+        </a>
 
-            <!-- Ajustes -->
-            <a class="footer-btn" href="/Templates/Inicio/calendario.html" aria-label="Calendario"
-                data-i18n-en-aria-label="Calendar">
-                <div class="footer-btn-icon">
-                    <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiNmZmZmZmYiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIiBjbGFzcz0ibHVjaWRlIGx1Y2lkZS1jYWxlbmRhci1kYXlzLWljb24gbHVjaWRlLWNhbGVuZGFyLWRheXMiPjxwYXRoIGQ9Ik04IDJ2NCIvPjxwYXRoIGQ9Ik0xNiAydjQiLz48cmVjdCB3aWR0aD0iMTgiIGhlaWdodD0iMTgiIHg9IjMiIHk9IjQiIHJ4PSIyIi8+PHBhdGggZD0iTTMgMTBoMTgiLz48cGF0aCBkPSJNOCAxNGguMDEiLz48cGF0aCBkPSJNMTIgMTRoLjAxIi8+PHBhdGggZD0iTTE2IDE0aC4wMSIvPjxwYXRoIGQ9Ik04IDE4aC4wMSIvPjxwYXRoIGQ9Ik0xMiAxOGguMDEiLz48cGF0aCBkPSJNMTYgMThoLjAxIi8+PC9zdmc+"
-                        alt="" aria-hidden="true">
-                </div>
-            </a>
-        </nav>
+        <!-- Calendario (active)-->
+        <a class="footer-btn is-active" href="/Templates/Inicio/calendario.html" aria-label="Calendario"
+            data-i18n-en-aria-label="Calendar">
+            <div class="footer-btn-icon">
+                <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiNmZmZmZmYiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIiBjbGFzcz0ibHVjaWRlIGx1Y2lkZS1jYWxlbmRhci1kYXlzLWljb24gbHVjaWRlLWNhbGVuZGFyLWRheXMiPjxwYXRoIGQ9Ik04IDJ2NCIvPjxwYXRoIGQ9Ik0xNiAydjQiLz48cmVjdCB3aWR0aD0iMTgiIGhlaWdodD0iMTgiIHg9IjMiIHk9IjQiIHJ4PSIyIi8+PHBhdGggZD0iTTMgMTBoMTgiLz48cGF0aCBkPSJNOCAxNGguMDEiLz48cGF0aCBkPSJNMTIgMTRoLjAxIi8+PHBhdGggZD0iTTE2IDE0aC4wMSIvPjxwYXRoIGQ9Ik04IDE4aC4wMSIvPjxwYXRoIGQ9Ik0xMiAxOGguMDEiLz48cGF0aCBkPSJNMTYgMThoLjAxIi8+PC9zdmc+"
+                    alt="" aria-hidden="true">
+            </div>
+        </a>
+
+        <div class="liquid-highlight"></div>
+    </nav>
     </footer>
-
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="/Scripts/ui_bottom_sheet.js"></script>
-    <script src="/Scripts/dashboard.js" type="module"></script>
+    <script src="/Scripts/script_calendario.js" type="module"></script>
     <script src="/Scripts/Ayuda.js"></script>
-
-    <script>
-        (function () {
-            const pe = document.getElementById('Plan_ejercicio');
-            const pa = document.getElementById('Plan_alimentacion');
-            if (!pe || !pa) return;
-            const syncAlimentacion = () => {
-                if (pe.offsetHeight > 100 && pe.innerHTML.trim() !== '') {
-                    pa.style.maxHeight = pe.offsetHeight + 'px';
-                    pa.style.overflowY = 'auto';
-                } else {
-                    pa.style.maxHeight = '';
-                }
-            };
-            const ob = new MutationObserver(syncAlimentacion);
-            ob.observe(pe, { childList: true, subtree: true });
-            window.addEventListener('resize', syncAlimentacion, { passive: true });
-            setTimeout(syncAlimentacion, 100);
-        })();
-    </script>
 </body>
-
 </html>

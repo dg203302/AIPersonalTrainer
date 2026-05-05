@@ -421,6 +421,172 @@ a:focus-visible {
 	padding-top: 2px;
 }
 
+/* Registro entreno: inputs + tipografias mas legibles y consistentes con el glass style */
+.pt-detalle-entreno .pt-status-row {
+	gap: 14px;
+}
+
+.pt-detalle-entreno .pt-status-text {
+	font-size: 15px;
+	line-height: 1.58;
+	color: rgba(255, 255, 255, .84);
+}
+
+.pt-detalle-entreno .pt-detalle-meta {
+	font-size: 14px;
+	line-height: 1.55;
+	color: rgba(255, 255, 255, .78);
+}
+
+.pt-detalle-entreno .pt-detalle-label {
+	display: block;
+	font-size: 14px;
+	font-weight: 800;
+	letter-spacing: .1px;
+	color: rgba(255, 255, 255, .88);
+}
+
+.pt-input.pt-input--glass {
+	width: 100%;
+	min-height: 46px;
+	padding: 11px 13px;
+	border-radius: 14px;
+	border: 1px solid rgba(255, 255, 255, .22);
+	background: linear-gradient(180deg, rgba(255, 255, 255, .09), rgba(255, 255, 255, .04));
+	color: rgba(255, 255, 255, .95);
+	font-size: 16px;
+	font-weight: 600;
+	outline: none;
+	transition: border-color .16s ease, box-shadow .16s ease, background .16s ease;
+	-webkit-appearance: none;
+	appearance: none;
+}
+
+.pt-input.pt-input--glass::placeholder {
+	color: rgba(255, 255, 255, .58);
+	font-weight: 500;
+}
+
+.pt-input.pt-input--glass:focus {
+	border-color: color-mix(in srgb, var(--accent) 72%, #fff 28%);
+	box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 26%, transparent);
+	background: linear-gradient(180deg, rgba(255, 255, 255, .12), rgba(255, 255, 255, .06));
+}
+
+.pt-detalle-entreno .pt-status-actions .btn-primary {
+	min-height: 46px;
+	padding: 11px 18px;
+	font-size: 17px;
+	font-weight: 800;
+}
+
+/* Calendario: detalle del dia con cards mas grandes y legibles */
+.pt-cal-detalle-sheet {
+	gap: 14px;
+}
+
+.pt-cal-header-row {
+	padding-bottom: 8px;
+	border-bottom: 1px solid rgba(255, 255, 255, .08);
+}
+
+.pt-cal-header-text {
+	width: 100%;
+}
+
+.pt-cal-header-title {
+	display: block;
+	font-size: 20px;
+	font-weight: 850;
+	line-height: 1.2;
+	color: rgba(255, 255, 255, .95);
+}
+
+.pt-cal-header-sub {
+	margin-top: 6px;
+	font-size: 14px;
+	font-weight: 600;
+	color: rgba(255, 255, 255, .68);
+}
+
+.pt-cal-registro-row {
+	margin-top: 4px;
+}
+
+.pt-cal-registro-card {
+	width: 100%;
+	padding: 12px 12px 13px;
+	border-radius: 14px;
+	border: 1px solid rgba(255, 255, 255, .12);
+	background: linear-gradient(180deg, rgba(255, 255, 255, .09), rgba(255, 255, 255, .03));
+	box-shadow: 0 10px 24px rgba(0, 0, 0, .18);
+}
+
+.pt-cal-registro-title {
+	font-size: 18px;
+	font-weight: 850;
+	line-height: 1.25;
+	color: rgba(255, 255, 255, .96);
+}
+
+.pt-cal-registro-meta {
+	margin-top: 9px;
+	display: grid;
+	gap: 5px;
+	font-size: 15px;
+	line-height: 1.45;
+}
+
+.pt-cal-registro-meta div {
+	display: flex;
+	gap: 8px;
+	align-items: baseline;
+	flex-wrap: wrap;
+}
+
+.pt-cal-k {
+	font-weight: 800;
+	color: rgba(255, 255, 255, .80);
+}
+
+.pt-cal-v {
+	font-weight: 700;
+	color: rgba(255, 255, 255, .94);
+}
+
+.pt-cal-registro-desc {
+	margin-top: 8px;
+	font-size: 14px;
+	line-height: 1.5;
+	color: rgba(255, 255, 255, .74);
+}
+
+.pt-cal-registro-actions {
+	margin-top: 12px;
+}
+
+.pt-cal-clear-btn {
+	padding: 10px 14px;
+	border-radius: 12px;
+	border: 1px solid rgba(255, 120, 120, .48);
+	background: linear-gradient(180deg, rgba(255, 80, 80, .24), rgba(255, 80, 80, .12));
+	color: #fff;
+	font-weight: 800;
+	font-size: 13px;
+	line-height: 1;
+	cursor: pointer;
+	transition: transform .15s ease, border-color .15s ease, background .15s ease;
+}
+
+.pt-cal-clear-btn:hover {
+	background: linear-gradient(180deg, rgba(255, 80, 80, .31), rgba(255, 80, 80, .18));
+	border-color: rgba(255, 130, 130, .68);
+}
+
+.pt-cal-clear-btn:active {
+	transform: translateY(1px) scale(.99);
+}
+
 .pt-form-error {
 	display: none;
 	margin: 10px 2px 0;

@@ -3,7 +3,9 @@
 */
 
 (() => {
-	let activeClose = null;
+	let activeCloseStack = [];
+	let scrollLockCount = 0;
+	let scrollLockPrev = null;
 
 	const FOCUSABLE_SELECTOR = [
 		"button",
@@ -16,17 +18,43 @@
 
 	const lockScroll = () => {
 		const root = document.documentElement;
-		const prev = {
-			overflow: root.style.overflow,
-			paddingRight: root.style.paddingRight,
-		};
-		const scrollbarW = window.innerWidth - root.clientWidth;
-		root.style.overflow = "hidden";
-		if (scrollbarW > 0) root.style.paddingRight = `${scrollbarW}px`;
+		if (scrollLockCount === 0) {
+			scrollLockPrev = {
+				overflow: root.style.overflow,
+				paddingRight: root.style.paddingRight,
+			};
+			const scrollbarW = window.innerWidth - root.clientWidth;
+			root.style.overflow = "hidden";
+			if (scrollbarW > 0) root.style.paddingRight = `${scrollbarW}px`;
+		}
+
+		scrollLockCount += 1;
+		let released = false;
 		return () => {
-			root.style.overflow = prev.overflow;
-			root.style.paddingRight = prev.paddingRight;
+			if (released) return;
+			released = true;
+			scrollLockCount = Math.max(0, scrollLockCount - 1);
+			if (scrollLockCount === 0) {
+				root.style.overflow = scrollLockPrev?.overflow ?? "";
+				root.style.paddingRight = scrollLockPrev?.paddingRight ?? "";
+				scrollLockPrev = null;
+			}
 		};
+	};
+
+	const forceResetOverlays = () => {
+		try {
+			document.querySelectorAll(".pt-sheet-overlay").forEach((el) => el.remove());
+		} catch {
+			// ignore
+		}
+
+		activeCloseStack = [];
+		scrollLockCount = 0;
+		const root = document.documentElement;
+		root.style.overflow = scrollLockPrev?.overflow ?? "";
+		root.style.paddingRight = scrollLockPrev?.paddingRight ?? "";
+		scrollLockPrev = null;
 	};
 
 	const isHtml = (v) => typeof v === "string";
@@ -44,17 +72,14 @@
 		allowOutsideClose = true,
 		allowEscapeClose = true,
 		allowDragClose = true,
+		stack = false,
 		didOpen,
 		willClose,
 	} = {}) => {
 		if (!isHtml(html)) html = String(html ?? "");
-		const existing = document.querySelector(".pt-sheet-overlay");
-		if (existing) {
-			try {
-				existing.remove();
-			} catch {
-				// ignore
-			}
+
+		if (!stack) {
+			forceResetOverlays();
 		}
 
 		const unlock = lockScroll();
@@ -135,7 +160,7 @@
 		const close = () => {
 			if (closed) return;
 			closed = true;
-			activeClose = null;
+			activeCloseStack = activeCloseStack.filter((fn) => fn !== close);
 
 			try {
 				if (typeof willClose === "function") willClose();
@@ -181,7 +206,7 @@
 		};
 
 		// Expose programmatic close for the current sheet
-		activeClose = close;
+		activeCloseStack.push(close);
 
 		const onKeyDown = (ev) => {
 			if (ev.key === "Escape") {
@@ -384,7 +409,8 @@
 
 	const close = () => {
 		try {
-			if (typeof activeClose === "function") activeClose();
+			const top = activeCloseStack[activeCloseStack.length - 1];
+			if (typeof top === "function") top();
 		} catch {
 			// ignore
 		}

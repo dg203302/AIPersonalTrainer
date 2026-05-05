@@ -169,7 +169,7 @@ const closeBottomSheetSafe = () => {
     }
 };
 
-const openStatusSheet = async ({ title, message, html } = {}) => {
+const openStatusSheet = async ({ title, message, html, stacked = false } = {}) => {
     const safeTitle = String(title || "");
     const safeMessage = String(message || "");
     const safeHtml = html != null ? String(html) : null;
@@ -195,6 +195,7 @@ const openStatusSheet = async ({ title, message, html } = {}) => {
             allowOutsideClose: true,
             allowEscapeClose: true,
             allowDragClose: true,
+            stack: !!stacked,
             didOpen: (sheet) => {
                 sheet.querySelector("[data-pt-close]")?.addEventListener("click", () => closeBottomSheetSafe());
                 try { globalThis.UIIdioma?.translatePage?.(sheet); } catch { }
@@ -1873,68 +1874,257 @@ function initDetallePorDiaPlan() {
     if (contenedor.dataset.detalleDiaInit === "1") return;
     contenedor.dataset.detalleDiaInit = "1";
 
+    const getHoraActualLocal = () => {
+        const ahora = new Date();
+        return {
+            fecha: `${ahora.getFullYear()}-${String(ahora.getMonth() + 1).padStart(2, "0")}-${String(ahora.getDate()).padStart(2, "0")}`,
+            hora: `${String(ahora.getHours()).padStart(2, "0")}:${String(ahora.getMinutes()).padStart(2, "0")}`,
+            iso: ahora.toISOString(),
+        };
+    };
+
+    const guardarRegistroEntreno = async (registro) => {
+        try {
+            const res = await fetch('/guardar_registro_entreno', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    id_usuario: localStorage.getItem("id_usuario"),
+                    registro_entreno: registro,
+                }),
+            });
+            if (!res.ok) {
+                const text = await res.text().catch(() => null);
+                console.warn("[/guardar_registro_entreno] respuesta no OK:", res.status, text);
+            }
+            return res;
+        } catch (err) {
+            console.log("[/guardar_registro_entreno] Error:", err);
+            throw err;
+        }
+    };
+
     const openDetalleDia = async (headerEl) => {
-        const dayIdx = Number(headerEl.getAttribute("data-day-idx"));
-        if (!Number.isFinite(dayIdx)) return;
+        const dia_ent = headerEl?.querySelector(".plan-dia-titulo")?.textContent?.replace(/\s+/g, " ")?.trim()
+            || headerEl?.querySelector(".plan-dia-titulos")?.textContent?.replace(/\s+/g, " ")?.trim()
+            || headerEl?.textContent?.replace(/\s+/g, " ")?.trim();
+        const desc_ent = headerEl?.querySelector(".plan-dia-subtitle")?.textContent?.trim() ?? "";
+        const dia_Actual = getHoraActualLocal().fecha;
+        const normalizarDiasCale = (value) => {
+            if (Array.isArray(value)) return value;
+            if (value == null) return [];
+            if (typeof value === "string") {
+                const text = value.trim();
+                if (!text) return [];
+                try {
+                    const parsed = JSON.parse(text);
+                    return Array.isArray(parsed) ? parsed : [];
+                } catch {
+                    return [];
+                }
+            }
+            if (typeof value === "object") {
+                const maybeArray = value.Dias_cale ?? value.Dias_entrenados;
+                return Array.isArray(maybeArray) ? maybeArray : [];
+            }
+            return [];
+        };
 
-        const planRaw = localStorage.getItem("plan_ejercicio_usuario");
-        const planObj = JSON.parse(planRaw || "{}");
-        const dias = Array.isArray(planObj.Plan_ejercicio) ? planObj.Plan_ejercicio : [];
-        const diaInfo = dias[dayIdx];
-        if (!diaInfo) return;
+        const obtenerRegistrosPrevios = async () => {
+            const fromLocalStorage = normalizarDiasCale(localStorage.getItem("Dias_cale"));
+            try {
+                const { data, error } = await supabase
+                    .from("Planes")
+                    .select("Dias_entrenados")
+                    .eq("ID_user", localStorage.getItem("id_usuario"))
+                    .limit(1)
+                    .single();
 
-        const exs = Array.isArray(diaInfo.ejercicios) ? diaInfo.ejercicios : [];
+                if (error) throw new Error(error.message);
 
-        const html = `
-            <div class="pt-detail">
-                <div class="pt-detail-hero">
-                    <div class="pt-detail-hero-title">${escapeHtml(diaInfo.dia)}</div>
-                    <div class="pt-detail-hero-sub">${escapeHtml(tLang("Resumen del entrenamiento", "Training summary"))}</div>
+                const fromDb = normalizarDiasCale(data?.Dias_entrenados);
+                return fromDb.length ? fromDb : fromLocalStorage;
+            } catch (err) {
+                console.error("Error al obtener registros de entreno:", err);
+                return fromLocalStorage;
+            }
+        };
+
+        const registrosPrevios = await obtenerRegistrosPrevios();
+        const registrosDelDia = registrosPrevios.filter((item) => item?.start === dia_Actual || item?.fecha === dia_Actual);
+        const registroPrevio = registrosDelDia.length ? registrosDelDia[registrosDelDia.length - 1] : null;
+        const caloriasPrevias = "";
+        const tiempoPrevio = "";
+
+        const sheetHtml = `
+            <div class="pt-status pt-detalle-entreno">
+                <div class="pt-status-row">
+                    <div class="pt-status-text">
+                        <strong>${escapeHtml(dia_ent || tLang("Día sin título", "Untitled day"))}</strong>
+                        ${desc_ent ? `<div style="margin-top:6px; color: rgba(255,255,255,.72);">${escapeHtml(desc_ent)}</div>` : ""}
+                    </div>
                 </div>
 
-                <div class="pt-detail-viewport">
-                    <div style="padding:16px;">
-                        <section style="margin-bottom:20px;">
-                            <h3 class="pt-sheet-section-title">${escapeHtml(tLang("Enfoque", "Focus"))}</h3>
-                            <div class="pt-sheet-item">
-                                <div class="pt-sheet-item-left">
-                                    <div class="pt-sheet-item-title">${escapeHtml(diaInfo.foco || tLang("Entrenamiento variado", "Varied training"))}</div>
-                                    <div class="pt-sheet-item-sub">${escapeHtml(tLang("Objetivo principal", "Main focus"))}</div>
-                                </div>
-                            </div>
-                        </section>
-
-                        <section>
-                            <h3 class="pt-sheet-section-title">${escapeHtml(tLang("Lista de ejercicios", "Exercise list"))}</h3>
-                            <div class="pt-sheet-list">
-                                ${exs.map((ex, idx) => `
-                                    <div class="pt-sheet-item">
-                                        <div class="pt-sheet-item-left">
-                                            <div class="pt-sheet-item-title">${idx + 1}. ${escapeHtml(ex.nombre)}</div>
-                                            <div class="pt-sheet-item-sub">${escapeHtml(ex.series)} sers · ${escapeHtml(ex.repeticiones)} reps</div>
-                                        </div>
-                                    </div>
-                                `).join("")}
-                            </div>
-                        </section>
+                <div class="pt-status-row" style="margin-top: 14px;">
+                    <div class="pt-status-text pt-detalle-meta">
+                        <div><strong>${escapeHtml(tLang("Fecha", "Date"))}:</strong> ${escapeHtml(dia_Actual)}</div>
+                        <div style="margin-top:4px;"><strong>${escapeHtml(tLang("Hora actual", "Current time"))}:</strong> ${escapeHtml(getHoraActualLocal().hora)}</div>
                     </div>
+                </div>
+
+                <div class="pt-status-row" style="margin-top: 16px; display: grid; gap: 12px;">
+                    <label style="display:grid; gap:6px; text-align:left;">
+                        <span class="pt-detalle-label">${escapeHtml(tLang("Calorías quemadas", "Calories burned"))}</span>
+                        <input type="number" min="0" step="1" inputmode="numeric" data-pt-calorias class="pt-input pt-input--glass" placeholder="${escapeHtml(tLang("Ej: 350", "E.g. 350"))}" value="${escapeHtml(caloriasPrevias)}">
+                    </label>
+
+                    <label style="display:grid; gap:6px; text-align:left;">
+                        <span class="pt-detalle-label">${escapeHtml(tLang("Tiempo total de entreno (min)", "Total workout time (min)"))}</span>
+                        <input type="number" min="0" step="1" inputmode="numeric" data-pt-tiempo class="pt-input pt-input--glass" placeholder="${escapeHtml(tLang("Ej: 60", "E.g. 60"))}" value="${escapeHtml(tiempoPrevio)}">
+                    </label>
+                </div>
+
+                <div class="pt-status-actions" style="margin-top: 18px;">
+                    <button type="button" class="btn-primary" data-pt-confirmar-entreno>${escapeHtml(tLang("Confirmar entreno", "Confirm workout"))}</button>
                 </div>
             </div>
         `;
 
+        if (!globalThis.PTBottomSheet || typeof globalThis.PTBottomSheet.open !== "function") {
+            await openStatusSheet({
+                title: tLang("Detalle del día", "Day detail"),
+                html: `<div class="pt-status"><div class="pt-status-row"><div class="pt-status-text">${escapeHtml(dia_ent || tLang("Día sin título", "Untitled day"))}</div></div></div>`,
+            });
+            return;
+        }
+
         await globalThis.PTBottomSheet.open({
-            title: "",
-            ariaLabel: `${tLang("Detalle del día", "Day detail")}: ${diaInfo.dia}`,
-            html,
-            closeText: tLang("Cerrar", "Close"),
+            title: tLang("Registrar entreno", "Register workout"),
+            subtitle: dia_ent || tLang("Detalle del día", "Day detail"),
+            ariaLabel: tLang("Registrar entreno", "Register workout"),
+            html: sheetHtml,
+            showClose: false,
+            showHandle: true,
+            allowOutsideClose: true,
+            allowEscapeClose: true,
+            allowDragClose: true,
             didOpen: (sheet) => {
                 try { globalThis.UIIdioma?.translatePage?.(sheet); } catch { }
-            }
-        });
-    };
 
-    const fitDetalleTipografia = (rootEl) => {
-        // No longer needed for single exercise view
+                const caloriasEl = sheet.querySelector("[data-pt-calorias]");
+                const tiempoEl = sheet.querySelector("[data-pt-tiempo]");
+                const btnConfirmar = sheet.querySelector("[data-pt-confirmar-entreno]");
+
+                if (caloriasEl instanceof HTMLInputElement && registroPrevio) {
+                    caloriasEl.value = String(registroPrevio.calorias_quemadas ?? registroPrevio.caloriasQuemadas ?? "");
+                }
+                if (tiempoEl instanceof HTMLInputElement && registroPrevio) {
+                    tiempoEl.value = String(registroPrevio.tiempo_total_min ?? registroPrevio.tiempoTotalMin ?? "");
+                }
+
+                btnConfirmar?.addEventListener("click", async () => {
+                    const caloriasQuemadas = Number.parseInt(String(caloriasEl?.value ?? "").trim(), 10);
+                    const tiempoTotalMin = Number.parseInt(String(tiempoEl?.value ?? "").trim(), 10);
+
+                    if (!Number.isFinite(caloriasQuemadas) || caloriasQuemadas < 0) {
+                        await openStatusSheet({
+                            title: tLang("Dato inválido", "Invalid data"),
+                            message: tLang("Ingresá una cantidad válida de calorías quemadas.", "Enter a valid number of calories burned."),
+                            stacked: true,
+                        });
+                        return;
+                    }
+
+                    if (!Number.isFinite(tiempoTotalMin) || tiempoTotalMin <= 0) {
+                        await openStatusSheet({
+                            title: tLang("Dato inválido", "Invalid data"),
+                            message: tLang("Ingresá un tiempo total de entreno válido en minutos.", "Enter a valid total workout time in minutes."),
+                            stacked: true,
+                        });
+                        return;
+                    }
+
+                    const now = getHoraActualLocal();
+                    const idRegistro = (globalThis.crypto && typeof globalThis.crypto.randomUUID === "function")
+                        ? globalThis.crypto.randomUUID()
+                        : `${dia_Actual}-${now.iso}-${Math.random().toString(36).slice(2, 10)}`;
+
+                    // Registro en formato legible (para compatibilidad interna)
+                    const registro = {
+                        id_registro: idRegistro,
+                        fecha: dia_Actual,
+                        dia: dia_ent || "",
+                        descripcion: desc_ent || "",
+                        calorias_quemadas: caloriasQuemadas,
+                        tiempo_total_min: tiempoTotalMin,
+                        hora_confirmacion: now.hora,
+                        confirmado_en: now.iso,
+                    };
+
+                    // Transformar/insertar en el formato solicitado: Dias_cale = [{ title, start, extendedProps: { calories_burnt, status, ... } }, ...]
+                    const diasArray = Array.isArray(registrosPrevios) ? registrosPrevios.slice() : [];
+
+                    const newEntry = {
+                        id_registro: registro.id_registro,
+                        title: registro.dia || `Entreno ${registro.fecha}`,
+                        start: registro.fecha,
+                        extendedProps: {
+                            calories_burnt: Number.isFinite(caloriasQuemadas) ? caloriasQuemadas : null,
+                            tiempo_total_min: Number.isFinite(tiempoTotalMin) ? tiempoTotalMin : null,
+                            hora_confirmacion: registro.hora_confirmacion,
+                            confirmado_en: registro.confirmado_en,
+                            status: "completado",
+                        },
+                    };
+
+                    // Buscar índice por id único; así varios entrenos del mismo día pueden coexistir.
+                    const idx = diasArray.findIndex((d) => {
+                        if (!d) return false;
+                        if (d.id_registro && d.id_registro === registro.id_registro) return true;
+                        if (d.id && d.id === registro.id_registro) return true;
+                        return false;
+                    });
+
+                    if (idx >= 0) {
+                        diasArray[idx] = newEntry;
+                    } else {
+                        diasArray.push(newEntry);
+                    }
+
+                    localStorage.setItem("Dias_cale", JSON.stringify(diasArray));
+
+                    // Enviar array actualizado al edge-function / guardar
+                    try {
+                        const res = await guardarRegistroEntreno(diasArray);
+                        if (!res || !res.ok) {
+                            const txt = res ? await res.text().catch(() => null) : null;
+                            console.warn("No se pudo guardar Dias_cale:", res?.status, txt);
+                            await openStatusSheet({ title: tLang("Error", "Error"), message: tLang("No se pudo guardar el registro. Intenta de nuevo.", "Could not save the record. Please try again.") });
+                            return;
+                        }
+                    } catch (err) {
+                        console.error("Error al guardar Dias_cale:", err);
+                        await openStatusSheet({ title: tLang("Error", "Error"), message: tLang("Error al guardar el registro.", "Error saving the record.") });
+                        return;
+                    }
+                    try { globalThis.PTBottomSheet?.close?.(); } catch { }
+
+                    await openStatusSheet({
+                        title: tLang("Entreno registrado", "Workout registered"),
+                        message: tLang(
+                            `Se guardó el entreno de hoy a las ${now.hora}.`,
+                            `Today's workout was saved at ${now.hora}.`
+                        ),
+                    });
+
+                    try {
+                        verificacion_plan_entrenamiento();
+                    } catch (err) {
+                        console.warn("No se pudo refrescar la vista del plan:", err);
+                    }
+                });
+            },
+        });
     };
 
     const openDetalle = async (cardEl) => {
