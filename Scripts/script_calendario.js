@@ -86,17 +86,17 @@ const openConfirmSheet = async ({
                 const btnConfirm = sheet.querySelector("[data-pt-confirm]");
 
                 btnCancel?.addEventListener("click", () => {
-                    try { globalThis.PTBottomSheet?.close?.(); } catch { }
                     finish(false);
+                    try { globalThis.PTBottomSheet?.close?.(); } catch { }
                 });
 
                 btnConfirm?.addEventListener("click", () => {
-                    try { globalThis.PTBottomSheet?.close?.(); } catch { }
                     finish(true);
+                    try { globalThis.PTBottomSheet?.close?.(); } catch { }
                 });
             },
             willClose: () => {
-                finish(false);
+                if (!settled) finish(false);
             },
         });
     });
@@ -229,7 +229,7 @@ const initDynamicGreeting = () => {
 
 const buildRegistroMeta = (registro, index) => {
     const start = String(registro?.start ?? registro?.fecha ?? "").trim();
-    const title = String(registro?.title ?? registro?.dia ?? registro?.descripcion ?? `Entreno ${index + 1}`).trim();
+    const title = String(registro?.title ?? registro?.titulo_entreno ?? registro?.dia ?? registro?.descripcion ?? `Entreno ${index + 1}`).trim();
     const extendedProps = registro?.extendedProps && typeof registro.extendedProps === "object" ? registro.extendedProps : {};
     return {
         id: getRegistroId(registro, index),

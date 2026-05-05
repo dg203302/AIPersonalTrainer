@@ -2,7 +2,7 @@ import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js
 
 
 const supabaseUrl = "https://lhecmoeilmhzgxpcetto.supabase.co";
-const supabaseKey = "sb_secret_8pOt21ZHhoru6-VbtV6sEQ_TYL8DivC";
+const supabaseKey = Deno.env.get('API_Key_Supabase');
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 const corsHeaders = {

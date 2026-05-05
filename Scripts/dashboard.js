@@ -1,5 +1,4 @@
 import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.94.1/+esm";
-import { generatePlanEntreno } from "./generacion_planes/gen_plan_entreno.js";
 import { initPlanAlimentacion } from "./Alimentacion.js";
 
 const supabaseUrl = "https://lhecmoeilmhzgxpcetto.supabase.co";
@@ -419,6 +418,7 @@ const EXERCISE_NAME_MAP_ES_EN = {
     // Índice (frases completas) / index (full phrases)
     // Pecho
     "press de banca plano con barra": "Barbell Bench Press",
+    "press de banca inclinado con barra": "Incline Barbell Bench Press",
     "press de banca inclinado con mancuernas": "Incline Dumbbell Bench Press",
     "flexiones de brazos peso corporal": "Push-Ups (Bodyweight)",
     "aperturas con mancuernas": "Dumbbell Flyes",
@@ -432,6 +432,8 @@ const EXERCISE_NAME_MAP_ES_EN = {
     "remo con barra": "Barbell Row",
     "remo unilateral con mancuerna": "One-Arm Dumbbell Row",
     "remo sentado en polea": "Seated Cable Row",
+    "pull over con mancuerna": "Dumbbell Pullover",
+    "remo en t": "T-Bar Row",
     "hiperextensiones lumbares": "Back Extensions",
 
     // Piernas
@@ -441,6 +443,8 @@ const EXERCISE_NAME_MAP_ES_EN = {
     "extension de cuadriceps en maquina": "Leg Extension Machine",
     "curl femoral tumbado o sentado": "Leg Curl (Lying or Seated)",
     "elevacion de talones": "Calf Raises",
+    "peso muerto sumo con barra": "Barbell Sumo Deadlift",
+    "step ups con mancuernas": "Dumbbell Step-Ups",
 
     // Hombros
     "press militar con barra o mancuernas": "Overhead Press (Barbell or Dumbbells)",
@@ -448,6 +452,8 @@ const EXERCISE_NAME_MAP_ES_EN = {
     "pajaros vuelos posteriores": "Rear Delt Flyes",
     "elevaciones frontales": "Front Raises",
     "face pull salud del hombro": "Face Pull",
+    "press arnold": "Arnold Press",
+    "encogimientos de hombros con barra reversa": "Reverse Barbell Shrug",
 
     // Brazos / tríceps
     "curl de biceps con barra": "Barbell Biceps Curl",
@@ -471,8 +477,10 @@ const EXERCISE_NAME_MAP_ES_EN = {
     "elevacion de piernas colgado o en suelo": "Leg Raises (Hanging or Floor)",
     "giros rusos": "Russian Twists",
     "rueda abdominal": "Ab Wheel Rollout",
+    "dragon flag": "Dragon Flag",
 
     // Cardio
+    "burpees": "Burpees",
     "saltos de tijera": "Jumping Jacks",
     "salto a la cuerda": "Jump Rope",
 
@@ -562,6 +570,35 @@ const isNetlifyEdgeUncaughtInvocation = (text) =>
         .toLowerCase()
         .includes(NETLIFY_EDGE_UNCAUGHT);
 
+const callEdgeFunctionJson = async (endpoint, payload) => {
+    const response = await fetch(endpoint, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+    });
+
+    const bodyText = await response.text().catch(() => "");
+    if (!response.ok) {
+        let msg = bodyText;
+        try {
+            const parsed = JSON.parse(bodyText);
+            msg = parsed?.error || parsed?.message || msg;
+        } catch {
+            // ignore
+        }
+        const error = new Error(msg || `Request failed (${response.status})`);
+        error.response = response;
+        error.bodyText = bodyText;
+        throw error;
+    }
+
+    try {
+        return JSON.parse(bodyText);
+    } catch {
+        return bodyText;
+    }
+};
+
 const showNetlifyHostingErrorAlert = async ({ endpoint, status, statusText, bodyText }) => {
     const safeEndpoint = String(endpoint ?? "").trim() || tLang("(desconocido)", "(unknown)");
     const safeStatus = Number.isFinite(Number(status)) ? Number(status) : "-";
@@ -612,6 +649,7 @@ const avatar = localStorage.getItem("avatar_usuario")
 const EJERCICIOS_INDICE = {
     "Pecho": [
         "Press de banca plano con barra",
+        "Press de banca inclinado con barra",
         "Press de banca inclinado con mancuernas",
         "Flexiones de brazos (peso corporal)",
         "Aperturas con mancuernas",
@@ -624,6 +662,8 @@ const EJERCICIOS_INDICE = {
         "Remo con barra",
         "Remo unilateral con mancuerna",
         "Remo sentado en polea",
+        "Pull-over con mancuerna",
+        "Remo en T",
         "Hiperextensiones lumbares",
     ],
     "Piernas": [
@@ -636,6 +676,8 @@ const EJERCICIOS_INDICE = {
         "Curl femoral tumbado o sentado",
         "Elevación de talones",
         "Sentadilla búlgara",
+        "Peso muerto sumo con barra",
+        "Step-ups con mancuernas",
     ],
     "Hombros": [
         "Press militar con barra o mancuernas",
@@ -643,18 +685,18 @@ const EJERCICIOS_INDICE = {
         "Pájaros / vuelos posteriores",
         "Elevaciones frontales",
         "Face pull (salud del hombro)",
+        "Press Arnold",
+        "Encogimientos de hombros con barra reversa",
     ],
     "Brazos": [
         "Curl de bíceps con barra",
         "Curl martillo con mancuernas",
         "Curl predicador",
-        "Press francés",
-        "Extensión de tríceps en polea alta",
         "Fondos entre bancos",
     ],
     "Tríceps": [
         "Press francés",
-        "Extensión de tríceps en polea alta",
+        "Extensión de triceps en polea alta",
         "Fondos entre bancos",
         "Extensión de tríceps con mancuerna sobre la cabeza",
         "Patada de tríceps con mancuerna",
@@ -671,6 +713,7 @@ const EJERCICIOS_INDICE = {
         "Elevación de piernas colgado o en suelo",
         "Giros rusos",
         "Rueda abdominal",
+        "Dragon flag",
     ],
     "Cardio / acondicionamiento": [
         "Burpees",
@@ -1336,8 +1379,7 @@ async function crearPlanEntreno(lugar, objetivo, diasSeleccionados, ejerciciosSe
 
     let response;
     try {
-        const { plan_entreno } = await generatePlanEntreno({
-            id_usuario: localStorage.getItem("id_usuario"),
+        const { plan_entreno } = await callEdgeFunctionJson("/gen_plan_entreno", {
             idioma: getIdiomaPreferido(),
             lugar,
             objetivo,
@@ -2053,7 +2095,7 @@ function initDetallePorDiaPlan() {
                     const registro = {
                         id_registro: idRegistro,
                         fecha: dia_Actual,
-                        dia: dia_ent || "",
+                        titulo_entreno: desc_ent || dia_ent || "",
                         descripcion: desc_ent || "",
                         calorias_quemadas: caloriasQuemadas,
                         tiempo_total_min: tiempoTotalMin,
@@ -2066,7 +2108,7 @@ function initDetallePorDiaPlan() {
 
                     const newEntry = {
                         id_registro: registro.id_registro,
-                        title: registro.dia || `Entreno ${registro.fecha}`,
+                        title: registro.titulo_entreno || registro.descripcion || `Entreno ${registro.fecha}`,
                         start: registro.fecha,
                         extendedProps: {
                             calories_burnt: Number.isFinite(caloriasQuemadas) ? caloriasQuemadas : null,

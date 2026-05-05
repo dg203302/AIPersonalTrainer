@@ -1,36 +1,6 @@
 import { GoogleGenAI } from "https://esm.sh/@google/genai@1.38.0";
 
-
-
-const fetchGeminiApiKeyFromEdge = async (request) => {
-	const url = new URL(request.url);
-	const apiKeyUrl = `${url.origin}/obtener_gemini_api_key`;
-	let res;
-	let txt = "";
-	try {
-		res = await fetch(apiKeyUrl, { method: "POST" });
-		txt = await res.text();
-	} catch (e) {
-		throw new Error(`No se pudo contactar el servidor para la API key: ${e?.message || String(e)}`);
-	}
-	if (!res.ok) {
-		let msg = txt;
-		try {
-			const parsed = JSON.parse(txt);
-			msg = parsed?.error || parsed?.message || msg;
-		} catch {
-			// ignore
-		}
-		throw new Error(`No se pudo obtener la API key (HTTP ${res.status}): ${String(msg).slice(0, 240)}`);
-	}
-	let parsed;
-	try {
-		parsed = JSON.parse(txt);
-	} catch {
-		parsed = null;
-	}
-    return parsed?.apiKey ?? "";
-};
+const APIkey = Deno.env.get('API_Key_Gemini')
 
 const normalizeKey = (s) =>
 	String(s ?? "")
@@ -513,7 +483,7 @@ Entorno: ${entornoValue} | Objetivo: ${objetivoValue} | Edad: ${payload?.Edad} |
 
 ${ejerciciosContexto}`;
 
-	const ai = new GoogleGenAI({ apiKey: await fetchGeminiApiKeyFromEdge(request) });
+	const ai = new GoogleGenAI({ apiKey: APIkey });
 	const response = await ai.models.generateContent({
 		model: "gemini-3-flash-preview",
 		contents: prompt,

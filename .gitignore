@@ -1,2 +1,3 @@
 .netlify
-Templates/Inicio/plantillas_legacy/
+elementos_depreciados
+.env

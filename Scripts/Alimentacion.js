@@ -1,5 +1,4 @@
 import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.94.1/+esm";
-import { generatePlanAlimenta } from "./generacion_planes/gen_plan_alimenta.js";
 
 const supabaseUrl = "https://lhecmoeilmhzgxpcetto.supabase.co";
 const supabaseKey = "sb_publishable_oLC8LcDLa3jR72Hpd_jJsA_eXjMlP3-";
@@ -203,6 +202,35 @@ const isNetlifyEdgeUncaughtInvocation = (text) =>
     String(text ?? "")
         .toLowerCase()
         .includes(NETLIFY_EDGE_UNCAUGHT);
+
+const callEdgeFunctionJson = async (endpoint, payload) => {
+    const response = await fetch(endpoint, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+    });
+
+    const bodyText = await response.text().catch(() => "");
+    if (!response.ok) {
+        let msg = bodyText;
+        try {
+            const parsed = JSON.parse(bodyText);
+            msg = parsed?.error || parsed?.message || msg;
+        } catch {
+            // ignore
+        }
+        const error = new Error(msg || `Request failed (${response.status})`);
+        error.response = response;
+        error.bodyText = bodyText;
+        throw error;
+    }
+
+    try {
+        return JSON.parse(bodyText);
+    } catch {
+        return bodyText;
+    }
+};
 
 const showNetlifyHostingErrorAlert = async ({ endpoint, status, statusText, bodyText }) => {
     const safeEndpoint = String(endpoint ?? "").trim() || tLang("(desconocido)", "(unknown)");
@@ -1299,7 +1327,7 @@ async function crearPlanAlimentacion(objetivo, intensidad, ctx) {
 
     let planAlimentaObj;
     try {
-        planAlimentaObj = await generatePlanAlimenta({
+        planAlimentaObj = await callEdgeFunctionJson("/gen_plan_alimenta", {
             idioma: isEnglish() ? "en" : "es",
             objetivo,
             intensidad,
