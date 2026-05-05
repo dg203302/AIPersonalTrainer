@@ -63,29 +63,23 @@ main{
 }
 
 .loader{
-	width: min(560px, 100%);
-	border-radius: var(--radius-xl);
-	border: 1px solid var(--stroke2);
-	background: color-mix(in srgb, #fff 7%, transparent);
-	box-shadow: var(--shadow);
-	backdrop-filter: blur(12px) saturate(140%);
-	-webkit-backdrop-filter: blur(12px) saturate(140%);
-	padding: 26px;
+	padding: 6px;
 	display: grid;
-	gap: 16px;
+	gap: 64px;
 	place-items: center;
 	text-align: center;
 }
 
 .loader-text{
+	font-size: 1000px;
 	width: 100%;
 	display: grid;
-	gap: 6px;
+	gap: 10px;
 }
 
 .loader-title{
 	margin: 0;
-	font-size: clamp(22px, 5.2vw, 34px);
+	font-size: clamp(30px, 7vw, 48px);
 	letter-spacing: .4px;
 	line-height: 1.1;
 }
@@ -93,7 +87,7 @@ main{
 .loader-subtitle{
 	margin: 0;
 	color: var(--muted);
-	font-size: 14px;
+	font-size: 18px;
 	font-weight: 750;
 	letter-spacing: .25px;
 }
@@ -102,13 +96,13 @@ main{
 	width: 100%;
 	display: grid;
 	place-items: center;
-	padding: 6px 0;
+	padding: 10px 0;
 }
 
 .ios-spinner{
 	position: relative;
-	width: 64px;
-	height: 64px;
+	width: clamp(250px, 42vw, 320px);
+	height: clamp(250px, 42vw, 320px);
 	opacity: .95;
 	filter:
 		drop-shadow(0 14px 38px rgba(0,0,0,.55))
@@ -119,13 +113,13 @@ main{
 	position: absolute;
 	top: 50%;
 	left: 50%;
-	width: 6px;
-	height: 20px;
-	margin-left: -3px;
-	margin-top: -30px;
+	width: 10px;
+	height: 34px;
+	margin-left: -5px;
+	margin-top: -50px;
 	border-radius: 999px;
 	background: rgba(255,255,255,.92);
-	transform-origin: 3px 30px;
+	transform-origin: 5px 50px;
 	animation: iosFade 1s linear infinite;
 }
 

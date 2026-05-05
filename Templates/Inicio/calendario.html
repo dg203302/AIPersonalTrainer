@@ -497,6 +497,127 @@
             font-weight: 500;
             color: rgba(255, 255, 255, .45);
         }
+        /* Estadísticas (tarjetas) */
+        .pt-stats {
+            margin-top: 20px;
+            padding: 14px;
+            border-radius: var(--my-radius-sm);
+            border: 1px solid var(--my-glass-rim);
+            background:
+                radial-gradient(140% 80% at 0% 0%, rgba(188, 228, 255, 0.12), transparent 60%),
+                linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.015));
+            box-shadow: 0 10px 30px rgba(0,0,0,0.25);
+        }
+
+        .pt-stats-title {
+            margin: 0 0 12px 0;
+            font-size: 18px;
+            font-weight: 800;
+            color: rgba(255,255,255,0.9);
+            letter-spacing: .2px;
+        }
+
+        .pt-stats-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 12px;
+        }
+
+        .pt-stat-group {
+            grid-column: 1 / -1;
+            margin: 4px 2px 0;
+            font-size: 12px;
+            font-weight: 800;
+            letter-spacing: .7px;
+            text-transform: uppercase;
+            color: rgba(255,255,255,0.58);
+        }
+
+        .pt-stat-card {
+            padding: 12px 12px;
+            border-radius: 14px;
+            background: rgba(255,255,255,0.045);
+            border: 1px solid rgba(255,255,255,0.09);
+            color: rgba(255,255,255,0.92);
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            min-height: 94px;
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            transition: transform .16s ease, border-color .16s ease, background .16s ease;
+        }
+
+        .pt-stat-card:active {
+            transform: scale(0.98);
+        }
+
+        .pt-stat-key {
+            font-size: 12px;
+            color: rgba(255,255,255,0.68);
+            font-weight: 700;
+            line-height: 1.25;
+        }
+
+        .pt-stat-value {
+            font-size: clamp(18px, 4.8vw, 22px);
+            font-weight: 900;
+            color: var(--my-primary);
+            line-height: 1.12;
+            word-break: break-word;
+        }
+
+        .pt-stat-card--primary .pt-stat-value {
+            color: #bce4ff;
+        }
+
+        .pt-stat-card--performance .pt-stat-value {
+            color: #9effcb;
+        }
+
+        .pt-stat-card--consistency .pt-stat-value {
+            color: #ffdca2;
+        }
+
+        .pt-stat-card--progress .pt-stat-value {
+            color: #f8b3ff;
+        }
+
+        .pt-stat-card--projection .pt-stat-value {
+            color: #ffb9a8;
+        }
+
+        @media (max-width: 400px) {
+            .pt-stats {
+                margin-top: 14px;
+                padding: 12px;
+                border-radius: 14px;
+            }
+
+            .pt-stats-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+                gap: 10px;
+            }
+
+            .pt-stat-group {
+                margin-top: 6px;
+                font-size: 11px;
+            }
+
+            .pt-stat-card {
+                min-height: 88px;
+                padding: 12px 12px;
+            }
+
+            .pt-stat-key {
+                font-size: 11.5px;
+            }
+
+            .pt-stat-value {
+                font-size: clamp(20px, 6vw, 24px);
+            }
+        }
+
     </style>
     <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.js"></script>
 </head>
@@ -526,6 +647,14 @@
     <main>
         <h1 data-i18n-en="Calendar">Calendario</h1>
         <div id="calendario"></div>
+
+        <!-- Estadísticas del mes -->
+        <section id="estadisticas" class="pt-stats">
+            <h2 class="pt-stats-title" data-i18n-en="Statistics">Estadísticas</h2>
+            <div id="pt-stats-grid" class="pt-stats-grid">
+                <!-- Las tarjetas de estadísticas se renderizan dinámicamente desde Scripts/script_calendario.js -->
+            </div>
+        </section>
     </main>
 
     <footer id="footer_dashboard" class="liquid-wrap">

@@ -364,6 +364,247 @@ async function initCalendario() {
         }, new Map());
     };
 
+    const safeNum = (v) => {
+        const n = Number(String(v ?? "").replace(/[^0-9.-]/g, ""));
+        return Number.isFinite(n) ? n : 0;
+    };
+
+    const computeStatsFromEventos = (allEventos) => {
+        const now = new Date();
+        const curYear = now.getFullYear();
+        const curMonth = now.getMonth(); // 0-based
+
+        const eventosThisMonth = allEventos.filter((e) => {
+            try {
+                const d = new Date(`${e.start}T00:00:00`);
+                return d.getFullYear() === curYear && d.getMonth() === curMonth;
+            } catch {
+                return false;
+            }
+        });
+
+        const aggByDate = new Map();
+        const allDatesSet = new Set();
+        allEventos.forEach((ev) => {
+            const date = ev.start;
+            if (!date) return;
+            allDatesSet.add(date);
+            const calories = safeNum(ev.extendedProps?.calories_burnt);
+            const minutes = safeNum(ev.extendedProps?.tiempo_total_min);
+            const prev = aggByDate.get(date) || { calories: 0, minutes: 0 };
+            prev.calories += calories;
+            prev.minutes += minutes;
+            aggByDate.set(date, prev);
+        });
+
+        // Month aggregates
+        let totalCalories = 0;
+        let totalMinutes = 0;
+        const daysTrainedSet = new Set();
+        eventosThisMonth.forEach((ev) => {
+            const date = ev.start;
+            const c = safeNum(ev.extendedProps?.calories_burnt);
+            const m = safeNum(ev.extendedProps?.tiempo_total_min);
+            totalCalories += c;
+            totalMinutes += m;
+            if (date) daysTrainedSet.add(date);
+        });
+
+        const daysTrained = daysTrainedSet.size;
+        const avgDailyMinutes = daysTrained ? Math.round(totalMinutes / daysTrained) : 0;
+        const avgDailyCalories = daysTrained ? Math.round(totalCalories / daysTrained) : 0;
+
+        // Best day (by calories, tiebreaker minutes)
+        let bestDay = null;
+        let bestCalories = -1;
+        let bestMinutes = -1;
+        aggByDate.forEach((vals, date) => {
+            if (!date) return;
+            // only consider dates in current month
+            const d = new Date(`${date}T00:00:00`);
+            if (d.getFullYear() !== curYear || d.getMonth() !== curMonth) return;
+            if (vals.calories > bestCalories || (vals.calories === bestCalories && vals.minutes > bestMinutes)) {
+                bestCalories = vals.calories;
+                bestMinutes = vals.minutes;
+                bestDay = { date, calories: vals.calories, minutes: vals.minutes };
+            }
+        });
+
+        // Streak calculations (using all recorded dates)
+        const allDates = Array.from(allDatesSet).sort();
+        const dateSet = new Set(allDates);
+        const dayIsoToTs = (iso) => new Date(`${iso}T00:00:00`).getTime();
+
+        // longest streak
+        let longestStreak = 0;
+        let currentStreak = 0;
+        let prevTs = null;
+        const sortedAllDates = Array.from(dateSet).map((d) => new Date(`${d}T00:00:00`)).sort((a,b)=>a-b);
+        sortedAllDates.forEach((d, idx) => {
+            if (idx === 0) { currentStreak = 1; prevTs = d.getTime(); longestStreak = 1; return; }
+            const diffDays = Math.round((d.getTime() - prevTs) / (1000*60*60*24));
+            if (diffDays === 1) currentStreak += 1;
+            else currentStreak = 1;
+            prevTs = d.getTime();
+            if (currentStreak > longestStreak) longestStreak = currentStreak;
+        });
+
+        // current streak up to today
+        let streakCurrent = 0;
+        for (let i = 0; ; i++) {
+            const check = new Date();
+            check.setDate(check.getDate() - i);
+            const iso = check.toISOString().slice(0,10);
+            if (dateSet.has(iso)) streakCurrent += 1;
+            else break;
+        }
+
+        const efficiency = totalMinutes ? +(totalCalories / totalMinutes).toFixed(2) : 0;
+
+        // Consistency
+        const daysInMonth = new Date(curYear, curMonth + 1, 0).getDate();
+        const pctActive = daysInMonth ? +(daysTrained / daysInMonth * 100).toFixed(1) : 0;
+        const daysRest = daysInMonth - daysTrained;
+
+        // Distribution by weekday for current month
+        const weekdayCounts = {};
+        eventosThisMonth.forEach((ev) => {
+            const d = new Date(`${ev.start}T00:00:00`);
+            const wd = d.toLocaleDateString(getIdiomaPreferido(), { weekday: 'long' });
+            weekdayCounts[wd] = (weekdayCounts[wd] || 0) + 1;
+        });
+
+        // Monthly variation (compare previous month)
+        const prevMonthDate = new Date(curYear, curMonth - 1, 1);
+        const prevYear = prevMonthDate.getFullYear();
+        const prevMonth = prevMonthDate.getMonth();
+        let prevTotalCalories = 0;
+        allEventos.forEach((ev) => {
+            const d = new Date(`${ev.start}T00:00:00`);
+            if (d.getFullYear() === prevYear && d.getMonth() === prevMonth) {
+                prevTotalCalories += safeNum(ev.extendedProps?.calories_burnt);
+            }
+        });
+        const variationAbsolute = totalCalories - prevTotalCalories;
+        const variationPct = prevTotalCalories ? +((variationAbsolute / prevTotalCalories) * 100).toFixed(1) : null;
+
+        // Weekly trend inside month (simple week index by day of month)
+        const weeks = {};
+        eventosThisMonth.forEach((ev) => {
+            const d = new Date(`${ev.start}T00:00:00`);
+            const weekIndex = Math.ceil(d.getDate() / 7);
+            weeks[weekIndex] = weeks[weekIndex] || { calories: 0, minutes: 0 };
+            weeks[weekIndex].calories += safeNum(ev.extendedProps?.calories_burnt);
+            weeks[weekIndex].minutes += safeNum(ev.extendedProps?.tiempo_total_min);
+        });
+
+        // Projection
+        const projectedCalories = daysTrained ? Math.round((totalCalories / daysTrained) * daysInMonth) : 0;
+
+        return {
+            totalCalories,
+            totalMinutes,
+            avgDailyMinutes,
+            avgDailyCalories,
+            daysTrained,
+            bestDay,
+            longestStreak,
+            streakCurrent,
+            efficiency,
+            pctActive,
+            daysRest,
+            weekdayCounts,
+            variationAbsolute,
+            variationPct,
+            weeks,
+            projectedCalories,
+            daysInMonth,
+        };
+    };
+
+    const formatNumber = (v) => (typeof v === 'number' ? v.toLocaleString(getIdiomaPreferido()) : v);
+
+    const renderEstadisticas = (stats) => {
+        try {
+            const container = document.getElementById('pt-stats-grid');
+            const section = document.getElementById('estadisticas');
+            if (section) section.style.display = 'block';
+            if (!container) return;
+            const items = [];
+            // Si no hay datos registrados, mostrar una tarjeta informativa pero mantener visibles las métricas en cero
+            const noData = !stats || (stats.totalCalories === 0 && stats.totalMinutes === 0 && stats.daysTrained === 0);
+
+            const weeklyEntries = Object.entries(stats.weeks || {})
+                .map(([k, v]) => [Number(k), v])
+                .filter(([k]) => Number.isFinite(k))
+                .sort((a, b) => a[0] - b[0]);
+            const firstWeek = weeklyEntries[0]?.[1] || null;
+            const lastWeek = weeklyEntries[weeklyEntries.length - 1]?.[1] || null;
+            const weeklyTrendLabel = (() => {
+                if (!firstWeek || !lastWeek) return tLang('Sin datos', 'No data');
+                const diff = (lastWeek.calories || 0) - (firstWeek.calories || 0);
+                if (diff === 0) return tLang('Estable', 'Stable');
+                return diff > 0
+                    ? `+${formatNumber(diff)} kcal`
+                    : `${formatNumber(diff)} kcal`;
+            })();
+
+            items.push({ type: 'group', v: tLang('Resumen Mensual', 'Monthly Summary') });
+            items.push({ k: tLang('Total minutos (mes)', 'Total minutes (month)'), v: `${formatNumber(stats.totalMinutes)} min`, tone: 'primary' });
+            items.push({ k: tLang('Total calorías (mes)', 'Total calories (month)'), v: `${formatNumber(stats.totalCalories)} kcal`, tone: 'primary' });
+            items.push({ k: tLang('Promedio diario minutos', 'Avg daily minutes'), v: `${formatNumber(stats.avgDailyMinutes)} min`, tone: 'primary' });
+            items.push({ k: tLang('Promedio diario calorías', 'Avg daily calories'), v: `${formatNumber(stats.avgDailyCalories)} kcal`, tone: 'primary' });
+            items.push({ k: tLang('Días entrenados (mes)', 'Days trained (month)'), v: `${formatNumber(stats.daysTrained)}`, tone: 'primary' });
+
+            const bestLabel = stats.bestDay ? `${stats.bestDay.date} — ${stats.bestDay.calories} kcal / ${stats.bestDay.minutes} min` : tLang('N/A', 'N/A');
+            items.push({ type: 'group', v: tLang('Rendimiento', 'Performance') });
+            items.push({ k: tLang('Mejor día (mes)', 'Best day (month)'), v: bestLabel, tone: 'performance' });
+            items.push({ k: tLang('Racha más larga', 'Longest streak'), v: `${formatNumber(stats.longestStreak)} ${tLang('días','days')}`, tone: 'performance' });
+            items.push({ k: tLang('Racha actual', 'Current streak'), v: `${formatNumber(stats.streakCurrent)} ${tLang('días','days')}`, tone: 'performance' });
+            items.push({ k: tLang('Eficiencia calórica', 'Caloric efficiency'), v: `${stats.efficiency} ${tLang('kcal/min','kcal/min')}`, tone: 'performance' });
+
+            items.push({ type: 'group', v: tLang('Consistencia', 'Consistency') });
+            items.push({ k: tLang('% días activos', '% active days'), v: `${stats.pctActive}%`, tone: 'consistency' });
+            items.push({ k: tLang('Días de descanso', 'Rest days'), v: `${formatNumber(stats.daysRest)}`, tone: 'consistency' });
+
+            // Distribution by weekday (show top 3)
+            const weekdayEntries = Object.entries(stats.weekdayCounts || {}).sort((a, b) => b[1] - a[1]);
+            const distLabel = weekdayEntries.length ? weekdayEntries.map(([k,v])=>`${k}: ${v}`).slice(0,5).join(' · ') : tLang('Sin datos', 'No data');
+            items.push({ k: tLang('Distribución por día', 'Distribution by weekday'), v: distLabel, tone: 'consistency' });
+
+            // Variation monthly
+            const varPct = stats.variationPct === null ? tLang('N/A', 'N/A') : `${stats.variationPct}%`;
+            items.push({ type: 'group', v: tLang('Progreso y Proyección', 'Progress and Projection') });
+            items.push({ k: tLang('Variación mensual (cal)', 'Monthly variation (cal)'), v: `${formatNumber(stats.variationAbsolute)} kcal (${varPct})`, tone: 'progress' });
+            items.push({ k: tLang('Tendencia semanal', 'Weekly trend'), v: weeklyTrendLabel, tone: 'progress' });
+
+            items.push({ k: tLang('Ritmo proyectado (cal)', 'Projected pace (cal)'), v: `${formatNumber(stats.projectedCalories)} kcal`, tone: 'projection' });
+
+            container.innerHTML = items.map((it) => {
+                if (it.type === 'group') {
+                    return `<div class="pt-stat-group">${escapeHtml(it.v)}</div>`;
+                }
+                const tone = it.tone ? ` pt-stat-card--${it.tone}` : '';
+                return `
+                    <div class="pt-stat-card${tone}">
+                        <div class="pt-stat-key">${escapeHtml(it.k)}</div>
+                        <div class="pt-stat-value">${escapeHtml(it.v)}</div>
+                    </div>
+                `;
+            }).join('');
+
+            if (noData) {
+                // añadir nota adicional
+                const note = document.createElement('div');
+                note.className = 'pt-stat-card';
+                note.innerHTML = `<div class="pt-stat-key">${escapeHtml(tLang('Nota', 'Note'))}</div><div class="pt-stat-value">${escapeHtml(tLang('Sin registros este mes', 'No records this month'))}</div>`;
+                container.appendChild(note);
+            }
+        } catch (err) {
+            console.error('Error renderEstadisticas', err);
+        }
+    };
+
     const getRegistrosByFecha = (fechaIso) => recordsByDate.get(fechaIso) || [];
 
     const onDeleteRegistro = async (registroId) => {
@@ -394,6 +635,12 @@ async function initCalendario() {
         rebuildCalendarData();
         calendar.removeAllEvents();
         calendar.addEventSource(eventos);
+        try {
+            const stats = computeStatsFromEventos(eventos);
+            renderEstadisticas(stats);
+        } catch (e) {
+            console.warn('No se pudo actualizar estadísticas después de eliminar:', e);
+        }
         return true;
     };
 
@@ -440,6 +687,12 @@ async function initCalendario() {
     });
 
     calendar.render();
+    try {
+        const stats = computeStatsFromEventos(eventos);
+        renderEstadisticas(stats);
+    } catch (e) {
+        console.warn('No se pudo renderizar estadísticas:', e);
+    }
 }
 
 window.onload = async () => {

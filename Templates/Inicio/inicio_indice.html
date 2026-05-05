@@ -458,60 +458,6 @@
             padding: 8px 18px;
         }
 
-        .footer-float-text .liquid-btn>span {
-            font-weight: 500;
-            font-size: 11px;
-            color: rgba(255, 255, 255, 0.55);
-            letter-spacing: .2px;
-            padding: 6px 16px;
-        }
-
-        .footer-float-text .liquid-btn>span a {
-            color: rgba(255, 255, 255, 0.70);
-            text-decoration: underline;
-        }
-
-        .liquid-btn:hover>span {
-            text-shadow: 0.025em 0.025em 0.025em rgba(0, 0, 0, 0.12);
-        }
-
-        /* Text overlay shiny effect */
-        .liquid-btn>span::after {
-            content: "";
-            display: block;
-            position: absolute;
-            z-index: 1;
-            width: calc(100% - var(--border-width));
-            /* Prevent overlapping border */
-            height: calc(100% - var(--border-width));
-            top: calc(0% + var(--border-width) / 2);
-            left: calc(0% + var(--border-width) / 2);
-            box-sizing: border-box;
-            border-radius: 999vw;
-            overflow: clip;
-            background: linear-gradient(var(--angle-2),
-                    rgba(255, 255, 255, 0) 0%,
-                    rgba(255, 255, 255, 0.5) 40% 50%,
-                    rgba(255, 255, 255, 0) 55%);
-            z-index: 3;
-            mix-blend-mode: screen;
-            pointer-events: none;
-            background-size: 200% 200%;
-            background-position: 0% 50%;
-            background-repeat: no-repeat;
-            transition: background-position calc(var(--anim--hover-time, 300ms) * 1.25) var(--anim--hover-ease, ease),
-                --angle-2 calc(var(--anim--hover-time, 300ms) * 1.25) var(--anim--hover-ease, ease);
-        }
-
-        .liquid-btn:hover>span::after {
-            background-position: 25% 50%;
-        }
-
-        .liquid-btn:active>span::after {
-            background-position: 50% 15%;
-            --angle-2: -15deg;
-        }
-
         /* Touch Devices */
         @media (hover: none) and (pointer: coarse) {
 
