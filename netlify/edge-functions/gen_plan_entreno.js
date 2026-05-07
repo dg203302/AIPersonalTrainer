@@ -13,6 +13,7 @@ const normalizeKey = (s) =>
 const EJERCICIOS_INDICE = {
 	"Pecho": [
 		"Press de banca plano con barra",
+		"Press de banca inclinado con barra",
 		"Press de banca inclinado con mancuernas",
 		"Flexiones de brazos (peso corporal)",
 		"Aperturas con mancuernas",
@@ -25,6 +26,8 @@ const EJERCICIOS_INDICE = {
 		"Remo con barra",
 		"Remo unilateral con mancuerna",
 		"Remo sentado en polea",
+		"Pull-over con mancuerna",
+		"Remo en T",
 		"Hiperextensiones lumbares",
 	],
 	"Piernas": [
@@ -37,6 +40,8 @@ const EJERCICIOS_INDICE = {
 		"Curl femoral tumbado o sentado",
 		"Elevación de talones",
 		"Sentadilla búlgara",
+		"Peso muerto sumo con barra",
+		"Step-ups con mancuernas",
 	],
 	"Hombros": [
 		"Press militar con barra o mancuernas",
@@ -44,18 +49,18 @@ const EJERCICIOS_INDICE = {
 		"Pájaros / vuelos posteriores",
 		"Elevaciones frontales",
 		"Face pull (salud del hombro)",
+		"Press Arnold",
+		"Encogimientos de hombros con barra reversa",
 	],
 	"Brazos": [
 		"Curl de bíceps con barra",
 		"Curl martillo con mancuernas",
 		"Curl predicador",
-		"Press francés",
-		"Extensión de tríceps en polea alta",
 		"Fondos entre bancos",
 	],
 	"Tríceps": [
 		"Press francés",
-		"Extensión de tríceps en polea alta",
+		"Extensión de triceps en polea alta",
 		"Fondos entre bancos",
 		"Extensión de tríceps con mancuerna sobre la cabeza",
 		"Patada de tríceps con mancuerna",
@@ -72,6 +77,7 @@ const EJERCICIOS_INDICE = {
 		"Elevación de piernas colgado o en suelo",
 		"Giros rusos",
 		"Rueda abdominal",
+		"Dragon flag",
 	],
 	"Cardio / acondicionamiento": [
 		"Burpees",
@@ -455,12 +461,14 @@ const generatePlanEntreno = async (payload, request) => {
 	const ejerciciosContexto = ejerciciosSeleccionados.length > 0
 		? `Usa SOLO estos ejercicios (repite si es necesario): ${ejerciciosSeleccionadosJson}`
 		: `Ejercicios disponibles por grupo (elige según entorno/objetivo):
-Pecho: Press de banca plano con barra, Press de banca inclinado con mancuernas, Flexiones de brazos (peso corporal), Aperturas con mancuernas, Fondos en paralelas (pecho bajo/tríceps), Cruce de poleas.
-Espalda: Dominadas (peso corporal), Jalón al pecho en polea, Remo con barra, Remo unilateral con mancuerna, Remo sentado en polea, Hiperextensiones lumbares.
-Piernas: Sentadilla libre, Prensa de piernas, Zancadas / estocadas, Peso muerto rumano, Hip thrust (empuje de cadera), Extensión de cuádriceps en máquina, Curl femoral tumbado o sentado, Elevación de talones, Sentadilla búlgara.
-Hombros: Press militar con barra o mancuernas, Elevaciones laterales con mancuernas, Pájaros / vuelos posteriores, Elevaciones frontales, Face pull (salud del hombro).
-Brazos: Curl de bíceps con barra, Curl martillo con mancuernas, Curl predicador, Press francés, Extensión de tríceps en polea alta, Fondos entre bancos.
-Abdomen: Plancha abdominal, Crunch abdominal clásico, Elevación de piernas colgado o en suelo, Giros rusos, Rueda abdominal.
+Pecho: Press de banca plano con barra, Press de banca inclinado con barra, Press de banca inclinado con mancuernas, Flexiones de brazos (peso corporal), Aperturas con mancuernas, Fondos en paralelas (pecho bajo/tríceps), Cruce de poleas.
+Espalda: Dominadas (peso corporal), Jalón al pecho en polea, Remo con barra, Remo unilateral con mancuerna, Remo sentado en polea, Pull-over con mancuerna, Remo en T, Hiperextensiones lumbares.
+Piernas: Sentadilla libre, Prensa de piernas, Zancadas / estocadas, Peso muerto rumano, Hip thrust (empuje de cadera), Extensión de cuádriceps en máquina, Curl femoral tumbado o sentado, Elevación de talones, Sentadilla búlgara, Peso muerto sumo con barra, Step-ups con mancuernas.
+Hombros: Press militar con barra o mancuernas, Elevaciones laterales con mancuernas, Pájaros / vuelos posteriores, Elevaciones frontales, Face pull (salud del hombro), Press Arnold, Encogimientos de hombros con barra reversa.
+Brazos: Curl de bíceps con barra, Curl martillo con mancuernas, Curl predicador, Fondos entre bancos.
+Tríceps: Press francés, Extensión de triceps en polea alta, Fondos entre bancos, Extensión de tríceps con mancuerna sobre la cabeza, Patada de tríceps con mancuerna.
+Antebrazos: Curl de muñeca con barra, Curl de muñeca con mancuerna, Curl invertido con barra, Farmer's walk (caminata del granjero).
+Abdomen: Plancha abdominal, Crunch abdominal clásico, Elevación de piernas colgado o en suelo, Giros rusos, Rueda abdominal, Dragon flag.
 Cardio: Burpees, Saltos de tijera, Salto a la cuerda.`;
 
 	const prompt = `JSON válido (RFC 8259) únicamente. Sin texto extra, markdown ni comentarios.
