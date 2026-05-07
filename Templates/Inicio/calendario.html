@@ -684,6 +684,214 @@
     </footer>
     <script src="/Scripts/ui_bottom_sheet.js"></script>
     <script src="/Scripts/script_calendario.js" type="module"></script>
-    <script src="/Scripts/Ayuda.js"></script>
+    <script>
+        (function () {
+            var btn = document.getElementById('btn-ayuda-sheet');
+            if (!btn) return;
+            btn.addEventListener('click', function (e) {
+                e.preventDefault();
+                if (!window.PTBottomSheet) return;
+
+                var ayudaHTML = [
+                    '<div class="ayuda-sheet-wrap">',
+
+                    /* ── Índice ─────────────────────────────────────────── */
+                    '<section class="ayuda-box" aria-labelledby="sh_ayuda_indice_title">',
+                    '  <div class="ayuda-header">',
+                    '    <div class="ayuda-title">',
+                    '      <h1 id="sh_ayuda_indice_title">Índice</h1>',
+                    '      <p class="ayuda-subtitle">Ir a una sección</p>',
+                    '    </div>',
+                    '    <span class="ayuda-chip">Ayuda</span>',
+                    '  </div>',
+                    '  <div class="ayuda-content">',
+                    '    <nav aria-label="Índice de ayuda">',
+                    '      <ul>',
+                    '        <li><a href="#sh-ayuda-calendario">Usando el Calendario</a></li>',
+                    '        <li><a href="#sh-ayuda-estadisticas">Entender Estadísticas</a></li>',
+                    '        <li><a href="#sh-ayuda-registros">Gestionar Registros</a></li>',
+                    '      </ul>',
+                    '    </nav>',
+                    '    <p class="ayuda-note">El calendario es tu herramienta para rastrear tus entrenamientos completados, ver calorías quemadas y analizar tu progreso a lo largo del tiempo.</p>',
+                    '  </div>',
+                    '</section>',
+
+                    /* ── Guía Calendario ────────────────────────────────── */
+                    '<section id="sh-ayuda-calendario" class="ayuda-box" aria-labelledby="sh_ayuda_title">',
+                    '  <div class="ayuda-header">',
+                    '    <div class="ayuda-title">',
+                    '      <h1 id="sh_ayuda_title">Usando el Calendario</h1>',
+                    '      <p class="ayuda-subtitle">Rastrear y gestionar entrenamientos</p>',
+                    '    </div>',
+                    '    <span class="ayuda-chip">Guía</span>',
+                    '  </div>',
+                    '  <div class="ayuda-content">',
+                    '    <p>El calendario te permite ver todos tus entrenamientos completados, rastrear calorías quemadas y analizar tu consistencia a lo largo del tiempo.</p>',
+                    '    <div class="ayuda-grid" role="list">',
+                    '      <div class="ayuda-card" role="listitem"><h4>Qué ves</h4><p>Entrenamientos completados en el calendario con calorías e información del entrenamiento.</p></div>',
+                    '      <div class="ayuda-card" role="listitem"><h4>Estados</h4><p>Cada evento muestra su estado (completado/pendiente) con un indicador de color.</p></div>',
+                    '    </div>',
+                    '    <div class="ayuda-divider" aria-hidden="true"></div>',
+                    '    <h2>1) Ver entrenamientos en el calendario</h2>',
+                    '    <ul>',
+                    '      <li>El calendario muestra todos los meses. Navegá entre meses usando los controles de arriba.</li>',
+                    '      <li>Cada <strong>punto o evento</strong> en el calendario representa un entrenamiento completado.</li>',
+                    '      <li>Los eventos muestran:',
+                    '        <ul>',
+                    '          <li><strong>Calorías quemadas</strong> (si están registradas).</li>',
+                    '          <li><strong>Indicador de estado</strong>: punto verde para completados, azul para otros.</li>',
+                    '        </ul>',
+                    '      </li>',
+                    '    </ul>',
+                    '    <h2>2) Ver detalle de un día</h2>',
+                    '    <ul>',
+                    '      <li>Tocá/clickeá en <strong>cualquier fecha</strong> del calendario para ver el detalle de ese día.</li>',
+                    '      <li>También podés clickear en un <strong>evento específico</strong> (entrenamiento) para ver su información.</li>',
+                    '      <li>Se abrirá un <strong>panel emergente</strong> con:',
+                    '        <ul>',
+                    '          <li><strong>Fecha</strong>: día seleccionado.</li>',
+                    '          <li><strong>Entrenamientos completados</strong>: lista de todos los entrenamientos de ese día.</li>',
+                    '          <li><strong>Detalles de cada entrenamiento</strong>: estado, calorías, tiempo total, hora de confirmación.</li>',
+                    '        </ul>',
+                    '      </li>',
+                    '    </ul>',
+                    '    <h2>3) Información de cada entrenamiento</h2>',
+                    '    <ul>',
+                    '      <li><strong>Título</strong>: nombre del entrenamiento (ej: "Pecho y Tríceps").</li>',
+                    '      <li><strong>Estado</strong>: completado o en progreso.</li>',
+                    '      <li><strong>Calorías</strong>: calorías estimadas quemadas durante el entrenamiento.</li>',
+                    '      <li><strong>Tiempo</strong>: duración total del entrenamiento en minutos.</li>',
+                    '      <li><strong>Hora</strong>: hora en que se confirmó el entrenamiento.</li>',
+                    '      <li><strong>Descripción</strong>: notas adicionales sobre el entrenamiento (si existen).</li>',
+                    '    </ul>',
+                    '    <div class="ayuda-divider" aria-hidden="true"></div>',
+                    '    <h2>4) Eliminar registros</h2>',
+                    '    <ul>',
+                    '      <li>En el detalle de cada entrenamiento, hay un botón <strong>"Limpiar registro"</strong>.</li>',
+                    '      <li>Al presionarlo, se te pedirá confirmación antes de eliminar el registro.</li>',
+                    '      <li>Una vez eliminado, el entrenamiento desaparecerá del calendario.</li>',
+                    '      <li>Este cambio se sincronizará con tu perfil automáticamente.</li>',
+                    '    </ul>',
+                    '    <p class="ayuda-note">Atajo: tocá tu <strong>Perfil</strong> en el header para ir directamente a tu página de perfil.</p>',
+                    '  </div>',
+                    '</section>',
+                    /* ── Entender Estadísticas ──────────────────────────── */,
+                    '<section id="sh-ayuda-estadisticas" class="ayuda-box" aria-labelledby="sh_ayuda_stats_title">',
+                    '  <div class="ayuda-header">',
+                    '    <div class="ayuda-title">',
+                    '      <h1 id="sh_ayuda_stats_title">Entender Estadísticas</h1>',
+                    '      <p class="ayuda-subtitle">Métricas de tu progreso</p>',
+                    '    </div>',
+                    '    <span class="ayuda-chip">Análisis</span>',
+                    '  </div>',
+                    '  <div class="ayuda-content">',
+                    '    <p>Las estadísticas te muestran un resumen de tu desempeño durante el mes actual, ayudándote a evaluar tu consistencia y progreso.</p>',
+                    '    <div class="ayuda-divider" aria-hidden="true"></div>',
+                    '    <h2>1) Métricas principales</h2>',
+                    '    <ul>',
+                    '      <li><strong>Total de entrenamientos (mes)</strong>: cantidad de entrenamientos completados en el mes actual.</li>',
+                    '      <li><strong>Total de calorías (mes)</strong>: suma total de calorías quemadas en todos tus entrenamientos del mes.</li>',
+                    '      <li><strong>Promedio diario de calorías</strong>: calorías promedio por día (total del mes ÷ días activos).</li>',
+                    '      <li><strong>Consistencia</strong>: racha de días consecutivos con entrenamientos (útil para ver tu disciplina).</li>',
+                    '      <li><strong>Performance</strong>: evaluación de cómo te ha ido este mes comparado con tu capacidad.</li>',
+                    '      <li><strong>Proyección</strong>: estimación de tus calorías totales si mantienes el ritmo actual hasta fin de mes.</li>',
+                    '    </ul>',
+                    '    <div class="ayuda-divider" aria-hidden="true"></div>',
+                    '    <h2>2) Cómo leer las tarjetas de estadísticas</h2>',
+                    '    <ul>',
+                    '      <li>Cada <strong>tarjeta</strong> muestra una métrica diferente.</li>',
+                    '      <li>El <strong>número grande</strong> es el valor principal de la métrica.</li>',
+                    '      <li>El <strong>color</strong> de cada tarjeta ayuda a identificar el tipo de métrica:',
+                    '        <ul>',
+                    '          <li><strong>Azul claro</strong>: métricas principales (entrenamientos, calorías).</li>',
+                    '          <li><strong>Verde</strong>: performance (desempeño).</li>',
+                    '          <li><strong>Naranja</strong>: consistencia (racha de días).</li>',
+                    '          <li><strong>Rosa/Morado</strong>: progreso (proyecciones).</li>',
+                    '        </ul>',
+                    '      </li>',
+                    '    </ul>',
+                    '    <h2>3) Consejos para mejorar tus métricas</h2>',
+                    '    <ul>',
+                    '      <li><strong>Aumentar entrenamientos</strong>: intenta entrenar más días a la semana.</li>',
+                    '      <li><strong>Mejorar intensidad</strong>: entrenamientos más intensos queman más calorías.</li>',
+                    '      <li><strong>Mantener consistencia</strong>: una racha larga de días consecutivos es muy motivante.</li>',
+                    '      <li><strong>Revisar proyecciones</strong>: si tu proyección es baja, acelera el ritmo para lograr tus metas.</li>',
+                    '    </ul>',
+                    '  </div>',
+                    '</section>',
+
+                    /* ── Gestionar Registros ───────────────────────────── */
+                    '<section id="sh-ayuda-registros" class="ayuda-box" aria-labelledby="sh_ayuda_reg_title">',
+                    '  <div class="ayuda-header">',
+                    '    <div class="ayuda-title">',
+                    '      <h1 id="sh_ayuda_reg_title">Gestionar Registros</h1>',
+                    '      <p class="ayuda-subtitle">Editar y eliminar entrenamientos</p>',
+                    '    </div>',
+                    '    <span class="ayuda-chip">Gestión</span>',
+                    '  </div>',
+                    '  <div class="ayuda-content">',
+                    '    <p>Los registros de entrenamientos son la base de tu calendario y estadísticas. Acá te mostramos cómo gestionar tus datos.</p>',
+                    '    <div class="ayuda-divider" aria-hidden="true"></div>',
+                    '    <h2>1) Cómo se generan los registros</h2>',
+                    '    <ul>',
+                    '      <li>Los registros se crean automáticamente cuando <strong>completás un entrenamiento</strong> desde tu plan de ejercicio.</li>',
+                    '      <li>Se sincronizan con tu perfil automáticamente.</li>',
+                    '      <li>Cada registro contiene: calorías estimadas, tiempo total, hora de confirmación, estado.</li>',
+                    '    </ul>',
+                    '    <h2>2) Eliminar un registro</h2>',
+                    '    <ol>',
+                    '      <li>Abrí el calendario y hacé click en la fecha del entrenamiento.</li>',
+                    '      <li>Se abrirá un panel con los detalles de ese día.</li>',
+                    '      <li>En cada entrenamiento, encontrarás el botón <strong>"Limpiar registro"</strong>.</li>',
+                    '      <li>Presioná el botón y <strong>confirma</strong> la eliminación.</li>',
+                    '      <li>El registro desaparecerá del calendario y las estadísticas se actualizarán automáticamente.</li>',
+                    '    </ol>',
+                    '    <div class="ayuda-divider" aria-hidden="true"></div>',
+                    '    <h2>3) Sincronización automática</h2>',
+                    '    <ul>',
+                    '      <li>Todos los cambios (agregar o eliminar registros) se guardan en tu base de datos automáticamente.</li>',
+                    '      <li>Si desconectás y te conectás de nuevo, tus datos estarán sincronizados.</li>',
+                    '      <li>Las estadísticas se recalculan automáticamente con cada cambio.</li>',
+                    '    </ul>',
+                    '    <h2>4) Solución de problemas</h2>',
+                    '    <ul>',
+                    '      <li><strong>No veo mis entrenamientos</strong>: recargá la página o sincronizá desde tu perfil.</li>',
+                    '      <li><strong>Registro no se elimina</strong>: comprobá tu conexión a internet e intentá de nuevo.</li>',
+                    '      <li><strong>Estadísticas incorrectas</strong>: recargá la página para actualizar.</li>',
+                    '    </ul>',
+                    '    <p class="ayuda-note">Tip: Revisá tu calendario regularmente para ver tu progreso y mantente motivado.</p>',
+                    '  </div>',
+                    '</section>',
+
+                    '</div>'
+                ].join('\n');
+
+                window.PTBottomSheet.open({
+                    title: 'Ayuda',
+                    subtitle: 'Personal TrAIner',
+                    html: ayudaHTML,
+                    showClose: false,
+                    showHandle: true,
+                    allowOutsideClose: true,
+                    allowEscapeClose: true,
+                    allowDragClose: true,
+                    className: 'pt-sheet--ayuda',
+                    didOpen: function (sheet) {
+                        var content = sheet.querySelector('.pt-sheet-content');
+                        if (!content) return;
+                        sheet.querySelectorAll('a[href^="#sh-"]').forEach(function (link) {
+                            link.addEventListener('click', function (ev) {
+                                ev.preventDefault();
+                                var target = content.querySelector(link.getAttribute('href'));
+                                if (target) {
+                                    content.scrollTo({ top: target.offsetTop - 12, behavior: 'smooth' });
+                                }
+                            });
+                        });
+                    }
+                });
+            });
+        }());
+    </script>
 </body>
 </html>
