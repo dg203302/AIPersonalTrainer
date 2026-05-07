@@ -519,6 +519,9 @@ async function initCalendario() {
             weeks,
             projectedCalories,
             daysInMonth,
+            aggByDate,
+            curYear,
+            curMonth,
         };
     };
 
@@ -528,12 +531,21 @@ async function initCalendario() {
         try {
             const container = document.getElementById('pt-stats-grid');
             const section = document.getElementById('estadisticas');
+            const emptyOverlay = document.getElementById('pt-stats-empty');
             if (section) section.style.display = 'block';
             if (!container) return;
-            const items = [];
-            // Si no hay datos registrados, mostrar una tarjeta informativa pero mantener visibles las métricas en cero
+
             const noData = !stats || (stats.totalCalories === 0 && stats.totalMinutes === 0 && stats.daysTrained === 0);
 
+            // ── Empty state ──
+            if (emptyOverlay) emptyOverlay.style.display = noData ? 'flex' : 'none';
+
+            // ── Charts ──
+            renderCharts(stats);
+            initChartSwipeDots();
+
+            // ── Stat cards (existing logic) ──
+            const items = [];
             const weeklyEntries = Object.entries(stats.weeks || {})
                 .map(([k, v]) => [Number(k), v])
                 .filter(([k]) => Number.isFinite(k))
@@ -544,9 +556,7 @@ async function initCalendario() {
                 if (!firstWeek || !lastWeek) return tLang('Sin datos', 'No data');
                 const diff = (lastWeek.calories || 0) - (firstWeek.calories || 0);
                 if (diff === 0) return tLang('Estable', 'Stable');
-                return diff > 0
-                    ? `+${formatNumber(diff)} kcal`
-                    : `${formatNumber(diff)} kcal`;
+                return diff > 0 ? `+${formatNumber(diff)} kcal` : `${formatNumber(diff)} kcal`;
             })();
 
             items.push({ type: 'group', v: tLang('Resumen Mensual', 'Monthly Summary') });
@@ -567,17 +577,14 @@ async function initCalendario() {
             items.push({ k: tLang('% días activos', '% active days'), v: `${stats.pctActive}%`, tone: 'consistency' });
             items.push({ k: tLang('Días de descanso', 'Rest days'), v: `${formatNumber(stats.daysRest)}`, tone: 'consistency' });
 
-            // Distribution by weekday (show top 3)
             const weekdayEntries = Object.entries(stats.weekdayCounts || {}).sort((a, b) => b[1] - a[1]);
             const distLabel = weekdayEntries.length ? weekdayEntries.map(([k,v])=>`${k}: ${v}`).slice(0,5).join(' · ') : tLang('Sin datos', 'No data');
             items.push({ k: tLang('Distribución por día', 'Distribution by weekday'), v: distLabel, tone: 'consistency' });
 
-            // Variation monthly
             const varPct = stats.variationPct === null ? tLang('N/A', 'N/A') : `${stats.variationPct}%`;
             items.push({ type: 'group', v: tLang('Progreso y Proyección', 'Progress and Projection') });
             items.push({ k: tLang('Variación mensual (cal)', 'Monthly variation (cal)'), v: `${formatNumber(stats.variationAbsolute)} kcal (${varPct})`, tone: 'progress' });
             items.push({ k: tLang('Tendencia semanal', 'Weekly trend'), v: weeklyTrendLabel, tone: 'progress' });
-
             items.push({ k: tLang('Ritmo proyectado (cal)', 'Projected pace (cal)'), v: `${formatNumber(stats.projectedCalories)} kcal`, tone: 'projection' });
 
             container.innerHTML = items.map((it) => {
@@ -592,17 +599,251 @@ async function initCalendario() {
                     </div>
                 `;
             }).join('');
-
-            if (noData) {
-                // añadir nota adicional
-                const note = document.createElement('div');
-                note.className = 'pt-stat-card';
-                note.innerHTML = `<div class="pt-stat-key">${escapeHtml(tLang('Nota', 'Note'))}</div><div class="pt-stat-value">${escapeHtml(tLang('Sin registros este mes', 'No records this month'))}</div>`;
-                container.appendChild(note);
-            }
         } catch (err) {
             console.error('Error renderEstadisticas', err);
         }
+    };
+
+    /* ── Chart drawing helpers ─────────────────────────── */
+    const setupCanvas = (canvas) => {
+        if (!canvas) return null;
+        const wrap = canvas.parentElement;
+        const w = wrap.clientWidth;
+        const h = wrap.clientHeight;
+        const dpr = Math.min(window.devicePixelRatio || 1, 2);
+        canvas.width = w * dpr;
+        canvas.height = h * dpr;
+        const ctx = canvas.getContext('2d');
+        ctx.scale(dpr, dpr);
+        ctx.clearRect(0, 0, w, h);
+        return { ctx, w, h };
+    };
+
+    const renderCharts = (stats) => {
+        if (!stats) return;
+        const dim = stats.daysInMonth || 30;
+        const agg = stats.aggByDate || new Map();
+        const yr = stats.curYear ?? new Date().getFullYear();
+        const mo = stats.curMonth ?? new Date().getMonth();
+
+        // Build per-day arrays for current month
+        const dailyMin = [];
+        const dailyCal = [];
+        for (let d = 1; d <= dim; d++) {
+            const iso = `${yr}-${String(mo + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+            const entry = agg.get(iso);
+            dailyMin.push(entry ? entry.minutes : 0);
+            dailyCal.push(entry ? entry.calories : 0);
+        }
+
+        drawBarChart(dailyMin, dim);
+        drawLineChart(dailyCal, dim);
+        drawDonutChart(stats.daysTrained || 0, stats.daysRest ?? (dim - (stats.daysTrained || 0)));
+    };
+
+    const drawBarChart = (data, days) => {
+        const c = setupCanvas(document.getElementById('pt-chart-bar'));
+        if (!c) return;
+        const { ctx, w, h } = c;
+        const pad = { t: 8, b: 22, l: 6, r: 6 };
+        const plotW = w - pad.l - pad.r;
+        const plotH = h - pad.t - pad.b;
+        const barW = Math.max(2, (plotW / days) - 2);
+        const gap = (plotW - barW * days) / (days - 1 || 1);
+        const maxVal = Math.max(...data, 1);
+
+        // Grid lines
+        ctx.strokeStyle = 'rgba(255,255,255,0.06)';
+        ctx.lineWidth = 1;
+        for (let i = 0; i <= 3; i++) {
+            const y = pad.t + plotH * (1 - i / 3);
+            ctx.beginPath(); ctx.moveTo(pad.l, y); ctx.lineTo(w - pad.r, y); ctx.stroke();
+        }
+
+        // Bars
+        const grad = ctx.createLinearGradient(0, pad.t, 0, pad.t + plotH);
+        grad.addColorStop(0, 'rgba(188,228,255,0.9)');
+        grad.addColorStop(1, 'rgba(188,228,255,0.25)');
+
+        data.forEach((val, i) => {
+            const barH = (val / maxVal) * plotH;
+            const x = pad.l + i * (barW + gap);
+            const y = pad.t + plotH - barH;
+            ctx.fillStyle = val > 0 ? grad : 'rgba(255,255,255,0.04)';
+            ctx.beginPath();
+            const r = Math.min(3, barW / 2);
+            ctx.roundRect(x, y, barW, Math.max(barH, 2), [r, r, 0, 0]);
+            ctx.fill();
+        });
+
+        // X labels (every 5 days)
+        ctx.fillStyle = 'rgba(255,255,255,0.38)';
+        ctx.font = '500 9px "Plus Jakarta Sans", sans-serif';
+        ctx.textAlign = 'center';
+        for (let i = 0; i < days; i += 5) {
+            const x = pad.l + i * (barW + gap) + barW / 2;
+            ctx.fillText(String(i + 1), x, h - 4);
+        }
+    };
+
+    const drawLineChart = (data, days) => {
+        const c = setupCanvas(document.getElementById('pt-chart-line'));
+        if (!c) return;
+        const { ctx, w, h } = c;
+        const pad = { t: 12, b: 22, l: 10, r: 10 };
+        const plotW = w - pad.l - pad.r;
+        const plotH = h - pad.t - pad.b;
+        const maxVal = Math.max(...data, 1);
+        const stepX = plotW / (days - 1 || 1);
+
+        // Grid lines
+        ctx.strokeStyle = 'rgba(255,255,255,0.06)';
+        ctx.lineWidth = 1;
+        for (let i = 0; i <= 3; i++) {
+            const y = pad.t + plotH * (1 - i / 3);
+            ctx.beginPath(); ctx.moveTo(pad.l, y); ctx.lineTo(w - pad.r, y); ctx.stroke();
+        }
+
+        // Area fill
+        const gradFill = ctx.createLinearGradient(0, pad.t, 0, pad.t + plotH);
+        gradFill.addColorStop(0, 'rgba(158,255,203,0.25)');
+        gradFill.addColorStop(1, 'rgba(158,255,203,0.02)');
+        ctx.beginPath();
+        ctx.moveTo(pad.l, pad.t + plotH);
+        data.forEach((val, i) => {
+            const x = pad.l + i * stepX;
+            const y = pad.t + plotH - (val / maxVal) * plotH;
+            i === 0 ? ctx.lineTo(x, y) : ctx.lineTo(x, y);
+        });
+        ctx.lineTo(pad.l + (days - 1) * stepX, pad.t + plotH);
+        ctx.closePath();
+        ctx.fillStyle = gradFill;
+        ctx.fill();
+
+        // Line
+        ctx.strokeStyle = '#9effcb';
+        ctx.lineWidth = 2;
+        ctx.lineJoin = 'round';
+        ctx.lineCap = 'round';
+        ctx.beginPath();
+        data.forEach((val, i) => {
+            const x = pad.l + i * stepX;
+            const y = pad.t + plotH - (val / maxVal) * plotH;
+            i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+        });
+        ctx.stroke();
+
+        // Dots on active days
+        data.forEach((val, i) => {
+            if (val <= 0) return;
+            const x = pad.l + i * stepX;
+            const y = pad.t + plotH - (val / maxVal) * plotH;
+            ctx.beginPath();
+            ctx.arc(x, y, 3, 0, Math.PI * 2);
+            ctx.fillStyle = '#9effcb';
+            ctx.fill();
+        });
+
+        // X labels
+        ctx.fillStyle = 'rgba(255,255,255,0.38)';
+        ctx.font = '500 9px "Plus Jakarta Sans", sans-serif';
+        ctx.textAlign = 'center';
+        for (let i = 0; i < days; i += 5) {
+            ctx.fillText(String(i + 1), pad.l + i * stepX, h - 4);
+        }
+    };
+
+    const drawDonutChart = (active, rest) => {
+        const c = setupCanvas(document.getElementById('pt-chart-donut'));
+        if (!c) return;
+        const { ctx, w, h } = c;
+        const cx = w / 2, cy = h / 2;
+        const radius = Math.min(cx, cy) - 16;
+        const lineW = Math.max(18, radius * 0.28);
+        const total = active + rest || 1;
+        const pctActive = active / total;
+
+        // Rest arc (background)
+        ctx.beginPath();
+        ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+        ctx.lineWidth = lineW;
+        ctx.strokeStyle = 'rgba(255,255,255,0.06)';
+        ctx.lineCap = 'round';
+        ctx.stroke();
+
+        // Active arc
+        if (active > 0) {
+            const startAngle = -Math.PI / 2;
+            const endAngle = startAngle + pctActive * Math.PI * 2;
+            const grad = ctx.createConicGradient(startAngle, cx, cy);
+            grad.addColorStop(0, '#bce4ff');
+            grad.addColorStop(pctActive * 0.7, '#9effcb');
+            grad.addColorStop(pctActive, '#ffdca2');
+            ctx.beginPath();
+            ctx.arc(cx, cy, radius, startAngle, endAngle);
+            ctx.lineWidth = lineW;
+            ctx.strokeStyle = grad;
+            ctx.lineCap = 'round';
+            ctx.stroke();
+        }
+
+        // Center text
+        const pctLabel = `${Math.round(pctActive * 100)}%`;
+        ctx.fillStyle = 'rgba(255,255,255,0.92)';
+        ctx.font = `900 ${Math.round(radius * 0.38)}px "Plus Jakarta Sans", sans-serif`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(pctLabel, cx, cy - 4);
+        ctx.fillStyle = 'rgba(255,255,255,0.48)';
+        ctx.font = `600 ${Math.round(radius * 0.15)}px "Plus Jakarta Sans", sans-serif`;
+        ctx.fillText(tLang('activo', 'active'), cx, cy + radius * 0.22);
+
+        // Legend
+        const legY = h - 6;
+        ctx.font = '600 10px "Plus Jakarta Sans", sans-serif';
+        ctx.textAlign = 'center';
+        // Active legend
+        ctx.fillStyle = '#bce4ff';
+        ctx.beginPath(); ctx.arc(cx - 48, legY, 4, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = 'rgba(255,255,255,0.58)';
+        ctx.textAlign = 'left';
+        ctx.fillText(`${active} ${tLang('días', 'days')}`, cx - 40, legY + 3);
+        // Rest legend
+        ctx.fillStyle = 'rgba(255,255,255,0.18)';
+        ctx.beginPath(); ctx.arc(cx + 18, legY, 4, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = 'rgba(255,255,255,0.58)';
+        ctx.textAlign = 'left';
+        ctx.fillText(`${rest}`, cx + 26, legY + 3);
+    };
+
+    /* ── Swipe dot sync ────────────────────────────────── */
+    let _dotsInitialized = false;
+    const initChartSwipeDots = () => {
+        if (_dotsInitialized) return;
+        const swipe = document.getElementById('pt-charts-swipe');
+        const dotsWrap = document.getElementById('pt-charts-dots');
+        if (!swipe || !dotsWrap) return;
+        _dotsInitialized = true;
+
+        const dots = Array.from(dotsWrap.querySelectorAll('.pt-charts-dot'));
+        const panels = Array.from(swipe.querySelectorAll('.pt-chart-panel'));
+
+        const syncDots = () => {
+            const scrollLeft = swipe.scrollLeft;
+            const panelW = swipe.clientWidth || 1;
+            const idx = Math.round(scrollLeft / panelW);
+            dots.forEach((d, i) => d.classList.toggle('is-active', i === idx));
+        };
+
+        swipe.addEventListener('scroll', syncDots, { passive: true });
+
+        dots.forEach((dot) => {
+            dot.addEventListener('click', () => {
+                const idx = Number(dot.dataset.dot || 0);
+                const target = panels[idx];
+                if (target) target.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+            });
+        });
     };
 
     const getRegistrosByFecha = (fechaIso) => recordsByDate.get(fechaIso) || [];
