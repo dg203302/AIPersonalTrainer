@@ -2873,3 +2873,70 @@ html.no-transparency .liquid-shadow {
 	height: auto;
 	display: block;
 }
+
+/* ── FullCalendar: Override estilos para tema oscuro ────────────────────── */
+
+/* Encabezado del calendario (día de la semana) */
+.fc .fc-col-header {
+	background: transparent !important;
+	border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+.fc .fc-col-header-cell {
+	background: transparent !important;
+	color: #000 !important;
+	border: none !important;
+	padding: 10px 2px !important;
+	font-weight: 600 !important;
+	font-size: 12px !important;
+	text-transform: uppercase !important;
+	letter-spacing: 0.5px !important;
+}
+
+/* Días del calendario */
+.fc .fc-daygrid-day {
+	background: transparent !important;
+	border-color: rgba(255, 255, 255, 0.06) !important;
+}
+
+.fc .fc-daygrid-day:hover {
+	background: rgba(255, 255, 255, 0.02) !important;
+}
+
+.fc .fc-daygrid-day-number {
+	color: rgba(255, 255, 255, 0.6) !important;
+	padding: 4px 4px !important;
+	font-size: 13px !important;
+}
+
+/* Días del mes anterior/siguiente */
+.fc .fc-daygrid-day.fc-day-other {
+	background: transparent !important;
+	opacity: 0.35 !important;
+}
+
+.fc .fc-daygrid-day.fc-day-other .fc-daygrid-day-number {
+	opacity: 0.5 !important;
+}
+
+/* Hoy */
+.fc .fc-daygrid-day.fc-day-today {
+	background: rgba(188, 228, 255, 0.08) !important;
+	border-color: rgba(188, 228, 255, 0.2) !important;
+}
+
+.fc .fc-daygrid-day.fc-day-today .fc-daygrid-day-number {
+	color: rgba(188, 228, 255, 0.9) !important;
+}
+
+/* Eventos en el calendario */
+.fc .fc-event {
+	background: transparent !important;
+	border: none !important;
+	box-shadow: none !important;
+}
+
+.fc .fc-daygrid-event {
+	margin-bottom: 2px !important;
+}
+}

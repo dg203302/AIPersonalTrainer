@@ -369,8 +369,8 @@ async function initCalendario() {
         return Number.isFinite(n) ? n : 0;
     };
 
-    const computeStatsFromEventos = (allEventos) => {
-        const now = new Date();
+    const computeStatsFromEventos = (allEventos, targetDate = null) => {
+        const now = targetDate || new Date();
         const curYear = now.getFullYear();
         const curMonth = now.getMonth(); // 0-based
 
@@ -848,6 +848,8 @@ async function initCalendario() {
 
     const getRegistrosByFecha = (fechaIso) => recordsByDate.get(fechaIso) || [];
 
+    let currentViewDate = new Date(); // Track the current view date
+
     const onDeleteRegistro = async (registroId) => {
         const prev = Array.isArray(registros) ? registros.slice() : [];
         const next = prev.filter((registro, index) => getRegistroId(registro, index) !== registroId);
@@ -877,7 +879,7 @@ async function initCalendario() {
         calendar.removeAllEvents();
         calendar.addEventSource(eventos);
         try {
-            const stats = computeStatsFromEventos(eventos);
+            const stats = computeStatsFromEventos(eventos, currentViewDate);
             renderEstadisticas(stats);
         } catch (e) {
             console.warn('No se pudo actualizar estadísticas después de eliminar:', e);
@@ -895,6 +897,16 @@ async function initCalendario() {
         height: "auto",
         events: eventos,
         eventDisplay: "block",
+        datesSet: (info) => {
+            // Update currentViewDate when month/view changes
+            currentViewDate = new Date(info.view.currentStart);
+            try {
+                const stats = computeStatsFromEventos(eventos, currentViewDate);
+                renderEstadisticas(stats);
+            } catch (e) {
+                console.warn('No se pudo actualizar estadísticas al cambiar de mes:', e);
+            }
+        },
         eventContent: (arg) => {
             const status = arg.event.extendedProps?.status;
             const calories = arg.event.extendedProps?.calories_burnt;
@@ -929,7 +941,7 @@ async function initCalendario() {
 
     calendar.render();
     try {
-        const stats = computeStatsFromEventos(eventos);
+        const stats = computeStatsFromEventos(eventos, currentViewDate);
         renderEstadisticas(stats);
     } catch (e) {
         console.warn('No se pudo renderizar estadísticas:', e);

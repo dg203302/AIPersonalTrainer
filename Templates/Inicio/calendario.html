@@ -48,14 +48,24 @@
         main{
             margin: 0px;
             padding: 24px 16px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 16px;
+            align-items: flex-start;
         }
 
-        /* Hacer que el calendario ocupe el alto disponible (móvil y escritorio) */
-        html, body { height: 100%; }
+        main > h1 {
+            width: 100%;
+            order: -1;
+        }
 
-        /* Desktop / tablet: dar al calendario una altura mínima que llene la ventana
-           restando header/footer (ajustable por variables CSS). */
+        #estadisticas {
+            flex: 0 0 35%;
+            min-width: 280px;
+        }
+
         #calendario {
+            flex: 1 1 60%;
             min-height: calc(100vh - var(--header-fixed, 56px) - var(--footer-fixed, 56px) - 48px);
             height: auto;
             overflow: auto;
@@ -65,16 +75,32 @@
             padding: 8px;
         }
 
+        /* Hacer que el calendario ocupe el alto disponible (móvil y escritorio) */
+        html, body { height: 100%; }
+
         @media (max-width: 900px) {
             main {
                 padding: 12px 12px;
                 min-height: calc(100vh - var(--header-fixed, 56px) - var(--footer-fixed, 56px));
                 display: flex;
                 flex-direction: column;
+                flex-wrap: nowrap;
+            }
+
+            main > h1 {
+                order: 0;
+                width: 100%;
+            }
+
+            #estadisticas {
+                flex: 0 0 auto;
+                width: 100%;
+                order: 2;
             }
 
             #calendario {
                 flex: 1 1 auto;
+                order: 1;
                 height: 100%;
                 min-height: 0;
                 overflow: auto;
